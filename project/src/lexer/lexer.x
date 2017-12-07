@@ -59,8 +59,6 @@ tokens :-
       static	{ \s  ->  STATIC }
       switch	{ \s  ->  SWITCH }
       this		{ \s  ->  THIS }
-      throws	{ \s  ->  THROWS }
-      try		{ \s  ->  TRY }
       void		{ \s  ->  VOID }
       while		{ \s  ->  WHILE }
       true		{ \s  -> BOOLLITERAL(True) }
@@ -91,8 +89,6 @@ data Token
      | STATIC 
      | SWITCH 
      | THIS 
-     | THROWS 
-     | TRY 
      | VOID 
      | WHILE 
      | INTLITERAL Integer

@@ -18,3 +18,11 @@ Grund: Exceptions
 catch
 Grund: Exceptions
 
+throw
+Grund: Exceptions
+
+throws:
+Grund: Exceptions
+
+try:
+Grund: Exceptions
