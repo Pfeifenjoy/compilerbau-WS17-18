@@ -1,0 +1,20 @@
+Lösche:
+
+abstract
+Grund: abstrakte Klassen / Methoden
+
+extends
+Grund: Vererbung
+
+super
+Grund: Vererbung
+
+default
+Grund: Interfaces
+
+finally
+Grund: Exceptions
+
+catch
+Grund: Exceptions
+
