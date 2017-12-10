@@ -3,9 +3,16 @@ module ABSTree where
 import Data.Int
 
 data Type
-    = TVar String
-    | TC String [Type]
-    | WC
+    = ComplexType { typeName :: String } --complex type (e.g. Class name)
+    | ArrayType Type --Array
+    -- primitive types
+    | Boolean
+    | Byte
+    | Char
+    | Integer
+    | Long
+    | Float
+    | Double
     deriving(Eq, Show)
 
 -- Statements
@@ -31,37 +38,27 @@ data Expr
     | JNull
     -- other
     | StmtExprExpr StmtExpr
-    | TypedExpr Expr Type
     deriving(Eq, Show)
 
-data StmtExpr
-    = Assign Expr Expr
+data StmtExpr = Assign Expr Expr
     | New { stmtExprType :: Type, arguments :: [Expr] }
     | MethodCall Expr String [Expr]
-    | TypedStmtExpr StmtExpr Type
     deriving(Eq, Show)
 
-data SwitchCase = Expr Stmt
-    deriving(Eq, Show)
-
-data Stmt
-    = Block [Stmt]
+data Stmt = Block [Stmt]
     -- Function Statments
     | Return Expr
     -- Loop Statements
     | While { condition:: Expr, statement :: Stmt }
     | DoWhile { condition:: Expr, statement :: Stmt }
     | For { start :: Stmt, condition :: Expr, next :: Stmt, statement :: Stmt }
-    -- | ForEach { iterable :: Expr, range :: Expr }
     | Break
     | Continue
     -- Conditional Statements
     | If { condition :: Expr, thenStmt :: Stmt, elseStmt :: (Maybe Stmt) }
-    | Switch { variable :: Expr, cases :: [SwitchCase] }
     -- other
     | LocalVarDecl { localVarType :: Type, localVarName :: String }
     | StmtExprStmt StmtExpr
-    | TypedStmt Stmt Type
     deriving(Eq, Show)
 
 -- Classes
