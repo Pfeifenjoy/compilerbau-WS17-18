@@ -3,8 +3,8 @@
 
 name:                java-compiler
 version:             0.1.0.0
--- synopsis:            
--- description:         
+synopsis:            mini java compiler
+description:         A java compiler for a mini version of java
 license:             GPL-2
 license-file:        LICENSE
 author:              Arwed Mett
@@ -19,6 +19,8 @@ executable java-compiler
   main-is:             Main.hs
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.9 && <4.10
+  build-depends:       base >=4.9 && <4.10,
+                       bytestring,
+                       binary
   hs-source-dirs:      src
   default-language:    Haskell2010
