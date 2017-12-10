@@ -1,2 +1,5 @@
 Class("InstanzVariable", 
-	[FieldDecl("int", "i"), FieldDecl("boolean", "b"), FieldDecl("char", "c")])
+	[FieldDecl("int", "i"), 
+	FieldDecl("boolean", "b"), 
+	FieldDecl("char", "c")],
+	[])

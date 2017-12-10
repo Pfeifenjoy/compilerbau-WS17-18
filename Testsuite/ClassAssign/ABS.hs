@@ -3,7 +3,7 @@ Class("ClassAssign",
 	 [MethodDecl("int", "doStuff", [("int", "b")],
 	 	Block([
 	 		LocalVarDecl("int", "c"),
-	 		StmtExpStmt(Assign(LocalOrFieldVar("c"), LocalOrFieldVar("b"))),
+	 		StmtExprStmt(Assign(LocalOrFieldVar("c"), LocalOrFieldVar("b"))),
 	 		Return(LocalOrFieldVar("b"))]
 	 		))
 	 ])

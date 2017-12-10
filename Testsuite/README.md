@@ -15,3 +15,5 @@ Die Struktur ist wie folgt (Ordnername):
 | ClassMethod     | 1                 | 3          | Konstantenrückgabe, Parameterrückgabe, Instanzvariablenrückgabe |
 | ClassAssign     | 1                 | 1          | Variablenzuweisung innerhalb der Methode                        |
 
+
+**ToDo:** Testfunktionalität für einfachen Vergleich zwischen Compilter-Ergebnis und händischem Ergebnis
