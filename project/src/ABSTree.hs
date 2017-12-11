@@ -2,41 +2,41 @@ module ABSTree where
 
 import Data.Int
 
-data Type
-    = TVar String
-    | TC String [Type]
-    | WC
-    deriving(Eq, Show)
+type Type = String
 
 -- Statements
 data Expr
     = This
-    | Super
+    -- | Super
     -- variables
     | LocalOrFieldVar String
     | InstVar Expr String
     -- operators
     | Unary String Expr
-    | Binary String Expr Expr
-    | Ternary { ternCondition :: Expr, ternThen :: Expr, ternElse :: Expr }
+    | Binary String Expr Expr -- (&&, ||, ..., instanceOf)
+    | Ternary Expr Expr Expr -- expr1 ? expr2 : expr3
     --literals
     | BooleanLiteral Bool
-    | ByteLiteral Int8
+    -- | ByteLiteral Int8
     | CharLiteral Char
     | IntegerLiteral Int32
-    | LongLiteral Int64
-    | FloatLiteral Float
-    | DoubleLiteral Double
-    | StringLiteral String
+    -- | LongLiteral Int64
+    -- | FloatLiteral Float
+    -- | DoubleLiteral Double
+    -- | StringLiteral String
     | JNull
     -- other
     | StmtExprExpr StmtExpr
     | TypedExpr Expr Type
     deriving(Eq, Show)
 
+data VariableDecl
+    = Variable String Type Bool -- name, type, final
+    deriving(Eq, Show)
+
 data StmtExpr
     = Assign Expr Expr
-    | New { stmtExprType :: Type, arguments :: [Expr] }
+    | New Type [Expr] -- type, arguments
     | MethodCall Expr String [Expr]
     | TypedStmtExpr StmtExpr Type
     deriving(Eq, Show)
@@ -49,42 +49,37 @@ data Stmt
     -- Function Statments
     | Return Expr
     -- Loop Statements
-    | While { condition:: Expr, statement :: Stmt }
-    | DoWhile { condition:: Expr, statement :: Stmt }
-    | For { start :: Stmt, condition :: Expr, next :: Stmt, statement :: Stmt }
+    | While Expr Stmt -- condition, statement
+    | DoWhile Expr Stmt -- condition, statement
+    | For Stmt Expr Stmt Stmt -- for(stmt1, expr, stmt2) stmt3
     -- | ForEach { iterable :: Expr, range :: Expr }
     | Break
     | Continue
     -- Conditional Statements
-    | If { condition :: Expr, thenStmt :: Stmt, elseStmt :: (Maybe Stmt) }
-    | Switch { variable :: Expr, cases :: [SwitchCase] }
+    | If Expr Stmt (Maybe Stmt) -- condition, stmt, elseStmt
+    | Switch Expr [SwitchCase] (Maybe Stmt) -- variable, cases, finally
     -- other
-    | LocalVarDecl { localVarType :: Type, localVarName :: String }
+    | LocalVarDecl VariableDecl
     | StmtExprStmt StmtExpr
     | TypedStmt Stmt Type
     deriving(Eq, Show)
 
--- Classes
-data FieldDecl = FieldDecl {
-        fieldType :: Type,
-        fieldName :: String
-    }
+
+data Visibility
+    = Public
+    | Private
+    -- | Protected
     deriving(Eq, Show)
 
-data ArgumentDecl = ArgumentDecl {
-        argumentType :: Type,
-        argumentName :: String
-    }
+-- Classes
+data FieldDecl = FieldDecl VariableDecl Visibility Bool -- variable, private/protected, static
     deriving(Eq, Show)
+
+type ArgumentDecl = VariableDecl
 
 type ArgumentDecls = [ArgumentDecl]
 
-data MethodDecl = MethodDecl {
-        methodName :: String,
-        methodReturnType :: Type,
-        methodArguments :: ArgumentDecls,
-        body :: Stmt
-    }
+data MethodDecl = MethodDecl String Type ArgumentDecls Stmt Visibility Bool -- name, type, arguments, stmt (only block statement!!!), private/protected, static
     deriving(Eq, Show)
 
 data Class = Class Type [FieldDecl] [MethodDecl]
