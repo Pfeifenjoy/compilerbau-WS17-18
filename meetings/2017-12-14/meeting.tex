@@ -7,6 +7,7 @@
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning}
 \usepackage{multicol}
+\usepackage{hyperref}
 
 
 \title{Compilerbau WS 17/18}
@@ -23,6 +24,38 @@
 
 \section{Parser}
 
+\begin{frame}[t]{Abstract Syntax}
+	\centering
+	\framebox{
+	\href{run:../../project/src/ABSTree.hs}{ABSTree}
+	}
+\end{frame}
+
+\begin{frame}[t]{Open Questions}
+
+	\begin{itemize}
+		\item Should we implement strings to create test programs.
+			This might be helpful for code generation, to test small programs
+		\item How to implement the main method?
+			\begin{itemize}
+				\item implement Arrays and String
+				\item implement Strings and pass all arguments as string
+				\item donnot pass arguments
+			\end{itemize}
+		\item Further questions
+			\begin{itemize}
+				\item Deprecate const and goto?
+				\item implement enums
+				\item implement native
+				\item implement synchronized
+				\item implement transient
+				\item implement volatile
+				\item implement Unicode
+			\end{itemize}
+	\end{itemize}
+
+\end{frame}
+
 \section{Testsuite}
 
 \begin{frame}{Testsuite}
@@ -35,11 +68,15 @@
 	
 \end{frame}
 
-
-
-
-
-
-
+\begin{frame}[t]{Testsuite Results}
+	\begin{table}[H]
+		\centering
+		\caption{Testsuite Results}
+		\label{tab:label}
+		\begin{tabular}{c}
+		
+		\end{tabular}
+	\end{table}
+\end{frame}
 
 \end{document}
