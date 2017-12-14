@@ -1,6 +1,6 @@
 module Lexer where
 
-import Token
+import Lexer.Lexer
 
 lex :: String -> [Token]
-lex code = [] -- TODO implement
+lex = Lexer.Lexer.alexScanTokens

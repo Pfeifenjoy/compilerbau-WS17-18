@@ -1,5 +1,6 @@
 {
 module Lexer.Lexer  (alexScanTokens, Token(..)) where
+import Lexer.Token
 }
 
 %wrapper "basic"
@@ -68,82 +69,4 @@ tokens :-
       $alpha [$alpha $digit \_ \']*   { \s -> IDENTIFIER s }
       
 {
-data Token
-     = BOOLEAN 
-     | BREAK 
-     | CASE 
-     | CHAR  
-     | CLASS
-     | CONTINUE 
-     | DO 
-     | ELSE 
-     | FOR 
-     | IF 
-     | INSTANCEOF 
-     | INT
-     | NEW 
-     | PRIVATE 
-     | PROTECTED 
-     | PUBLIC 
-     | RETURN 
-     | STATIC 
-     | SWITCH 
-     | THIS 
-     | VOID 
-     | WHILE 
-     | INTLITERAL Integer
-     | BOOLLITERAL Bool
-     | JNULL 
-     | CHARLITERAL Char
-     | STRINGLITERAL String
-     | IDENTIFIER String
-     | EQUAL 
-     | LESSEQUAL 
-     | GREATEREQUAL 
-     | NOTEQUAL 
-     | LOGICALOR 
-     | LOGICALAND 
-     | INCREMENT 
-     | DECREMENT 
-     | SHIFTLEFT 
-     | SHIFTRIGHT 
-     | UNSIGNEDSHIFTRIGHT 
-     | SIGNEDSHIFTRIGHT 
-     | PLUSEQUAL 
-     | MINUSEQUAL 
-     | TIMESEQUAL 
-     | DIVIDEEQUAL 
-     | ANDEQUAL 
-     | OREQUAL 
-     | XOREQUAL 
-     | MODULOEQUAL 
-     | SHIFTLEFTEQUAL 
-     | SIGNEDSHIFTRIGHTEQUAL 
-     | UNSIGNEDSHIFTRIGHTEQUAL 
-     | LBRACE 
-     | RBRACE 
-     | LBRACKET 
-     | RBRACKET 
-     | LSQBRACKET 
-     | RSQBRACKET 
-     | SEMICOLON 
-     | DOT 
-     | ASSIGN 
-     | LESS 
-     | GREATER 
-     | EXCLMARK 
-     | TILDE 
-     | QUESMARK 
-     | COLON 
-     | PLUS 
-     | MINUS 
-     | MUL 
-     | DIV 
-     | MOD 
-     | AND 
-     | OR 
-     | XOR 
-     | SHARP
-     | ARROW
-     deriving(Eq,Show)
 }

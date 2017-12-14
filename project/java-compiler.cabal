@@ -16,7 +16,7 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Lexer, Token
+  exposed-modules:     Lexer, Lexer.Token
   build-depends:       base, array
   hs-source-dirs:      src
   build-tools:         alex, happy
