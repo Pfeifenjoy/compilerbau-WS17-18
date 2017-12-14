@@ -247,11 +247,4 @@ ExpRest :
     data ExpRest
         = ExpRest Exp
         deriving (show, Eq)
-
-    main = do
-    inputString <- getContents
-    print "start parser"
-    let parseTree = parse (alexScanTokens inputString)  
-    putStrLn ("Parse Tree:" ++ show(parseTree))
-    print "done"
 }
