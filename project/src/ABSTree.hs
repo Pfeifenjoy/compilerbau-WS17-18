@@ -14,6 +14,8 @@ data Expr
     -- operators
     | Unary String Expr
     | Binary String Expr Expr -- (&&, ||, ..., instanceOf)
+    | InstanceOf Expr Type
+    -- TODO extra instanceOf
     | Ternary Expr Expr Expr -- expr1 ? expr2 : expr3
     --literals
     | BooleanLiteral Bool
