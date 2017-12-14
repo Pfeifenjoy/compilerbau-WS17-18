@@ -6,4 +6,6 @@ class ClassAssign {
 		c = b;
 		return b;
 	}
+
+
 }

@@ -9,7 +9,7 @@ class ClassMethod {
 		return x;
 	}
 
-	void doStuff() {
+	int doStuff() {
 		return i;
 	}
 
