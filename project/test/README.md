@@ -12,6 +12,7 @@ Die Struktur ist wie folgt (Ordnername):
 | Ordnername         | #Instanzvariablen |  #Methoden | Besonderheit                                                    |
 |--------------------|:-----------------:|:----------:|-----------------------------------------------------------------|
 | InstanzVariable    | 3                 | 0          | Basisklasse mit Definition von Instnazvariablen                 |
+|  LocalVariable     | 0                 |  1         | Eine lokale Variable in einer Methode                           |
 | ClassMethod        | 1                 | 3          | Konstantenrückgabe, Parameterrückgabe, Instanzvariablenrückgabe |
 | ClassAssign        | 1                 | 1          | Variablenzuweisung innerhalb der Methode                        |
 | Simple-If          | 1                 | 1          | Simple If-Condition mit Else-Branch                             |
