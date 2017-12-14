@@ -1,10 +1,13 @@
 {
-module Parser  where
-import Lexer
+module Parser.Parser  where
+import Lexer.Token
+import ABSTree
+import Data.Int
+
 }
 
 %name parse
-%tokentype { Token }
+%tokentype { Lexer.Token.Token }
 %error { parseError }
 
 %token
@@ -40,8 +43,6 @@ import Lexer
     LESSEQUAL  {LESSEQUAL}
     GREATEREQUAL  {GREATEREQUAL}
     NOTEQUAL  {NOTEQUAL}
-    LOGICALOR  {LOGICALOR}
-    LOGICALAND  {LOGICALAND}
     INCREMENT  {INCREMENT}
     DECREMENT  {DECREMENT}
     SHIFTLEFT  {SHIFTLEFT}
@@ -84,167 +85,59 @@ import Lexer
     XOR  {XOR}
     SHARP {SHARP}
     ARROW {ARROW}
+    COMMA {COMMA}
 %%
 
-Program :
-        MainClass ClassDeclarationList { Program $1 $2 }
+Statement : RETURN Expr { Return $2 }
+          | Block       { $1 }
+          | WHILE LBRACE Expr RBRACE Statement { While $3 $5 }
+          | DO Statement WHILE LBRACE Expr RBRACE { DoWhile $5 $2 }
+          | FOR LBRACE Statement SEMICOLON Expr SEMICOLON Statement RBRACE Statement { For $3 $5 $7 $9 }
+          | BREAK { Break }
+          | CONTINUE { Continue }
+          | IF LBRACE Expr RBRACE Statement ELSE Statement { If $3 $5 (Just $7) }
+          | IF LBRACE Expr RBRACE Statement { If $3 $5 Nothing }
+          | StmtExpr { StmtExprStmt $1 }
 
-MainClass :
-        CLASS IDENTIFIER LBRACKET PUBLIC STATIC VOID "main" LBRACE "String" "[" "]" IDENTIFIER RBRACE LBRACKET Statement RBRACKET RBRACKET { MClas $2 $12 $15}
+Expr : Expr PLUS Expr                       { Binary "+" $1 $3 }
+     | THIS                                 { This }
+     | IDENTIFIER                           { LocalOrFieldVar $1 }
+     | Expr DOT IDENTIFIER                  { InstVar $1 $3 }
+     -- Operators
+     | EXCLMARK Expr                        { Unary "!" $2 }
+     | Expr PLUS Expr                       { Binary "+" $1 $3 }
+     | Expr MINUS Expr                      { Binary "-" $1 $3 }
+     | Expr MUL Expr                        { Binary "*" $1 $3 }
+     | Expr DIV Expr                        { Binary "/" $1 $3 }
+     | Expr MOD Expr                        { Binary "%" $1 $3 }
+     | Expr AND Expr                        { Binary "&&" $1 $3 }
+     | Expr OR Expr                         { Binary "||" $1 $3 }
+     | Expr XOR Expr                        { Binary "^" $1 $3 }
+     | Expr QUESMARK Expr COLON Expr        { Ternary $1 $3 $5 }
+     | INCREMENT Expr                       { StmtExprExpr (Assign $2 (Binary "+" $2 (IntegerLiteral 1))) }
+     | DECREMENT Expr                       { StmtExprExpr (Assign $2 (Binary "-" $2 (IntegerLiteral 1))) }
+     -- TODO back increment, back drecrement
+     -- Literals
+     | BOOLLITERAL                          { BooleanLiteral $1 }
+     | CHARLITERAL                          { CharLiteral $1 }
+     | INTLITERAL                           { IntegerLiteral (fromIntegral $1) }
+     | JNULL                                { JNull }
+     | StmtExpr                             { StmtExprExpr $1 }
 
-ClassDeclarationList:
-        ClassDeclaration {ClassDeclarationList $1 ClassEmpty}
-        | ClassDeclaration ClassDeclarationList { ClassDeclarationList $1 $2 }
-        | { ClassEmpty }
+Arguments : Expr { [$1] }
+            | Arguments COMMA Expr { $1 ++ [$3] }
+ 
+Statements : Statement { [$1] }
+          | Statements Statement { $1 ++ [$2] }
 
-ClassDeclaration :
-        CLASS IDENTIFIER LBRACKET VariableDeclarationList MethodDeclarationList RBRACKET { ClassDeclaration $2 VOID $4 $5}
+Block : LBRACKET RBRACKET { Block [] }
+      | LBRACKET Statements RBRACKET { Block $2 }
 
-MethodDeclarationList :
-        MethodDeclaration { MethodDeclarationList $1 MethodEmpty }
-        | MethodDeclaration MethodDeclarationList { MethodDeclarationList $1 $2 }
-        | {MethodEmpty}
-
-MethodDeclaration :
-        PUBLIC Type IDENTIFIER LBRACE FormalList RBRACE LBRACKET VariableDeclarationList StatementList RETURN Expression SEMICOLON RBRACKET { MethodDeclaration $2 $3 $5 $8 $9 $11 }
-
-VariableDeclarationList :
-        Type IDENTIFIER SEMICOLON { VariableDeclarationList $1 $2 VariableDeclarationListEmpty }
-        | Type IDENTIFIER SEMICOLON VariableDeclarationList { VariableDeclarationList $1 $2 $4 }
-        | { VariableDeclarationListEmpty }
-
-FormalList :
-        Type IDENTIFIER { FormalList $1 $2 FormalListEmpty }
-        | Type IDENTIFIER FormalList { FormalList $1 $2 $3 }
-
-Type :
-        INT LBRACKET RBRACKET { TypeIntArray }
-        | BOOLEAN { TypeBoolean }
-        | INT { TypeInt }
-        | IDENTIFIER { TypeIdent $1 }
-
-StatementList :
-        Statement { StatementList Empty $1 }
-        | StatementList Statement { StatementList $1 $2 }
-
-Exp :
-        Exp op Exp { ExpOp $1 $2 $3 }
-        | Exp comop { ExpComOp $1 $2 $3 }
-        | Exp LBRACKET Exp RBRACKET { ExpArray $1 $3 }
-        | Exp DOT "length" { ExpLength $1 }
-        | Exp DOT IDENTIFIER LBRACE ExpList RBRACE { ExpFCall $1 $3 $5 }
-        | INTLITERAL { ExpInt $1 }
-        | BOOLLITERAL { ExpBool $1 }
-        | IDENTIFIER { ExpIdent $1 }
-        | THIS { ExpThis $1 }
-        | NEW INT "[" Exp "]" { ExpNewInt $4 }
-        | NEW IDENTIFIER LBRACE RBRACE { ExpNewIdent $2 }
-        | "!" Exp { ExpNot $2 }
-        | LBRACE Exp RBRACE { ExpExp $2 }
-
-ExpList :
-        Exp { ExpList $1 }
-        | Exp ExpRest { ExpList $1 $2 }
-        | { ExpListEmpty }
-
-ExpRest :
-        COLON Exp { ExpRest $2 }
+StmtExpr : Expr ASSIGN Expr { Assign $1 $3 }
+         | NEW IDENTIFIER LBRACE Arguments RBRACE { New $2 $4 }
+         | Expr DOT IDENTIFIER LBRACE Arguments RBRACE { MethodCall $1 $3 $5 }
 
 {
-    parseError :: [Token] -> a
-    parseError _ = error "Parse error"
-
-    data Program
-        = Prorgram MainClass ClassDeclarationList
-        deriving (show, Eq)
-
-    data MainClass
-        = MClas String String Statement
-        deriving (show, Eq)
-
-    data ClassDeclarationList
-        = ClassDeclarationList ClassDeclaration ClassDeclarationList
-        | ClassEmpty
-        deriving (show, Eq)
-    
-    data MethodDeclarationList
-        = MethodDeclarationList MethodDeclaration MethodDeclarationList
-        | MethodEmpty
-        deriving (show, Eq)
-
-    data MethodDeclaration
-        = MethodDeclaration Type IDENTIFIER FormalList VariableDeclarationList StatementList Exp
-        deriving (show, Eq)
-
-    data VariableDeclarationList
-        = VariableDeclarationList Type IDENTIFIER VariableDeclarationList
-        | VariableDeclarationListEmpty
-        deriving (show, Eq)
-
-    data FormalList
-        = FormalList Type IDENTIFIER FormalList
-        | FormalListEmpty
-        deriving (show, Eq)
-
-    data Type
-        = TypeIntArray
-        | TypeBoolean
-        | TypeInt
-        | TypeIdent TypeIdent
-        deriving (show, Eq)
-
-    data Statement
-        = Statement String
-        | SList StatementList
-        | SIfElse Exp Statement Statement
-        | SWhile Exp Statement
-        | SPrint Exp
-        | SEqual IDENTIFIER Exp
-        | SArrayEqual IDENTIFIER Exp Exp
-        | StatementError
-        deriving (show, Eq)
-
-    data StatementList
-        = StatementList StatementList Statement
-        | Empty
-        deriving (show, Eq)
-
-    data Exp
-        = Exp String
-        | ExpOp Exp CHAR Exp
-        | ExpComOp Exp CHAR Exp
-        | ExpArray Exp Exp
-        | ExpFCall Exp IDENTIFIER ExpList
-        | ExpInt INT
-        | ExpNewInt Exp
-        | ExpBool BOOLLITERAL
-        | ExpIdent IDENTIFIER
-        | ExpNewIdent IDENTIFIER
-        | ExpExp Exp
-        | ExpThis
-        | ExpNot Exp
-        | ExpLength Exp
-        | ExpError
-        deriving (show, Eq)
-
-    data op
-        = AND
-        | LESS
-        | PLUS
-        | MINUS
-        | TIMES
-        deriving (show, Eq)
-
-    type IDENTIFIER = String
-    type INTLITERAL = INT
-
-    data ExpList
-        = ExpList Exp ExpRest
-        | ExpListEmpty
-        | ExpListExp Exp
-        deriving (show, Eq)
-
-    data ExpRest
-        = ExpRest Exp
-        deriving (show, Eq)
+parseError :: [Lexer.Token.Token] -> a
+parseError _ = error "Parse error"
 }

@@ -33,8 +33,6 @@ data Token
      | LESSEQUAL 
      | GREATEREQUAL 
      | NOTEQUAL 
-     | LOGICALOR 
-     | LOGICALAND 
      | INCREMENT 
      | DECREMENT 
      | SHIFTLEFT 
@@ -77,4 +75,5 @@ data Token
      | XOR 
      | SHARP
      | ARROW
+     | COMMA
      deriving(Eq,Show)
