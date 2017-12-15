@@ -31,7 +31,7 @@ executable jc
   default-language:    Haskell2010
 
 test-suite test-core
-  exposed-modules:     EmptyClass.Steps, InstanzVariable.Steps, ClassAssign.Steps, ClassMethods.Steps, ForLoop.Steps, LocalVariable.Steps
+  exposed-modules:     EmptyClass.Steps, InstanzVariable.Steps, ClassAssign.Steps, ClassMethods.Steps, ForLoop.Steps, LocalVariable.Steps, SimpleIf.Steps, WhileLoop.Steps, WhileLoopCondition.Steps, Arithmetic.Steps, BitWiseOperation.Steps, LogicOperations.Steps
   type:                exitcode-stdio-1.0
   main-is: 	           unitTests.hs
   hs-source-dirs: 	   test
