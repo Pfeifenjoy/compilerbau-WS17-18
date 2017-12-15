@@ -9,6 +9,7 @@ import InstanzVariable.Steps
 import ClassAssign.Steps
 import ClassMethods.Steps
 import ForLoop.Steps
+import LocalVariable.Steps
 
 data TestUnit = LexerUnit String [Token] [Token] -- TestName, TestTokens, FileTokens
                 deriving(Eq, Show)
@@ -54,7 +55,8 @@ lexTests = [(LexerUnit "EmptyClass" emptyTokens (Lexer.lex "./test/EmptyClass/Cl
             (LexerUnit "InstanzVariable" instanzVariableTokens (Lexer.lex "./test/InstanzVariable/Class.java")),
             (LexerUnit "ClassAssign" classAssignTokens (Lexer.lex "./test/ClassAssign/Class.java")),
             (LexerUnit "ClassMethods" classMethodTokens (Lexer.lex "./test/ClassMethods/Class.java")),
-            (LexerUnit "ForLoop" forLoopTokens (Lexer.lex "./test/ForLoop/Class.java"))
+            (LexerUnit "ForLoop" forLoopTokens (Lexer.lex "./test/ForLoop/Class.java")),
+            (LexerUnit "LocalVariable" localVariableTokens (Lexer.lex "./test/LocalVariable/Class.java"))
            ]
 
 main = do
