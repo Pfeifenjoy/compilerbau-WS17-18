@@ -1,33 +1,33 @@
-module Tester where
+module Main where
 
-import Test.HUnit
 import Lexer.Token
 import Lexer
+import System.Directory
+import EmptyClass.Steps
+import InstanzVariable.Steps
 
-data TestUnit = LexerUnit String [Token] [Token] -- Name, InputFile, CompareFile
-
-outPut :: Bool -> String -> String
-outPut cond name = if cond
-                       then concat ["\x1b[32m", "Lex: [", name, "] passed", "\x1b[0m"]
-                       else concat ["\x1b[35m", "Lex: [", name, "] failed", "\x1b[0m"]
+data TestUnit = LexerUnit String [Token] [Token] -- TestName, TestTokens, FileTokens
+                deriving(Eq, Show)
 
 runTest :: TestUnit -> String
-runTest (LexerUnit name a b) = outPut (a == b) name
+runTest (LexerUnit name a b) = if a == b
+                               then concat ["\x1b[32m", "Lex: [", name, "] passed", "\x1b[0m"]
+                               else concat ["\x1b[35m", "Lex: [", name, "] failed", "\x1b[0m", 
+                                           "\n\t \x1b[36m expected: \x1b[0m ", (show a), 
+                                           "\n\t \x1b[36m got: \x1b[0m ", (show b)]
 
 runTests :: [TestUnit] -> [String]
 runTests a = map runTest a
 
-firstTokenTest :: TestUnit
-firstTokenTest = LexerUnit "Empty Class" [Lexer.Token.INT, Lexer.Token.IDENTIFIER "i", Lexer.Token.SEMICOLON] (Lexer.lex "int i;")
 
-firstTokenTest2 :: TestUnit
-firstTokenTest2 = LexerUnit "Identifier" [Lexer.Token.INT, Lexer.Token.IDENTIFIER "k", Lexer.Token.SEMICOLON] (Lexer.lex "int i;")
+lexTests :: [TestUnit]
+lexTests = [(LexerUnit "EmptyClass" emptyTokens (Lexer.lex "./test/EmptyClass/Class.java")),
+         (LexerUnit "InstanzVariable" instanzVariableTokens (Lexer.lex "./test/InstanzVariable/Class.java"))
+        ]
 
-tests :: [TestUnit]
-tests = [firstTokenTest, firstTokenTest2]
- 
 main = do
-        mapM_ putStrLn (runTests tests)
+       mapM_ putStrLn (runTests lexTests)
+        
  
 
          
