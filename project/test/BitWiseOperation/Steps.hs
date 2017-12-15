@@ -1,9 +1,9 @@
 module BitWiseOperation.Steps where
 
-import Lexer.Token
+import           Lexer.Token
 
-bitWiseOperationTokens = [Lexer.Token.CLASS, 
-                        Lexer.Token.IDENTIFIER "BitWiseOperation", 
+bitWiseOperationTokens = [Lexer.Token.CLASS,
+                        Lexer.Token.IDENTIFIER "BitWiseOperation",
                         Lexer.Token.LEFT_BRACE,
                         Lexer.Token.INTEGER,
                         Lexer.Token.IDENTIFIER "a",
