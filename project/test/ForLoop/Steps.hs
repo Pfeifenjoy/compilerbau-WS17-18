@@ -1,0 +1,46 @@
+module ForLoop.Steps where
+
+import Lexer.Token
+
+forLoopTokens = [Lexer.Token.CLASS, 
+                    Lexer.Token.IDENTIFIER "ForLoop",
+                    Lexer.Token.LEFT_BRACE,
+                    Lexer.Token.VOID,
+                    Lexer.Token.IDENTIFIER "doLoop",
+                    Lexer.Token.LEFT_PARANTHESES,
+                    Lexer.Token.RIGHT_PARANTHESES,
+                    Lexer.Token.LEFT_BRACE,
+                    Lexer.Token.INTEGER,
+                    Lexer.Token.IDENTIFIER "a",
+                    Lexer.Token.SEMICOLON,
+                    Lexer.Token.IDENTIFIER "a",
+                    Lexer.Token.ASSIGN,
+                    Lexer.Token.INTEGER_LITERAL 0,
+                    Lexer.Token.SEMICOLON,
+                    Lexer.Token.FOR,
+                    Lexer.Token.LEFT_PARANTHESES,
+                    Lexer.Token.INTEGER,
+                    Lexer.Token.IDENTIFIER "i",
+                    Lexer.Token.ASSIGN,
+                    Lexer.Token.INTEGER_LITERAL 0,
+                    Lexer.Token.SEMICOLON,
+                    Lexer.Token.IDENTIFIER "i",
+                    Lexer.Token.LESSER,
+                    Lexer.Token.INTEGER_LITERAL 3,
+                    Lexer.Token.SEMICOLON, 
+                    Lexer.Token.IDENTIFIER "i",
+                    Lexer.Token.INCREMENT,
+                    Lexer.Token.RIGHT_PARANTHESES,
+                    Lexer.Token.LEFT_BRACE,
+                    Lexer.Token.IDENTIFIER "a",
+                    Lexer.Token.ASSIGN,
+                    Lexer.Token.IDENTIFIER "a",
+                    Lexer.Token.ADD,
+                    Lexer.Token.IDENTIFIER "i",
+                    Lexer.Token.SEMICOLON,
+                    Lexer.Token.RIGHT_BRACE,
+                    Lexer.Token.RIGHT_BRACE,
+                    Lexer.Token.RIGHT_BRACE
+                   ]
+
+

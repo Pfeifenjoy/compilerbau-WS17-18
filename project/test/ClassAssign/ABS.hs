@@ -1,4 +1,7 @@
-Class("ClassAssign",
+module ABS where
+import Lexer.Token
+
+test = Class("ClassAssign",
 	 [FieldDecl("int", "a")],
 	 [MethodDecl("int", "doStuff", [("int", "b")],
 	 	Block([
