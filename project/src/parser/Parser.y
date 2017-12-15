@@ -11,116 +11,125 @@ import Data.Int
 %error { parseError }
 
 %token
-    BOOLEAN {BOOLEAN}
-    BREAK  {BREAK}
-    CASE  {CASE}
-    CHAR   {CHAR}
-    CLASS {CLASS}
-    CONTINUE  {CONTINUE}
-    DO  {DO}
-    ELSE  {ELSE}
-    FOR  {FOR}
-    IF  {IF}
-    INSTANCEOF  {INSTANCEOF}
-    INT {INT}
-    NEW {NEW}
-    PRIVATE {PRIVATE}
-    PROTECTED  {PROTECTED}
-    PUBLIC  {PUBLIC}
-    RETURN  {RETURN}
-    STATIC  {STATIC}
-    SWITCH  {SWITCH}
-    THIS  {THIS}
-    VOID  {VOID}
-    WHILE  {WHILE}
-    INTLITERAL {INTLITERAL $$}
-    BOOLLITERAL {BOOLLITERAL $$}
-    JNULL  {JNULL}
-    CHARLITERAL {CHARLITERAL $$}
-    STRINGLITERAL {STRINGLITERAL $$}
-    IDENTIFIER {IDENTIFIER $$}
-    EQUAL  {EQUAL}
-    LESSEQUAL  {LESSEQUAL}
-    GREATEREQUAL  {GREATEREQUAL}
-    NOTEQUAL  {NOTEQUAL}
-    INCREMENT  {INCREMENT}
-    DECREMENT  {DECREMENT}
-    SHIFTLEFT  {SHIFTLEFT}
-    SHIFTRIGHT  {SHIFTRIGHT}
-    UNSIGNEDSHIFTRIGHT  {UNSIGNEDSHIFTRIGHT}
-    SIGNEDSHIFTRIGHT  {SIGNEDSHIFTRIGHT}
-    PLUSEQUAL  {PLUSEQUAL}
-    MINUSEQUAL  {MINUSEQUAL}
-    TIMESEQUAL  {TIMESEQUAL}
-    DIVIDEEQUAL  {DIVIDEEQUAL}
-    ANDEQUAL  {ANDEQUAL}
-    OREQUAL  {OREQUAL}
-    XOREQUAL  {XOREQUAL}
-    MODULOEQUAL  {MODULOEQUAL}
-    SHIFTLEFTEQUAL  {SHIFTLEFTEQUAL}
-    SIGNEDSHIFTRIGHTEQUAL  {SIGNEDSHIFTRIGHTEQUAL}
-    UNSIGNEDSHIFTRIGHTEQUAL  {UNSIGNEDSHIFTRIGHTEQUAL}
-    LBRACE {LBRACE}
-    RBRACE {RBRACE}
-    LBRACKET  {LBRACKET}
-    RBRACKET  {RBRACKET}
-    LSQBRACKET  {LSQBRACKET}
-    RSQBRACKET  {RSQBRACKET}
-    SEMICOLON  {SEMICOLON}
-    DOT  {DOT}
-    ASSIGN  {ASSIGN}
-    LESS  {LESS}
-    GREATER  {GREATER}
-    EXCLMARK  {EXCLMARK}
-    TILDE  {TILDE}
-    QUESMARK  {QUESMARK}
-    COLON  {COLON}
-    PLUS  {PLUS}
-    MINUS  {MINUS}
-    MUL  {MUL}
-    DIV  {DIV}
-    MOD  {MOD}
-    AND  {AND}
-    OR  {OR}
-    XOR  {XOR}
-    SHARP {SHARP}
-    ARROW {ARROW}
-    COMMA {COMMA}
+    -- Arithmentics
+    ADD { ADD }
+    SUBTRACT { SUBTRACT }
+    MULTIPLY { MULTIPLY }
+    DIVIDE { DIVIDE }
+    MODULO { MODULO }
+    INCREMENT { INCREMENT }
+    DECREMENT { DECREMENT }
+    -- Logical
+    NOT { NOT }
+    AND { AND }
+    OR { OR }
+    EQUAL { EQUAL }
+    NOT_EQUAL { NOT_EQUAL }
+    LESSER { LESSER }
+    GREATER { GREATER }
+    LESSER_EQUAL { LESSER_EQUAL }
+    GREATER_EQUAL { GREATER_EQUAL }
+    -- Bitwise
+    BITWISE_AND { BITWISE_AND }
+    BITWISE_OR { BITWISE_OR }
+    BITWISE_XOR { BITWISE_XOR }
+    SHIFTLEFT { SHIFTLEFT }
+    SHIFTRIGHT { SHIFTRIGHT }
+    UNSIGNED_SHIFTRIGHT { UNSIGNED_SHIFTRIGHT }
+    -- Punctuators
+    LEFT_PARANTHESES { LEFT_PARANTHESES }
+    RIGHT_PARANTHESES { RIGHT_PARANTHESES }
+    -- | LEFT_BRACKET
+    -- | RIGHT_BRACKET
+    LEFT_BRACE { LEFT_BRACE }
+    RIGHT_BRACE { RIGHT_BRACE }
+    DOT { DOT }
+    COMMA { COMMA }
+    COLON { COLON }
+    SEMICOLON { SEMICOLON }
+    -- Assignment
+    ASSIGN { ASSIGN }
+    ADD_ASSIGN { ADD_ASSIGN }
+    SUBTRACT_ASSIGN { SUBTRACT_ASSIGN }
+    MULTIPLY_ASSIGN { MULTIPLY_ASSIGN }
+    DIVIDE_ASSIGN { DIVIDE_ASSIGN }
+    MODULO_ASSIGN { MODULO_ASSIGN }
+    AND_ASSIGN { AND_ASSIGN }
+    OR_ASSIGN { OR_ASSIGN }
+    XOR_ASSIGN { XOR_ASSIGN }
+    SHIFTLEFT_ASSIGN { SHIFTLEFT_ASSIGN }
+    SHIFTRIGHT_ASSIGN { SHIFTRIGHT_ASSIGN }
+    UNSIGNED_SHIFTRIGHT_ASSIGN { UNSIGNED_SHIFTRIGHT_ASSIGN }
+    -- Types
+    BOOLEAN { BOOLEAN }
+    CHARACTER { CHARACTER }
+    INTEGER { INTEGER }
+    VOID { VOID }
+    -- Loops
+    FOR { FOR }
+    WHILE { WHILE }
+    DO { DO }
+    BREAK { BREAK }
+    CONTINUE { CONTINUE }
+    -- Conditional
+    IF { IF }
+    ELSE { ELSE }
+    SWITCH { SWITCH }
+    CASE { CASE }
+    QUESTIONMARK { QUESTIONMARK }
+    -- Class
+    CLASS { CLASS }
+    NEW { NEW }
+    PRIVATE { PRIVATE }
+    PUBLIC { PUBLIC }
+    -- | PROTECTED
+    STATIC { STATIC }
+    THIS { THIS }
+    -- Method
+    RETURN { RETURN }
+    -- Literals
+    BOOLEAN_LITERAL { BOOLEAN_LITERAL $$ }
+    CHARACTER_LITERAL  { CHARACTER_LITERAL  $$ }
+    INTEGER_LITERAL { INTEGER_LITERAL $$ }
+    IDENTIFIER { IDENTIFIER $$ }
+    JNULL { JNULL }
+    -- Other
+    INSTANCEOF { INSTANCEOF }
+    FINAL { FINAL }
 %%
 
 Statement : RETURN Expr { Return $2 }
           | Block       { $1 }
-          | WHILE LBRACE Expr RBRACE Statement { While $3 $5 }
-          | DO Statement WHILE LBRACE Expr RBRACE { DoWhile $5 $2 }
-          | FOR LBRACE Statement SEMICOLON Expr SEMICOLON Statement RBRACE Statement { For $3 $5 $7 $9 }
+          | WHILE LEFT_PARANTHESES Expr RIGHT_PARANTHESES Statement { While $3 $5 }
+          | DO Statement WHILE LEFT_PARANTHESES Expr RIGHT_PARANTHESES { DoWhile $5 $2 }
+          | FOR LEFT_PARANTHESES Statement SEMICOLON Expr SEMICOLON Statement RIGHT_PARANTHESES Statement { For $3 $5 $7 $9 }
           | BREAK { Break }
           | CONTINUE { Continue }
-          | IF LBRACE Expr RBRACE Statement ELSE Statement { If $3 $5 (Just $7) }
-          | IF LBRACE Expr RBRACE Statement { If $3 $5 Nothing }
+          | IF LEFT_PARANTHESES Expr RIGHT_PARANTHESES Statement ELSE Statement { If $3 $5 (Just $7) }
+          | IF LEFT_PARANTHESES Expr RIGHT_PARANTHESES Statement { If $3 $5 Nothing }
           | StmtExpr { StmtExprStmt $1 }
 
-Expr : Expr PLUS Expr                       { Binary "+" $1 $3 }
-     | THIS                                 { This }
+Expr : THIS                                 { This }
      | IDENTIFIER                           { LocalOrFieldVar $1 }
      | Expr DOT IDENTIFIER                  { InstVar $1 $3 }
      -- Operators
-     | EXCLMARK Expr                        { Unary "!" $2 }
-     | Expr PLUS Expr                       { Binary "+" $1 $3 }
-     | Expr MINUS Expr                      { Binary "-" $1 $3 }
-     | Expr MUL Expr                        { Binary "*" $1 $3 }
-     | Expr DIV Expr                        { Binary "/" $1 $3 }
-     | Expr MOD Expr                        { Binary "%" $1 $3 }
+     | NOT Expr                             { Unary "!" $2 }
+     | Expr ADD Expr                        { Binary "+" $1 $3 }
+     | Expr SUBTRACT Expr                   { Binary "-" $1 $3 }
+     | Expr MULTIPLY Expr                   { Binary "*" $1 $3 }
+     | Expr DIVIDE Expr                     { Binary "/" $1 $3 }
+     | Expr MODULO Expr                     { Binary "%" $1 $3 }
      | Expr AND Expr                        { Binary "&&" $1 $3 }
      | Expr OR Expr                         { Binary "||" $1 $3 }
-     | Expr XOR Expr                        { Binary "^" $1 $3 }
-     | Expr QUESMARK Expr COLON Expr        { Ternary $1 $3 $5 }
+     | Expr BITWISE_XOR Expr                { Binary "^" $1 $3 }
+     | Expr QUESTIONMARK Expr COLON Expr        { Ternary $1 $3 $5 }
      | INCREMENT Expr                       { StmtExprExpr (Assign $2 (Binary "+" $2 (IntegerLiteral 1))) }
      | DECREMENT Expr                       { StmtExprExpr (Assign $2 (Binary "-" $2 (IntegerLiteral 1))) }
      -- TODO back increment, back drecrement
      -- Literals
-     | BOOLLITERAL                          { BooleanLiteral $1 }
-     | CHARLITERAL                          { CharLiteral $1 }
-     | INTLITERAL                           { IntegerLiteral (fromIntegral $1) }
+     | BOOLEAN_LITERAL                          { BooleanLiteral $1 }
+     | CHARACTER_LITERAL                          { CharLiteral $1 }
+     | INTEGER_LITERAL                           { IntegerLiteral (fromIntegral $1) }
      | JNULL                                { JNull }
      | StmtExpr                             { StmtExprExpr $1 }
 
@@ -130,12 +139,24 @@ Arguments : Expr { [$1] }
 Statements : Statement { [$1] }
           | Statements Statement { $1 ++ [$2] }
 
-Block : LBRACKET RBRACKET { Block [] }
-      | LBRACKET Statements RBRACKET { Block $2 }
+Block : LEFT_BRACE RIGHT_BRACE { Block [] }
+      | LEFT_BRACE Statements RIGHT_BRACE { Block $2 }
 
 StmtExpr : Expr ASSIGN Expr { Assign $1 $3 }
-         | NEW IDENTIFIER LBRACE Arguments RBRACE { New $2 $4 }
-         | Expr DOT IDENTIFIER LBRACE Arguments RBRACE { MethodCall $1 $3 $5 }
+         | NEW IDENTIFIER LEFT_PARANTHESES Arguments RIGHT_PARANTHESES { New $2 $4 }
+         | Expr DOT IDENTIFIER LEFT_PARANTHESES Arguments RIGHT_PARANTHESES { MethodCall $1 $3 $5 }
+
+-- Type : IDENTIFIER { Type $1 }
+-- 
+-- VariableDecle : Type IDENTIFIER { VariableDecl $1 $2 False }
+--               | FINAL Type IDENTIFIER { VariableDecl $1 $2 true }
+-- 
+-- FieldDecl : 
+-- 
+-- ClassBody : MethodDecl
+--           | FieldDecl
+-- 
+-- Class : CLASS IDENTIFIER LEFT_BRACE ClassBody RIGHT_BRACE { Class $2 $4 }
 
 {
 parseError :: [Lexer.Token.Token] -> a
