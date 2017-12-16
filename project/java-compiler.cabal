@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Lexer, Lexer.Token, ABSTree, Codegen.Data.ClassFormat,
                        Codegen.Data.MethodFormat, Codegen.BinaryClass
-  build-depends:       base <= 4.10.1 , array, hashtables
+  build-depends:       base <= 4.10.1 , array, unordered-containers 
   hs-source-dirs:      src
   build-tools:         alex, happy
   other-modules:       Lexer.Lexer, Parser.Parser

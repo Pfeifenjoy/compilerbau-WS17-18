@@ -1,4 +1,5 @@
-module Jvm.Data.ClassFormat where
+module Codegen.Data.ClassFormat where
+import qualified Data.HashMap.Lazy as HM
 import qualified Data.ByteString.Lazy as BS
 
 -- class file format
@@ -25,11 +26,11 @@ data ClassFile = ClassFile { magic            :: Magic
 --          show (ClassFile  magic  minver  maxver  count_cp  array_cp  acfg  this  super  count_interfaces  array_interfaces  count_fields  array_fields  count_methods  array_methods  count_attributes  array_attributes) = "magic = 0x CAFEBABE\n"  ++ (show minver) ++ "\n"  ++ (show maxver) ++ "\n"  ++ "constant_pool_count = " ++ (show count_cp) ++ "\n"  ++ (showCP_Infos array_cp 1) ++ "\n"  ++ (show acfg) ++ "\n"  ++ (show this) ++ "\n"  ++ (show super) ++ "\n\nInterfaces\ncount_interfaces "  ++ (show count_interfaces) ++ "\n"  ++ (show array_interfaces) ++ "\n\nFields\ncount_fields "  ++ (show count_fields) ++ "\n"  ++ (show array_fields) ++ "\n"  ++ (show count_methods) ++ "\n\nMethods\ncount_Methods "  ++ (show array_methods) ++ "\n"  ++ (show count_attributes) ++ "\n"  ++ (show array_attributes)
          
 
-type CPInfos        = [CPInfo]
-type Interfaces     = [Interface]
-type FieldInfos     = [FieldInfo]
-type MethodInfos    = [MethodInfo]
-type AttributeInfos = [AttributeInfo]
+type CPInfos        = HM.HashMap String CPInfo
+type Interfaces     = HM.HashMap String Interface
+type FieldInfos     = HM.HashMap String FieldInfo
+type MethodInfos    = HM.HashMap String MethodInfo
+type AttributeInfos = HM.HashMap String AttributeInfo
 
 data Magic = Magic
         deriving Show

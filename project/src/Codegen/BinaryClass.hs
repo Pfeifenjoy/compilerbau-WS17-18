@@ -1,5 +1,5 @@
-module Jvm.BinaryClass where
-import Jvm.Data.ClassFormat
+module Codegen.BinaryClass where
+import Codegen.Data.ClassFormat
 
 import Data.Binary
 import Data.Binary.Get
@@ -10,26 +10,30 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Word
 import Data.Int
 import Data.Bits
+import Data.HashMap.Lazy as HM (fromList, toList)
+import Control.Arrow
 
 instance Binary ClassFile where
-    put (ClassFile mg mnv mjv tamCp lstCp flgs ths spr tamIf lstIf tamFd
-                   lstFd tamMth lstMth tamAttr lstAttr)
+    put (ClassFile mg mnv mjv tamCp mapCp flgs ths spr tamIf mapIf tamFd
+                   mapFd tamMth mapMth tamAttr mapAttr)
         = put mg                        >>
           put mnv                       >>
           put mjv                       >>
           put (fromInt2Word16 tamCp)    >>
-          mapM_ put lstCp               >>
+          mapM_ put (getValue  mapCp)   >>
           put flgs                      >>
           put ths                       >>
           put spr                       >>
           put (fromInt2Word16 tamIf)    >>
-          mapM_ put lstIf               >>
+          mapM_ put (getValue mapIf)    >>
           put (fromInt2Word16 tamFd)    >>
-          mapM_ put lstFd               >>
+          mapM_ put (getValue mapFd)    >>
           put (fromInt2Word16 tamMth)   >>
-          mapM_ put lstMth              >>
+          mapM_ put (getValue mapMth)   >>
           put (fromInt2Word16 tamAttr)  >>
-          mapM_ put lstAttr
+          mapM_ put (getValue mapAttr)
+            where
+              getValue = Prelude.map snd . HM.toList
 
     -- el tamanio del constantPool = 1 + length(constantPool)
     get = do mg          <- get :: Get Magic
@@ -37,26 +41,27 @@ instance Binary ClassFile where
              mjv         <- get :: Get MajorVersion
              wtamCp     <- getWord16
              let tamCp  =  fromWord162Int wtamCp
-             lstCp      <- getMany $ tamCp-1
+             mapCp      <- genMap "Constant" $ tamCp-1
              flgs        <- get :: Get AccessFlags
              ths         <- get :: Get ThisClass
              spr         <- get :: Get SuperClass
              wtamIf     <- getWord16
              let tamIf  =  fromWord162Int wtamIf
-             lstIf      <- getMany tamIf
+             mapIf      <- genMap "Interface" tamIf
              wtamFd     <- getWord16
              let tamFd  =  fromWord162Int wtamFd
-             lstFd      <- getMany tamFd
+             mapFd      <- genMap "Field" tamFd
              wtamMth    <- getWord16
              let tamMth =  fromWord162Int wtamMth
-             lstMth     <- getMany tamMth
+             mapMth     <- genMap "Method" tamMth
              wtamAttr   <- getWord16
              let tamAttr = fromWord162Int wtamAttr
-             lstAttr    <- getMany tamAttr
-             return $ ClassFile mg mnv mjv tamCp lstCp flgs ths spr 
-                                tamIf lstIf tamFd lstFd tamMth lstMth 
-                                tamAttr lstAttr
-
+             mapAttr    <- genMap "Attribute" tamAttr
+             return $ ClassFile mg mnv mjv tamCp mapCp flgs ths spr 
+                                tamIf mapIf tamFd mapFd tamMth mapMth 
+                                tamAttr mapAttr
+                 
+genMap str = fmap (HM.fromList . (map (first ((str ++) . show)) . zip  [1..])) . getMany
     
 
 instance Binary Magic where
@@ -156,8 +161,8 @@ instance Binary CPInfo where
                 TagUtf8
                     -> do wnum <- getWord16
                           let num = fromWord162Int wnum
-                          lst  <- getMany num
-                          return $ Utf8Info tag num lst ""
+                          map  <- getMany num
+                          return $ Utf8Info tag num map ""
 
 instance Binary Tag where
     put TagClass              = put (7 ::Word8)
@@ -189,14 +194,14 @@ instance Binary Tag where
              return tag
 
 instance Binary AccessFlags where
-    put (AccessFlags lst) = do
-        let flag = if null lst
+    put (AccessFlags map) = do
+        let flag = if null map
                    then 0
-                   else foldl1 (.+.) lst
+                   else foldl1 (.+.) map
         put $ fromInt2Word16 flag
     get = do wmask <- getWord16
              let mask = fromWord162Int wmask
-                 lst  = filter (bitsSet mask) [ accPublic
+                 map  = filter (bitsSet mask) [ accPublic
                                               , accPrivate
                                               , accProtected
                                               , accStatic
@@ -211,7 +216,7 @@ instance Binary AccessFlags where
                                               , accSynthetic
                                               , accAnnotation
                                               , accEnum]
-             return $ AccessFlags lst
+             return $ AccessFlags map
 
 instance Binary ThisClass where
     put (ThisClass i) = put $ fromInt2Word16 i
@@ -238,23 +243,23 @@ getInfo info = do accs  <- get :: Get AccessFlags
                   let inam     = fromWord162Int winam
                   let idsr     = fromWord162Int widsr
                   let tamAttr = fromWord162Int wtam
-                  lstAttr <- getMany tamAttr
-                  return $ info accs inam idsr tamAttr lstAttr
+                  mapAttr <- genMap "" tamAttr
+                  return $ info accs inam idsr tamAttr mapAttr
 
 instance Binary FieldInfo where
-    put (FieldInfo accs inam idsr tam lstAttr)
+    put (FieldInfo accs inam idsr tam mapAttr)
         = put accs >> put (fromInt2Word16 inam) 
                    >> put (fromInt2Word16 idsr) 
                    >> put (fromInt2Word16 tam) 
-                   >> mapM_ put lstAttr
+                   >> mapM_ put mapAttr
     get = getInfo FieldInfo
 
 instance Binary MethodInfo where
-    put (MethodInfo accs inam idsr tamAttr lstAttr)
+    put (MethodInfo accs inam idsr tamAttr mapAttr)
         = put accs >> put (fromInt2Word16 inam) 
                    >> put (fromInt2Word16 idsr) 
                    >> put (fromInt2Word16 tamAttr) 
-                   >> mapM_ put lstAttr
+                   >> mapM_ put mapAttr
     get = getInfo MethodInfo 
 
 instance Binary AttributeInfo where
@@ -268,34 +273,34 @@ instance Binary AttributeInfo where
                                     >> put (fromInt2Word16 ival)
     
     put (AttributeCode inam tamAll mlenStack mlenLocal tamCode 
-                       lstCode tamEx lstEx tamAttr lstAttr)
+                       mapCode tamEx mapEx tamAttr mapAttr)
         = put (fromInt2Word16 inam)                        >> 
           put (fromInt2Word32 tamAll)                      >> 
           put (fromInt2Word16 mlenStack)                   >> 
           put (fromInt2Word16 mlenLocal)                   >> 
           put (fromInt2Word32 tamCode)                     >> 
-          mapM_ (putWord8 . fromInt2Word8 ) lstCode        >> 
+          mapM_ (putWord8 . fromInt2Word8 ) mapCode        >> 
           put (fromInt2Word16 tamEx)                       >> 
           mapM_ (\(e1,e2,e3,e4) -> put (fromInt2Word16 e1) 
                  >> put (fromInt2Word16 e2) >> put (fromInt2Word16 e3) 
-                 >> put (fromInt2Word16 e4)) lstEx         >>
+                 >> put (fromInt2Word16 e4)) mapEx         >>
           put (fromInt2Word16 tamAttr)                     >> 
-          mapM_ put lstAttr
+          mapM_ put mapAttr
 
-    put (AttributeExceptions inam tamAll tamNumEx lstEx)
+    put (AttributeExceptions inam tamAll tamNumEx mapEx)
         = put (fromInt2Word16 inam)                        >> 
           put (fromInt2Word32 tamAll)                      >> 
           put (fromInt2Word16 tamNumEx)                    >> 
-          mapM_ (putWord8 . fromInt2Word8) lstEx 
+          mapM_ (putWord8 . fromInt2Word8) mapEx 
      
-    put (AttributeInnerClasses inam tamAll tamClasses lstClasses)
+    put (AttributeInnerClasses inam tamAll tamClasses mapClasses)
         = put (fromInt2Word16 inam)                        >> 
           put (fromInt2Word32 tamAll)                      >> 
           put (fromInt2Word16 tamClasses)                  >> 
           mapM_ (\(incl,outcl,innm,inflg) -> put (fromInt2Word16 incl)  >>
                                              put (fromInt2Word16 outcl) >> 
                                              put (fromInt2Word16 innm)  >> 
-                                             put inflg) lstClasses
+                                             put inflg) mapClasses
  
     put (AttributeSynthetic inam tamAll)
         = put (fromInt2Word16 inam)                        >> 
@@ -305,21 +310,21 @@ instance Binary AttributeInfo where
         = put (fromInt2Word16 inam) >> put (fromInt2Word32 tamAll) 
                                     >> put (fromInt2Word16 indSrc)
 
-    put (AttributeLineNumberTable inam tamAll tamTable lstLine)
+    put (AttributeLineNumberTable inam tamAll tamTable mapLine)
         = put (fromInt2Word16 inam)                  >> 
           put (fromInt2Word32 tamAll)               >> 
           put (fromInt2Word16 tamTable)             >> 
           mapM_ (\(e1,e2) -> put (fromInt2Word16 e1) 
-                          >> put (fromInt2Word16 e2)) lstLine
+                          >> put (fromInt2Word16 e2)) mapLine
 
-    put (AttributeLocalVariableTable inam tamAll tamVar lstVar)
+    put (AttributeLocalVariableTable inam tamAll tamVar mapVar)
         = put (fromInt2Word16 inam) >>
           put (fromInt2Word32 tamAll) >>
           put (fromInt2Word16 tamVar) >>
           mapM_ (\(e1,e2,e3,e4,e5) -> put (fromInt2Word16 e1) 
                   >> put (fromInt2Word16 e2) >> put (fromInt2Word16 e3) 
                   >> put (fromInt2Word16 e4) >> put (fromInt2Word16 e5)) 
-                    lstVar
+                    mapVar
     
     put (AttributeDeprecated inam tamAll)
         = put (fromInt2Word16 inam)                        >> 
@@ -393,156 +398,156 @@ getMany = go []
                  x `seq` go (x:xs) (i-1) 
 
 -- functions to modify attributes
-getListAttr cpInfos 0 str = return ([],str)
-getListAttr cpInfos n str
-    = do (rs1,_,winam) <- runGetOrFail (get :: Get Word16) str 
-         let inam = fromWord162Int winam
-         (rs2,_,wtam) <- runGetOrFail (get :: Get Word32) rs1 
-         let tam = fromWord322Int wtam
-         (rs3,_,rest) <-runGetOrFail (getLazyByteString (toInt64 tam)) rs2 
-         let attrGeneric  = AttributeGeneric inam tam rest
-         attrSpecific <- fChgAttr cpInfos attrGeneric
-         (lstn,rsn) <- getListAttr cpInfos (n-1) rs3 
-         return (attrSpecific : lstn, rsn)
-
-getListExCod 0 str = return ([],str)
-getListExCod n str
-    = do (rs1,_,wstartPc) <- runGetOrFail (get :: Get Word16) str
-         (rs2,_,wendPc) <- runGetOrFail (get :: Get Word16) rs1 
-         (rs3,_,whandlerPc) <- runGetOrFail (get :: Get Word16) rs2
-         (rs4,_,wcatchType) <- runGetOrFail (get :: Get Word16) rs3
-         let startPc   = fromWord162Int wstartPc
-             endPc     = fromWord162Int wendPc
-             handlerPc = fromWord162Int whandlerPc
-             catchType = fromWord162Int wcatchType
-         (lst, r) <- getListExCod (n-1) rs4 
-         return ((startPc,endPc,handlerPc,catchType):lst, r)
-
-getListTuplaInner 0 str = return ([],str)
-getListTuplaInner n str
-    = do (rs1,_,wincl) <- runGetOrFail (get :: Get Word16) str 
-         (rs2,_,woutcl) <- runGetOrFail (get :: Get Word16) rs1 
-         (rs3,_,winnm) <- runGetOrFail (get :: Get Word16) rs2 
-         (rs4,_,inflg) <- runGetOrFail (get :: Get AccessFlags) rs3
-         let incl  = fromWord162Int wincl
-             outcl = fromWord162Int woutcl
-             innm  = fromWord162Int winnm
-         (lst, r) <- getListTuplaInner (n-1) rs4 
-         return ((incl,outcl,innm,inflg):lst, r)
-
-getListEx 0 str = return ([],str)
-getListEx n str
-    = do (str',no,wcod) <- runGetOrFail (get :: Get Word16) str 
-         let ex = fromWord162Int wcod
-         (lst,r) <- getListEx (n-1) str' 
-         return (ex:lst, r)
-
-getListCode 0 str = return ([],str)
-getListCode n str
-    = do ( str', no,wcod) <- runGetOrFail (get :: Get Word8) str 
-         let  cod = fromWord82Int wcod
-         (lst,r) <- getListCode (n-1) str' 
-         return (cod:lst, r)
-
-getListLineNumber 0 str = return ([], str)
-getListLineNumber n str
-    = do (str1,_,wstartPc) <- runGetOrFail (get :: Get Word16) str  
-         let startPc = fromWord162Int wstartPc
-         (str2,_,wlineNumber) <- runGetOrFail (get :: Get Word16) str1 
-         let lineNumber = fromWord162Int wlineNumber
-         (lst,r) <-  getListLineNumber (n-1) str2 
-         return ((startPc,lineNumber):lst, r)
-
--- Get the name from Utf8Info in the Contant Pool list
-getNameCPUtf8 :: Int -> CPInfos -> String
-getNameCPUtf8 index cpInfos = cadCp $ cpInfos !! (index-1)
-
-fChgAttr :: CPInfos -> AttributeInfo 
-                    -> Either (BS.ByteString, ByteOffset, String) AttributeInfo 
-fChgAttr cpInfos (AttributeGeneric inam tam rbs) 
-    = case getNameCPUtf8 inam cpInfos of
-        "SourceFile" 
-            -> do (rest,n,wisrc) <- runGetOrFail (get :: Get Word16) rbs 
-                  let isrc = fromWord162Int wisrc
-                  return $ AttributeSourceFile inam tam isrc
-        "Code"
-            -> do (rs1,_,wstack) <- runGetOrFail (get :: Get Word16) rbs 
-                  let stack = fromWord162Int wstack
-                  (rs2,_,wlocal) <- runGetOrFail (get :: Get Word16) rs1 
-                  let local = fromWord162Int wlocal
-                  (rs3,_,wtamCode) <- runGetOrFail (get :: Get Word32) rs2 
-                  let tamCode = fromWord322Int wtamCode
-                  (lstCode,rs4) <- getListCode tamCode rs3
-                  (rs5,_,wtamEx) <- runGetOrFail (get :: Get Word16) rs4 
-                  let tamEx = fromWord162Int wtamEx
-                  (lstEx,rs6) <- getListExCod tamEx rs5
-                  (rs7,_,wtamAttr) <- runGetOrFail (get :: Get Word16) rs6 
-                  let tamAttr = fromWord162Int wtamAttr
-                  (lstAttr,_) <- getListAttr cpInfos tamAttr rs7
-                  --fix, because there is no support for exceptions,
-                  --nor the second list of attributes? 
-                  return $ AttributeCode inam tam stack local tamCode lstCode
-                                        tamEx lstEx tamAttr lstAttr
-        "LineNumberTable"
-            -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
-                  let ntable = fromWord162Int wntable
-                  (lstLine,_) <- getListLineNumber ntable rs0
-                  return $ AttributeLineNumberTable inam tam ntable lstLine
-        "Exceptions"
-            -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
-                  let ntable = fromWord162Int wntable
-                  (lstEx,_) <- getListEx ntable rs0
-                  return $ AttributeExceptions inam tam ntable lstEx
-
-        "Synthetic"
-            -> return $ AttributeSynthetic inam tam
-
-        "InnerClasses"
-            -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
-                  let ntable = fromWord162Int wntable
-                  (lstClasses,_) <- getListTuplaInner ntable rs0
-                  return $ AttributeInnerClasses inam tam ntable lstClasses
-        
-        "Deprecated" -> return $ AttributeDeprecated inam tam
-
-        _ -> return $ AttributeGeneric inam tam rbs
-
-
-chgAttrGFields :: ClassFile 
-               -> Either (BS.ByteString, ByteOffset, String) ClassFile
-chgAttrGFields cf = mapM fun (arrayFields cf) 
-                      >>= \newArrayFields -> return cf{arrayFields = newArrayFields}
-    where getNewFi fld' = mapM (fChgAttr (arrayCp cf)) $ arrayAttrFi fld' 
-          fun fld = getNewFi fld >>= \newFi -> return fld{arrayAttrFi = newFi}
-
-chgAttrGMethods :: ClassFile 
-               -> Either (BS.ByteString, ByteOffset, String) ClassFile
-chgAttrGMethods cf = mapM fun (arrayMethods cf) 
-                      >>= \newArrayMethods -> return cf{arrayMethods = newArrayMethods}
-    where getNewMi mth' = mapM (fChgAttr (arrayCp cf)) $ arrayAttrMi mth' 
-          fun mth = getNewMi mth >>= \newMi -> return mth{arrayAttrMi = newMi}
-
-chgAttrGClassFile :: ClassFile 
-               -> Either (BS.ByteString, ByteOffset, String) ClassFile
-chgAttrGClassFile cf = do
-    newArrayAttributes <- mapM (fChgAttr (arrayCp cf)) $ arrayAttributes cf
-    return cf{arrayAttributes = newArrayAttributes}
-
-chgObj :: ClassFile 
-       -> Either (BS.ByteString, ByteOffset, String) ClassFile
-chgObj obj  = do obj1 <- chgAttrGClassFile obj
-                 obj2 <- chgAttrGMethods obj1
-                 chgAttrGFields obj2
-
--- functions accessors to to codify and decodify a class file format
-encodeClassFile :: FilePath -> ClassFile -> IO ()
-encodeClassFile = encodeFile
-
-
-decodeClassFile :: FilePath 
-                -> IO (Either (BS.ByteString, ByteOffset, String) ClassFile)
-decodeClassFile fn = do 
-    obj <- decodeFile fn :: IO ClassFile
-    case chgObj obj of
-      Right cs -> return (Right cs)
-      Left str -> return (Left str)
+-- getListAttr cpInfos 0 str = return ([],str)
+-- getListAttr cpInfos n str
+--     = do (rs1,_,winam) <- runGetOrFail (get :: Get Word16) str 
+--          let inam = fromWord162Int winam
+--          (rs2,_,wtam) <- runGetOrFail (get :: Get Word32) rs1 
+--          let tam = fromWord322Int wtam
+--          (rs3,_,rest) <-runGetOrFail (getLazyByteString (toInt64 tam)) rs2 
+--          let attrGeneric  = AttributeGeneric inam tam rest
+--          attrSpecific <- fChgAttr cpInfos attrGeneric
+--          (mapn,rsn) <- getListAttr cpInfos (n-1) rs3 
+--          return (attrSpecific : mapn, rsn)
+-- 
+-- getListExCod 0 str = return ([],str)
+-- getListExCod n str
+--     = do (rs1,_,wstartPc) <- runGetOrFail (get :: Get Word16) str
+--          (rs2,_,wendPc) <- runGetOrFail (get :: Get Word16) rs1 
+--          (rs3,_,whandlerPc) <- runGetOrFail (get :: Get Word16) rs2
+--          (rs4,_,wcatchType) <- runGetOrFail (get :: Get Word16) rs3
+--          let startPc   = fromWord162Int wstartPc
+--              endPc     = fromWord162Int wendPc
+--              handlerPc = fromWord162Int whandlerPc
+--              catchType = fromWord162Int wcatchType
+--          (map, r) <- getListExCod (n-1) rs4 
+--          return ((startPc,endPc,handlerPc,catchType):map, r)
+-- 
+-- getListTuplaInner 0 str = return ([],str)
+-- getListTuplaInner n str
+--     = do (rs1,_,wincl) <- runGetOrFail (get :: Get Word16) str 
+--          (rs2,_,woutcl) <- runGetOrFail (get :: Get Word16) rs1 
+--          (rs3,_,winnm) <- runGetOrFail (get :: Get Word16) rs2 
+--          (rs4,_,inflg) <- runGetOrFail (get :: Get AccessFlags) rs3
+--          let incl  = fromWord162Int wincl
+--              outcl = fromWord162Int woutcl
+--              innm  = fromWord162Int winnm
+--          (map, r) <- getListTuplaInner (n-1) rs4 
+--          return ((incl,outcl,innm,inflg):map, r)
+-- 
+-- getListEx 0 str = return ([],str)
+-- getListEx n str
+--     = do (str',no,wcod) <- runGetOrFail (get :: Get Word16) str 
+--          let ex = fromWord162Int wcod
+--          (map,r) <- getListEx (n-1) str' 
+--          return (ex:map, r)
+-- 
+-- getListCode 0 str = return ([],str)
+-- getListCode n str
+--     = do ( str', no,wcod) <- runGetOrFail (get :: Get Word8) str 
+--          let  cod = fromWord82Int wcod
+--          (map,r) <- getListCode (n-1) str' 
+--          return (cod:map, r)
+-- 
+-- getListLineNumber 0 str = return ([], str)
+-- getListLineNumber n str
+--     = do (str1,_,wstartPc) <- runGetOrFail (get :: Get Word16) str  
+--          let startPc = fromWord162Int wstartPc
+--          (str2,_,wlineNumber) <- runGetOrFail (get :: Get Word16) str1 
+--          let lineNumber = fromWord162Int wlineNumber
+--          (map,r) <-  getListLineNumber (n-1) str2 
+--          return ((startPc,lineNumber):map, r)
+-- 
+-- -- Get the name from Utf8Info in the Contant Pool list
+-- -- getNameCPUtf8 :: Int -> CPInfos -> String
+-- -- getNameCPUtf8 index cpInfos = cadCp $ cpInfos !! (index-1)
+-- -- 
+-- -- fChgAttr :: CPInfos -> AttributeInfo 
+-- --                     -> Either (BS.ByteString, ByteOffset, String) AttributeInfo 
+-- -- fChgAttr cpInfos (AttributeGeneric inam tam rbs) 
+-- --     = case getNameCPUtf8 inam cpInfos of
+-- --         "SourceFile" 
+-- --             -> do (rest,n,wisrc) <- runGetOrFail (get :: Get Word16) rbs 
+-- --                   let isrc = fromWord162Int wisrc
+-- --                   return $ AttributeSourceFile inam tam isrc
+-- --         "Code"
+-- --             -> do (rs1,_,wstack) <- runGetOrFail (get :: Get Word16) rbs 
+-- --                   let stack = fromWord162Int wstack
+-- --                   (rs2,_,wlocal) <- runGetOrFail (get :: Get Word16) rs1 
+-- --                   let local = fromWord162Int wlocal
+-- --                   (rs3,_,wtamCode) <- runGetOrFail (get :: Get Word32) rs2 
+-- --                   let tamCode = fromWord322Int wtamCode
+-- --                   (mapCode,rs4) <- getListCode tamCode rs3
+-- --                   (rs5,_,wtamEx) <- runGetOrFail (get :: Get Word16) rs4 
+-- --                   let tamEx = fromWord162Int wtamEx
+-- --                   (mapEx,rs6) <- getListExCod tamEx rs5
+-- --                   (rs7,_,wtamAttr) <- runGetOrFail (get :: Get Word16) rs6 
+-- --                   let tamAttr = fromWord162Int wtamAttr
+-- --                   (mapAttr,_) <- getListAttr cpInfos tamAttr rs7
+-- --                   --fix, because there is no support for exceptions,
+-- --                   --nor the second list of attributes? 
+-- --                   return $ AttributeCode inam tam stack local tamCode mapCode
+-- --                                         tamEx mapEx tamAttr mapAttr
+-- --         "LineNumberTable"
+-- --             -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
+-- --                   let ntable = fromWord162Int wntable
+-- --                   (mapLine,_) <- getListLineNumber ntable rs0
+-- --                   return $ AttributeLineNumberTable inam tam ntable mapLine
+-- --         "Exceptions"
+-- --             -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
+-- --                   let ntable = fromWord162Int wntable
+-- --                   (mapEx,_) <- getListEx ntable rs0
+-- --                   return $ AttributeExceptions inam tam ntable mapEx
+-- -- 
+-- --         "Synthetic"
+-- --             -> return $ AttributeSynthetic inam tam
+-- -- 
+-- --         "InnerClasses"
+-- --             -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
+-- --                   let ntable = fromWord162Int wntable
+-- --                   (mapClasses,_) <- getListTuplaInner ntable rs0
+-- --                   return $ AttributeInnerClasses inam tam ntable mapClasses
+-- --         
+-- --         "Deprecated" -> return $ AttributeDeprecated inam tam
+-- -- 
+-- --         _ -> return $ AttributeGeneric inam tam rbs
+-- -- 
+-- -- 
+-- -- chgAttrGFields :: ClassFile 
+-- --                -> Either (BS.ByteString, ByteOffset, String) ClassFile
+-- -- chgAttrGFields cf = mapM fun (arrayFields cf) 
+-- --                       >>= \newArrayFields -> return cf{arrayFields = newArrayFields}
+-- --     where getNewFi fld' = mapM (fChgAttr (arrayCp cf)) $ arrayAttrFi fld' 
+-- --           fun fld = getNewFi fld >>= \newFi -> return fld{arrayAttrFi = newFi}
+-- -- 
+-- -- chgAttrGMethods :: ClassFile 
+-- --                -> Either (BS.ByteString, ByteOffset, String) ClassFile
+-- -- chgAttrGMethods cf = mapM fun (arrayMethods cf) 
+-- --                       >>= \newArrayMethods -> return cf{arrayMethods = newArrayMethods}
+-- --     where getNewMi mth' = mapM (fChgAttr (arrayCp cf)) $ arrayAttrMi mth' 
+-- --           fun mth = getNewMi mth >>= \newMi -> return mth{arrayAttrMi = newMi}
+-- -- 
+-- -- chgAttrGClassFile :: ClassFile 
+-- --                -> Either (BS.ByteString, ByteOffset, String) ClassFile
+-- -- chgAttrGClassFile cf = do
+-- --     newArrayAttributes <- mapM (fChgAttr (arrayCp cf)) $ arrayAttributes cf
+-- --     return cf{arrayAttributes = newArrayAttributes}
+-- -- 
+-- -- chgObj :: ClassFile 
+-- --        -> Either (BS.ByteString, ByteOffset, String) ClassFile
+-- -- chgObj obj  = do obj1 <- chgAttrGClassFile obj
+-- --                  obj2 <- chgAttrGMethods obj1
+-- --                  chgAttrGFields obj2
+-- -- 
+-- -- -- functions accessors to to codify and decodify a class file format
+-- -- encodeClassFile :: FilePath -> ClassFile -> IO ()
+-- -- encodeClassFile = encodeFile
+-- -- 
+-- -- 
+-- -- decodeClassFile :: FilePath 
+-- --                 -> IO (Either (BS.ByteString, ByteOffset, String) ClassFile)
+-- -- decodeClassFile fn = do 
+-- --     obj <- decodeFile fn :: IO ClassFile
+-- --     case chgObj obj of
+-- --       Right cs -> return (Right cs)
+-- --       Left str -> return (Left str)
