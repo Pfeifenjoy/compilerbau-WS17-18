@@ -33,7 +33,7 @@ data Expr
     deriving(Eq, Show)
 
 data VariableDecl
-    = Variable String Type Bool -- name, type, final
+    = VariableDecl String Type Bool -- name, type, final
     deriving(Eq, Show)
 
 data StmtExpr
@@ -74,7 +74,8 @@ data Visibility
     deriving(Eq, Show)
 
 -- Classes
-data FieldDecl = FieldDecl VariableDecl Visibility Bool -- variable, private/protected, static
+data FieldDecl
+    = FieldDecl VariableDecl Visibility Bool -- variable, private/protected, static
     deriving(Eq, Show)
 
 type ArgumentDecl = VariableDecl

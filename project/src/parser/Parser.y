@@ -118,92 +118,99 @@ import Data.Int
 %nonassoc INCREMENT DECREMENT --todo postfix
 %%
 
-SingleStatement : Statement SEMICOLON                { $1 }
-                | Block                              { $1 }
+SingleStatement
+    : Statement SEMICOLON                   { $1 }
+    | Block                                 { $1 }
 
 Statement
-	: RETURN Expression                  { Return $2 }
-	| WHILE LEFT_PARANTHESES Expression
-	RIGHT_PARANTHESES SingleStatement
-	                                     { While $3 $5 }
-	| DO SingleStatement WHILE
-	LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-	                                     { DoWhile $5 $2 }
-	| FOR LEFT_PARANTHESES Statement
-	SEMICOLON Expression SEMICOLON
-	Statement RIGHT_PARANTHESES SingleStatement
-	                                     { For $3 $5 $7 $9 }
-	| BREAK                              { Break }
-	| CONTINUE                           { Continue }
-	| IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-	SingleStatement ELSE SingleStatement
-	                                     { If $3 $5 (Just $7) }
-	| IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-	SingleStatement
-	                                     { If $3 $5 Nothing }
-	| StatementExpression                { StmtExprStmt $1 }
+    : RETURN Expression                     { ABSTree.Return $2 }
+    | WHILE LEFT_PARANTHESES Expression
+    RIGHT_PARANTHESES SingleStatement
+                                            { While $3 $5 }
+    | DO SingleStatement WHILE
+    LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+                                            { DoWhile $5 $2 }
+    | FOR LEFT_PARANTHESES Statement
+    SEMICOLON Expression SEMICOLON
+    Statement RIGHT_PARANTHESES SingleStatement
+                                            { For $3 $5 $7 $9 }
+    | BREAK                                 { Break }
+    | CONTINUE                              { Continue }
+    | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+    SingleStatement ELSE SingleStatement
+                                            { If $3 $5 (Just $7) }
+    | IF LEFT_PARANTHESES Expression
+    RIGHT_PARANTHESES SingleStatement       { If $3 $5 Nothing }
+    | StatementExpression                   { StmtExprStmt $1 }
 
 
 Expression
-	: THIS                               { This }
-	| IDENTIFIER                         { LocalOrFieldVar $1 }
-	-- | Expression DOT IDENTIFIER          { InstVar $1 $3 }
-	-- Operators
-	| NOT Expression                     { Unary "!" $2 }
-	| Expression ADD Expression          { Binary "+" $1 $3 }
-	| Expression SUBTRACT Expression     { Binary "-" $1 $3 }
-	| Expression MULTIPLY Expression     { Binary "*" $1 $3 }
-	| Expression DIVIDE Expression       { Binary "/" $1 $3 }
-	| Expression MODULO Expression       { Binary "%" $1 $3 }
-	| Expression AND Expression          { Binary "&&" $1 $3 }
-	| Expression OR Expression           { Binary "||" $1 $3 }
-	| Expression BITWISE_AND Expression  { Binary "&" $1 $3 }
-	| Expression BITWISE_OR Expression   { Binary "|" $1 $3 }
-	| Expression BITWISE_XOR Expression  { Binary "^" $1 $3 }
-	| Expression QUESTIONMARK Expression COLON Expression
-	                                     { Ternary $1 $3 $5 }
-	| INCREMENT Expression               { StmtExprExpr (Assign $2 (Binary "+" $2 (IntegerLiteral 1))) }
-	| DECREMENT Expression               { StmtExprExpr (Assign $2 (Binary "-" $2 (IntegerLiteral 1))) }
-	-- TODO back increment, back drecrement
-	-- Paranthesis
-	| LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-	                                     { $2 }
-	-- Literals
-	| BOOLEAN_LITERAL                    { BooleanLiteral $1 }
-	| CHARACTER_LITERAL                  { CharLiteral $1 }
-	| INTEGER_LITERAL                    { IntegerLiteral (fromIntegral $1) }
-	| JNULL                              { JNull }
-	| StatementExpression                { StmtExprExpr $1 }
+    : THIS                                  { This }
+    | IDENTIFIER                            { LocalOrFieldVar $1 }
+    -- | Expression DOT IDENTIFIER        { InstVar $1 $3 }
+    -- Operators
+    | NOT Expression                        { Unary "!" $2 }
+    | Expression ADD Expression             { Binary "+" $1 $3 }
+    | Expression SUBTRACT Expression        { Binary "-" $1 $3 }
+    | Expression MULTIPLY Expression        { Binary "*" $1 $3 }
+    | Expression DIVIDE Expression          { Binary "/" $1 $3 }
+    | Expression MODULO Expression          { Binary "%" $1 $3 }
+    | Expression AND Expression             { Binary "&&" $1 $3 }
+    | Expression OR Expression              { Binary "||" $1 $3 }
+    | Expression BITWISE_AND Expression     { Binary "&" $1 $3 }
+    | Expression BITWISE_OR Expression      { Binary "|" $1 $3 }
+    | Expression BITWISE_XOR Expression     { Binary "^" $1 $3 }
+    | Expression QUESTIONMARK Expression
+        COLON Expression                    { Ternary $1 $3 $5 }
+    | INCREMENT Expression                  { StmtExprExpr (Assign $2 (Binary "+" $2 (IntegerLiteral 1))) }
+    | DECREMENT Expression                  { StmtExprExpr (Assign $2 (Binary "-" $2 (IntegerLiteral 1))) }
+    -- TODO back increment, back drecrement
+    -- Paranthesis
+    | LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+                                            { $2 }
+    -- Literals
+    | BOOLEAN_LITERAL                       { BooleanLiteral $1 }
+    | CHARACTER_LITERAL                     { CharLiteral $1 }
+    | INTEGER_LITERAL                       { IntegerLiteral (fromIntegral $1) }
+    | JNULL                                 { JNull }
+    | StatementExpression                   { StmtExprExpr $1 }
 
 Arguments
-	: Expression                         { [$1] }
-	| Arguments COMMA Expression         { $1 ++ [$3] }
+    : Expression                            { [$1] }
+    | Arguments COMMA Expression            { $1 ++ [$3] }
  
 Statements
-	: SingleStatement                    { [$1] }
-	| Statements SingleStatement         { $1 ++ [$2] }
+    : SingleStatement                       { [$1] }
+    | Statements SingleStatement            { $1 ++ [$2] }
 
 Block
-	: LEFT_BRACE RIGHT_BRACE             { Block [] }
-	| LEFT_BRACE Statements RIGHT_BRACE  { Block $2 }
+    : LEFT_BRACE RIGHT_BRACE                { Block [] }
+    | LEFT_BRACE Statements RIGHT_BRACE     { Block $2 }
 
 StatementExpression
-	: Expression ASSIGN Expression       { Assign $1 $3 }
-	| NEW IDENTIFIER LEFT_PARANTHESES
-		Arguments RIGHT_PARANTHESES      { New $2 $4 }
-	| Expression DOT IDENTIFIER
-		LEFT_PARANTHESES Arguments
-		RIGHT_PARANTHESES                { MethodCall $1 $3 $5 }
+    : Expression ASSIGN Expression          { Assign $1 $3 }
+    | NEW IDENTIFIER LEFT_PARANTHESES
+        Arguments RIGHT_PARANTHESES         { New $2 $4 }
+    | Expression DOT IDENTIFIER
+        LEFT_PARANTHESES Arguments
+        RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
 
--- Type : IDENTIFIER { Type $1 }
--- 
--- VariableDecle : Type IDENTIFIER { VariableDecl $1 $2 False }
---               | FINAL Type IDENTIFIER { VariableDecl $1 $2 true }
--- 
--- FieldDecl : 
--- 
--- ClassBody : MethodDecl
---           | FieldDecl
+Type
+    : IDENTIFIER                        { $1 }
+
+VariableDecl
+    : Type IDENTIFIER { VariableDecl $1 $2 False }
+    | FINAL Type IDENTIFIER { VariableDecl $2 $3 True }
+
+FieldDecl
+    : PRIVATE VariableDecl { FieldDecl $2 Private False }
+    | PRIVATE STATIC VariableDecl { FieldDecl $3 Private True }
+    | PUBLIC VariableDecl { FieldDecl $2 Private False }
+    | PUBLIC STATIC VariableDecl { FieldDecl $3 Private True }
+
+-- ClassBody
+--     : MethodDecl
+--     | FieldDecl
 -- 
 -- Class : CLASS IDENTIFIER LEFT_BRACE ClassBody RIGHT_BRACE { Class $2 $4 }
 
