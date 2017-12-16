@@ -113,10 +113,14 @@ import Data.Int
 %left SHIFTLEFT SHIFTRIGHT UNSIGNED_SHIFTRIGHT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
-%left NOT -- todo unary increment, decrement, plus, minus
-%left DOT -- todo [] ()
+%left NOT
+%left DOT
 %nonassoc INCREMENT DECREMENT --todo postfix
 %%
+
+Program
+    : Class                                 { [$1] }
+    | Program Class                         { $1 ++ [$2] }
 
 SingleStatement
     : Statement SEMICOLON                   { $1 }
@@ -196,23 +200,45 @@ StatementExpression
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
 
 Type
-    : IDENTIFIER                        { $1 }
+    : IDENTIFIER                            { $1 }
 
 VariableDecl
-    : Type IDENTIFIER { VariableDecl $1 $2 False }
-    | FINAL Type IDENTIFIER { VariableDecl $2 $3 True }
+    : Type IDENTIFIER                       { VariableDecl $1 $2 False }
+    | FINAL Type IDENTIFIER                 { VariableDecl $2 $3 True }
+
+VariableDecls
+    : VariableDecl                          { [ $1 ] }
+    | VariableDecls COMMA VariableDecl      { $1 ++ [ $3 ] }
 
 FieldDecl
-    : PRIVATE VariableDecl { FieldDecl $2 Private False }
-    | PRIVATE STATIC VariableDecl { FieldDecl $3 Private True }
-    | PUBLIC VariableDecl { FieldDecl $2 Private False }
-    | PUBLIC STATIC VariableDecl { FieldDecl $3 Private True }
+    : PRIVATE VariableDecl                  { FieldDecl $2 Private False }
+    | PRIVATE STATIC VariableDecl           { FieldDecl $3 Private True }
+    | PUBLIC VariableDecl                   { FieldDecl $2 Private False }
+    | PUBLIC STATIC VariableDecl            { FieldDecl $3 Private True }
 
--- ClassBody
---     : MethodDecl
---     | FieldDecl
--- 
--- Class : CLASS IDENTIFIER LEFT_BRACE ClassBody RIGHT_BRACE { Class $2 $4 }
+MethodDecl
+    : PRIVATE Type IDENTIFIER
+        LEFT_PARANTHESES VariableDecls
+        RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Private False }
+    | PRIVATE STATIC Type IDENTIFIER
+        LEFT_PARANTHESES VariableDecls
+        RIGHT_PARANTHESES Block             { MethodDecl $4 $3 $6 $8 Private True }
+    | PUBLIC Type IDENTIFIER
+        LEFT_PARANTHESES VariableDecls
+        RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Public False }
+    | PUBLIC STATIC Type IDENTIFIER
+        LEFT_PARANTHESES VariableDecls
+        RIGHT_PARANTHESES Block             { MethodDecl $4 $3 $6 $8 Public True }
+
+ClassBody
+    : FieldDecl                             { ( [$1], [] ) }
+    | MethodDecl                            { ( [], [$1] ) }
+    | ClassBody FieldDecl                   { ( (fst $1) ++ [$2], snd $1 ) }
+    | ClassBody MethodDecl                  { ( fst $1, (snd $1) ++ [$2] ) }
+
+Class
+    : CLASS IDENTIFIER LEFT_BRACE
+        ClassBody RIGHT_BRACE               { Class $2 (fst $4) (snd $4) }
 
 {
 parseError :: [Lexer.Token.Token] -> a
