@@ -16,11 +16,11 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Lexer, Lexer.Token, ABSTree
-  build-depends:       base, array
+  exposed-modules:     Lexer, Lexer.Token, ABSTree, Codegen.Data.ClassFormat,
+                       Codegen.Data.MethodFormat, Codegen.BinaryClass
+  build-depends:       base <= 4.10.1 , array, hashtables
   hs-source-dirs:      src
   build-tools:         alex, happy
-  -- other-modules:       
   other-modules:       Lexer.Lexer, Parser.Parser
   default-language:    Haskell2010
 
@@ -36,8 +36,4 @@ test-suite test-core
   main-is: 	           unitTests.hs
   hs-source-dirs: 	   test
   build-depends: 	   base, HUnit, java-compiler, directory
-
-
-
-
-
+  default-language:    Haskell2010
