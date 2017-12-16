@@ -180,7 +180,8 @@ Expression
     | StatementExpression                   { StmtExprExpr $1 }
 
 Arguments
-    : Expression                            { [$1] }
+    :                                       { [] }
+    | Expression                            { [$1] }
     | Arguments COMMA Expression            { $1 ++ [$3] }
  
 Statements
@@ -201,23 +202,34 @@ StatementExpression
 
 Type
     : IDENTIFIER                            { $1 }
+    | BOOLEAN                               { "bool" }
+    | CHARACTER                             { "char" }
+    | INTEGER                               { "int" }
 
 VariableDecl
     : Type IDENTIFIER                       { VariableDecl $1 $2 False }
     | FINAL Type IDENTIFIER                 { VariableDecl $2 $3 True }
 
 VariableDecls
-    : VariableDecl                          { [ $1 ] }
+    :                                       { [] }
+    | VariableDecl                          { [ $1 ] }
     | VariableDecls COMMA VariableDecl      { $1 ++ [ $3 ] }
 
 FieldDecl
-    : PRIVATE VariableDecl                  { FieldDecl $2 Private False }
-    | PRIVATE STATIC VariableDecl           { FieldDecl $3 Private True }
-    | PUBLIC VariableDecl                   { FieldDecl $2 Private False }
-    | PUBLIC STATIC VariableDecl            { FieldDecl $3 Private True }
+    : VariableDecl SEMICOLON                { FieldDecl $1 Public False }
+    | PRIVATE VariableDecl SEMICOLON        { FieldDecl $2 Private False }
+    | PRIVATE STATIC VariableDecl SEMICOLON { FieldDecl $3 Private True }
+    | PUBLIC VariableDecl SEMICOLON         { FieldDecl $2 Public False }
+    | PUBLIC STATIC VariableDecl SEMICOLON  { FieldDecl $3 Public True }
 
 MethodDecl
-    : PRIVATE Type IDENTIFIER
+    : Type IDENTIFIER
+        LEFT_PARANTHESES VariableDecls
+        RIGHT_PARANTHESES Block             { MethodDecl $2 $1 $4 $6 Public False }
+    | STATIC Type IDENTIFIER
+        LEFT_PARANTHESES VariableDecls
+        RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Public True }
+    | PRIVATE Type IDENTIFIER
         LEFT_PARANTHESES VariableDecls
         RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Private False }
     | PRIVATE STATIC Type IDENTIFIER
@@ -239,8 +251,10 @@ ClassBody
 Class
     : CLASS IDENTIFIER LEFT_BRACE
         ClassBody RIGHT_BRACE               { Class $2 (fst $4) (snd $4) }
+    | CLASS IDENTIFIER LEFT_BRACE
+        RIGHT_BRACE                         { Class $2 [] [] }
 
 {
 parseError :: [Lexer.Token.Token] -> a
-parseError _ = error "Parse error"
+parseError (x:xs) = error ("Parse error " ++ (show x))
 }

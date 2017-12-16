@@ -88,3 +88,4 @@ data MethodDecl = MethodDecl String Type ArgumentDecls Stmt Visibility Bool -- n
 data Class = Class Type [FieldDecl] [MethodDecl]
     deriving(Eq, Show)
 
+type Program = [ Class ]

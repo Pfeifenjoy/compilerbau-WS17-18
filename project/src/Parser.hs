@@ -1,7 +1,8 @@
 module Parser where
 
 import ABSTree
-import Token
+import Lexer.Token
+import Parser.Parser
 
 parse :: [Token] -> [Class]
-parse tokens = [] -- TODO implement
+parse = Parser.Parser.parse
