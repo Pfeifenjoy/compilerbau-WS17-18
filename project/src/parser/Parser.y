@@ -155,6 +155,28 @@ Switch
             FinallyCase
         RIGHT_BRACE                         { Switch $2 $4 $ Just $5 }
 
+SingleVariableDecl
+    : Type IDENTIFIER                       { VariableDecl $2 $1 False Nothing }
+    | Type IDENTIFIER ASSIGN Expression     { VariableDecl $2 $1 False $ Just $4 }
+    | FINAL Type IDENTIFIER                 { VariableDecl $3 $2 True Nothing }
+    | FINAL Type IDENTIFIER ASSIGN
+        Expression                          { VariableDecl $3 $2 False $ Just $5 }
+
+RestVariableDecl
+    : COMMA IDENTIFIER                      { ($2, Nothing) }
+    | COMMA IDENTIFIER ASSIGN Expression    { ($2, Just $4) }
+
+RestVariableDecls
+    : RestVariableDecl                      { [$1] }
+    | RestVariableDecls RestVariableDecl    { $1 ++ [$2] }
+
+VariableDecl
+    : SingleVariableDecl                    { [$1] }
+    | SingleVariableDecl RestVariableDecls  { joinVariableDecls $1 $2 }
+
+LocalVariableDecl
+    : VariableDecl                          { LocalVarDecls $1 }
+
 Statement
     : RETURN Expression                     { ABSTree.Return $2 }
     | WHILE LEFT_PARANTHESES Expression
@@ -175,6 +197,7 @@ Statement
     | IF LEFT_PARANTHESES Expression
         RIGHT_PARANTHESES SingleStatement   { If $3 $5 Nothing }
     | Switch                                { $1 }
+    | LocalVariableDecl                     { $1 }
     | StatementExpression                   { StmtExprStmt $1 }
 
 
@@ -255,15 +278,6 @@ Type
     | INTEGER                               { "int" }
     | VOID                                  { "void" }
 
-VariableDecl
-    : Type IDENTIFIER                       { VariableDecl $1 $2 False }
-    | FINAL Type IDENTIFIER                 { VariableDecl $2 $3 True }
-
-VariableDecls
-    :                                       { [] }
-    | VariableDecl                          { [ $1 ] }
-    | VariableDecls COMMA VariableDecl      { $1 ++ [ $3 ] }
-
 FieldDecl
     : VariableDecl SEMICOLON                { FieldDecl $1 Public False }
     | PRIVATE VariableDecl SEMICOLON        { FieldDecl $2 Private False }
@@ -271,24 +285,36 @@ FieldDecl
     | PUBLIC VariableDecl SEMICOLON         { FieldDecl $2 Public False }
     | PUBLIC STATIC VariableDecl SEMICOLON  { FieldDecl $3 Public True }
 
+ArgumentDecl
+    : Type IDENTIFIER                       { ArgumentDecl $2 $1 False }
+    | FINAL Type IDENTIFIER                 { ArgumentDecl $3 $2 True }
+
+ArgumentDecls
+    : ArgumentDecl                          { [ $1 ] }
+    | ArgumentDecls COMMA ArgumentDecl      { $1 ++ [ $3 ] }
+
+MethodParameters
+    :                                       { [] }
+    | ArgumentDecls                         { $1 }
+
 MethodDecl
     : Type IDENTIFIER
-        LEFT_PARANTHESES VariableDecls
+        LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $2 $1 $4 $6 Public False }
     | STATIC Type IDENTIFIER
-        LEFT_PARANTHESES VariableDecls
+        LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Public True }
     | PRIVATE Type IDENTIFIER
-        LEFT_PARANTHESES VariableDecls
+        LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Private False }
     | PRIVATE STATIC Type IDENTIFIER
-        LEFT_PARANTHESES VariableDecls
+        LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $4 $3 $6 $8 Private True }
     | PUBLIC Type IDENTIFIER
-        LEFT_PARANTHESES VariableDecls
+        LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $3 $2 $5 $7 Public False }
     | PUBLIC STATIC Type IDENTIFIER
-        LEFT_PARANTHESES VariableDecls
+        LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $4 $3 $6 $8 Public True }
 
 ClassBody
@@ -306,4 +332,12 @@ Class
 {
 parseError :: [Lexer.Token.Token] -> a
 parseError (x:xs) = error ("Parse error " ++ (show x))
+
+prototypeVariableDecl :: VariableDecl -> (String, Maybe Expr) -> VariableDecl
+prototypeVariableDecl (VariableDecl _ t f _) (name, initial)
+    = (VariableDecl name t f initial)
+
+joinVariableDecls :: VariableDecl -> [(String, Maybe Expr)] -> [VariableDecl]
+joinVariableDecls prototype other
+    = [prototype] ++ (map (prototypeVariableDecl prototype) other)
 }
