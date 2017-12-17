@@ -18,4 +18,8 @@ instanzVariableTokens = [Lexer.Token.CLASS,
                         Lexer.Token.RIGHT_BRACE]
 
 instanzVariableABS = [Class "InstanzVariable"
-                      [] []]
+                      [FieldDecl [VariableDecl "i" "int" False Nothing] Public False,
+                       FieldDecl [VariableDecl "b" "bool" False Nothing] Public False,
+                       FieldDecl [VariableDecl "c" "char" False Nothing] Public False
+                      ]
+                      []]

@@ -135,7 +135,7 @@ lexTests = [LexerUnit "EmptyClass" emptyTokens,
 parserTests :: [TestUnit]
 parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "InstanzVariable" instanzVariableABS,
-               ParserUnit "ClassAssign" emptyABS,
+               ParserUnit "ClassAssign" classAssignABS,
                ParserUnit "Arithmetic" emptyABS
                ]
 

@@ -1,5 +1,6 @@
 module ClassAssign.Steps where
 
+import           ABSTree
 import           Lexer.Token
 
 classAssignTokens = [Lexer.Token.CLASS,
@@ -27,5 +28,13 @@ classAssignTokens = [Lexer.Token.CLASS,
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.RIGHT_BRACE,
                     Lexer.Token.RIGHT_BRACE]
+
+classAssignABS = [Class "ClassAssign"
+                  [FieldDecl [VariableDecl "a" "int" False Nothing] Public False]
+                  [MethodDecl "doStuff" "int" [ArgumentDecl "b" "int" False]
+                              (Block [LocalVarDecls [VariableDecl "c" "int" False Nothing],
+                                   StmtExprStmt (Assign (LocalOrFieldVar "c") (LocalOrFieldVar "b")),
+                                   Return (LocalOrFieldVar "b")]) Public False]
+                 ]
 
 
