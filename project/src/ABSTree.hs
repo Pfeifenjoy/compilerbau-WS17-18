@@ -40,10 +40,11 @@ data StmtExpr
     = Assign Expr Expr
     | New Type [Expr] -- type, arguments
     | MethodCall Expr String [Expr]
+    | LazyAssign Expr Expr -- e.g. a++; -> a (a + 1)
     | TypedStmtExpr StmtExpr Type
     deriving(Eq, Show)
 
-data SwitchCase = Expr Stmt
+data SwitchCase = SwitchCase Expr [ Stmt ]
     deriving(Eq, Show)
 
 data Stmt
@@ -59,7 +60,7 @@ data Stmt
     | Continue
     -- Conditional Statements
     | If Expr Stmt (Maybe Stmt) -- condition, stmt, elseStmt
-    | Switch Expr [SwitchCase] (Maybe Stmt) -- variable, cases, finally
+    | Switch Expr [SwitchCase] (Maybe [Stmt]) -- variable, cases, finally
     -- other
     | LocalVarDecl VariableDecl
     | StmtExprStmt StmtExpr

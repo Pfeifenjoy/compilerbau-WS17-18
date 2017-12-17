@@ -76,6 +76,7 @@ import Data.Int
     ELSE                                { ELSE }
     SWITCH                              { SWITCH }
     CASE                                { CASE }
+    FINALLY                             { FINALLY }
     QUESTIONMARK                        { QUESTIONMARK }
     -- Class
     CLASS                               { CLASS }
@@ -109,49 +110,78 @@ import Data.Int
 %left BITWISE_OR
 %left BITWISE_AND
 %left EQUAL NOT_EQUAL
-%nonassoc LESSER GREATER LOWER_EQUAL LESSER_EQUAL INSTANCEOF
+%nonassoc LESSER GREATER LESSER_EQUAL GREATER_EQUAL INSTANCEOF
 %left SHIFTLEFT SHIFTRIGHT UNSIGNED_SHIFTRIGHT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
 %left NOT
 %left DOT
-%nonassoc INCREMENT DECREMENT --todo postfix
+%nonassoc INCREMENT DECREMENT
 %%
 
 Program
     : Class                                 { [$1] }
     | Program Class                         { $1 ++ [$2] }
+    | Program SEMICOLON                     { $1 }
 
 SingleStatement
     : Statement SEMICOLON                   { $1 }
     | Block                                 { $1 }
+ 
+Statements
+    : SingleStatement                       { [$1] }
+    | Statements SingleStatement            { $1 ++ [$2] }
+
+Block
+    : LEFT_BRACE RIGHT_BRACE                { Block [] }
+    | LEFT_BRACE Statements RIGHT_BRACE     { Block $2 }
+
+SwitchCase
+    : CASE Expression COLON Statements      { SwitchCase $2 $4 }
+
+FinallyCase
+    : FINALLY Statements                    { $2 }
+
+SwitchCases
+    : SwitchCase                            { [$1] }
+    | SwitchCases SwitchCase                { $1 ++ [$2] }
+
+Switch
+    : SWITCH Expression
+        LEFT_BRACE SwitchCases RIGHT_BRACE  { Switch $2 $4 Nothing }
+    | SWITCH Expression
+        LEFT_BRACE
+            SwitchCases
+            FinallyCase
+        RIGHT_BRACE                         { Switch $2 $4 $ Just $5 }
 
 Statement
     : RETURN Expression                     { ABSTree.Return $2 }
     | WHILE LEFT_PARANTHESES Expression
-    RIGHT_PARANTHESES SingleStatement
+        RIGHT_PARANTHESES SingleStatement
                                             { While $3 $5 }
     | DO SingleStatement WHILE
-    LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+        LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { DoWhile $5 $2 }
     | FOR LEFT_PARANTHESES Statement
-    SEMICOLON Expression SEMICOLON
-    Statement RIGHT_PARANTHESES SingleStatement
+        SEMICOLON Expression SEMICOLON
+        Statement RIGHT_PARANTHESES SingleStatement
                                             { For $3 $5 $7 $9 }
     | BREAK                                 { Break }
     | CONTINUE                              { Continue }
     | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-    SingleStatement ELSE SingleStatement
+        SingleStatement ELSE SingleStatement
                                             { If $3 $5 (Just $7) }
     | IF LEFT_PARANTHESES Expression
-    RIGHT_PARANTHESES SingleStatement       { If $3 $5 Nothing }
+        RIGHT_PARANTHESES SingleStatement   { If $3 $5 Nothing }
+    | Switch                                { $1 }
     | StatementExpression                   { StmtExprStmt $1 }
 
 
 Expression
     : THIS                                  { This }
     | IDENTIFIER                            { LocalOrFieldVar $1 }
-    -- | Expression DOT IDENTIFIER        { InstVar $1 $3 }
+    | Expression DOT IDENTIFIER             { InstVar $1 $3 }
     -- Operators
     | NOT Expression                        { Unary "!" $2 }
     | Expression ADD Expression             { Binary "+" $1 $3 }
@@ -164,11 +194,23 @@ Expression
     | Expression BITWISE_AND Expression     { Binary "&" $1 $3 }
     | Expression BITWISE_OR Expression      { Binary "|" $1 $3 }
     | Expression BITWISE_XOR Expression     { Binary "^" $1 $3 }
+    | INCREMENT Expression                  { StmtExprExpr $ Assign $2 $ Binary "+" $2 $ IntegerLiteral 1 }
+    | DECREMENT Expression                  { StmtExprExpr $ Assign $2 $ Binary "-" $2 $ IntegerLiteral 1 }
+    | Expression INCREMENT                  { StmtExprExpr $ LazyAssign $1 $ Binary "+" $1 $ IntegerLiteral 1 }
+    | Expression DECREMENT                  { StmtExprExpr $ LazyAssign $1 $ Binary "-" $1 $ IntegerLiteral 1 }
+    | Expression SHIFTLEFT Expression       { Binary "<<" $1 $3 }
+    | Expression SHIFTRIGHT Expression      { Binary ">>" $1 $3 }
+    | Expression UNSIGNED_SHIFTRIGHT
+        Expression                          { Binary ">>>" $1 $3 }
     | Expression QUESTIONMARK Expression
         COLON Expression                    { Ternary $1 $3 $5 }
-    | INCREMENT Expression                  { StmtExprExpr (Assign $2 (Binary "+" $2 (IntegerLiteral 1))) }
-    | DECREMENT Expression                  { StmtExprExpr (Assign $2 (Binary "-" $2 (IntegerLiteral 1))) }
-    -- TODO back increment, back drecrement
+    | Expression EQUAL Expression           { Binary "==" $1 $3 }
+    | Expression NOT_EQUAL Expression       { Unary "!" $ Binary "==" $1 $3 }
+    | Expression LESSER Expression          { Binary "<" $1 $3 }
+    | Expression GREATER Expression         { Binary ">" $1 $3 }
+    | Expression LESSER_EQUAL Expression    { Binary "<=" $1 $3 }
+    | Expression GREATER_EQUAL Expression   { Binary ">=" $1 $3 }
+    | Expression INSTANCEOF Type            { InstanceOf $1 $3 }
     -- Paranthesis
     | LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { $2 }
@@ -183,19 +225,25 @@ Arguments
     :                                       { [] }
     | Expression                            { [$1] }
     | Arguments COMMA Expression            { $1 ++ [$3] }
- 
-Statements
-    : SingleStatement                       { [$1] }
-    | Statements SingleStatement            { $1 ++ [$2] }
-
-Block
-    : LEFT_BRACE RIGHT_BRACE                { Block [] }
-    | LEFT_BRACE Statements RIGHT_BRACE     { Block $2 }
 
 StatementExpression
     : Expression ASSIGN Expression          { Assign $1 $3 }
     | NEW IDENTIFIER LEFT_PARANTHESES
         Arguments RIGHT_PARANTHESES         { New $2 $4 }
+    | Expression ADD_ASSIGN Expression      { Assign $1 $ Binary "+" $1 $3 }
+    | Expression SUBTRACT_ASSIGN Expression { Assign $1 $ Binary "-" $1 $3 }
+    | Expression MULTIPLY_ASSIGN Expression { Assign $1 $ Binary "*" $1 $3 }
+    | Expression DIVIDE_ASSIGN Expression   { Assign $1 $ Binary "/" $1 $3 }
+    | Expression MODULO_ASSIGN Expression   { Assign $1 $ Binary "%" $1 $3 }
+    | Expression AND_ASSIGN Expression      { Assign $1 $ Binary "&" $1 $3 }
+    | Expression OR_ASSIGN Expression       { Assign $1 $ Binary "|" $1 $3 }
+    | Expression XOR_ASSIGN Expression      { Assign $1 $ Binary "^" $1 $3 }
+    | Expression SHIFTLEFT_ASSIGN Expression
+                                            { Assign $1 $ Binary "<<" $1 $3 }
+    | Expression SHIFTRIGHT_ASSIGN
+        Expression                          { Assign $1 $ Binary ">>" $1 $3 }
+    | Expression UNSIGNED_SHIFTRIGHT_ASSIGN
+        Expression                          { Assign $1 $ Binary ">>" $1 $3 }
     | Expression DOT IDENTIFIER
         LEFT_PARANTHESES Arguments
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
@@ -205,6 +253,7 @@ Type
     | BOOLEAN                               { "bool" }
     | CHARACTER                             { "char" }
     | INTEGER                               { "int" }
+    | VOID                                  { "void" }
 
 VariableDecl
     : Type IDENTIFIER                       { VariableDecl $1 $2 False }
