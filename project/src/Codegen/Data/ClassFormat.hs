@@ -1,4 +1,8 @@
 module Codegen.Data.ClassFormat where
+
+{-# LANGUAGE DeriveGeneric #-}
+import GHC.Generics (Generic)
+import Data.Hashable
 import Data.Word
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.ByteString.Lazy as BS
@@ -98,7 +102,9 @@ data CPInfo =
                 , cadCp                 :: String -- name of string
                 , desc                  :: String -- comment in Bytcode
                 }
-            deriving Show
+            deriving (Show,Eq,Generic)
+
+inctance Hashable CPInfo 
 
 showCPInfos :: [CPInfo] -> Int -> String
 showCPInfos [] n = ""
@@ -258,11 +264,11 @@ type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
 type ListaInt  = [Int]
-type ConstantPoolCount  = Int
-type InterfacesCount    = Int
-type FieldsCount        = Int
-type MethodsCount       = Int
-type AttributesCount    = Int
-type IndexConstantPool = Int
+type ConstantPoolCount  = Word8 
+type InterfacesCount    = Word8 
+type FieldsCount        = Word8 
+type MethodsCount       = Word8 
+type AttributesCount    = Word8 
+type IndexConstantPool = Word8 
 
 
