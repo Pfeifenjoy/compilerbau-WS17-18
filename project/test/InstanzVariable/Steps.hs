@@ -1,5 +1,6 @@
 module InstanzVariable.Steps where
 
+import           ABSTree
 import           Lexer.Token
 
 instanzVariableTokens = [Lexer.Token.CLASS,
@@ -15,3 +16,9 @@ instanzVariableTokens = [Lexer.Token.CLASS,
                         Lexer.Token.IDENTIFIER "c",
                         Lexer.Token.SEMICOLON,
                         Lexer.Token.RIGHT_BRACE]
+
+instanzVariableABS = [Class "InstanzVariable"
+                      [FieldDecl (VariableDecl "int" "i" False) Public False,
+                       FieldDecl (VariableDecl "bool" "b" False) Public False,
+                       FieldDecl (VariableDecl "char" "c" False) Public False
+                     ] []]
