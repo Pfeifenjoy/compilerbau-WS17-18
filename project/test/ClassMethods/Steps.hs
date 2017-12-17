@@ -1,12 +1,14 @@
 module ClassMethods.Steps where
 
-import Lexer.Token
+import           Lexer.Token
 
-classMethodTokens = [Lexer.Token.CLASS, 
+classMethodTokens = [Lexer.Token.CLASS,
                     Lexer.Token.IDENTIFIER "ClassMethod",
                     Lexer.Token.LEFT_BRACE,
                     Lexer.Token.INTEGER,
                     Lexer.Token.IDENTIFIER "i",
+                    Lexer.Token.ASSIGN,
+                    Lexer.Token.JNULL,
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.INTEGER,
                     Lexer.Token.IDENTIFIER "getInt",
@@ -17,6 +19,8 @@ classMethodTokens = [Lexer.Token.CLASS,
                     Lexer.Token.INTEGER_LITERAL 1,
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.RIGHT_BRACE,
+                    Lexer.Token.PUBLIC,
+                    Lexer.Token.STATIC,
                     Lexer.Token.INTEGER,
                     Lexer.Token.IDENTIFIER "returnInt",
                     Lexer.Token.LEFT_PARANTHESES,
@@ -28,6 +32,7 @@ classMethodTokens = [Lexer.Token.CLASS,
                     Lexer.Token.IDENTIFIER "x",
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.RIGHT_BRACE,
+                    Lexer.Token.PRIVATE,
                     Lexer.Token.INTEGER,
                     Lexer.Token.IDENTIFIER "doStuff",
                     Lexer.Token.LEFT_PARANTHESES,

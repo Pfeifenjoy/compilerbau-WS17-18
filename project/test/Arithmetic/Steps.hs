@@ -1,9 +1,9 @@
 module Arithmetic.Steps where
 
-import Lexer.Token
+import           Lexer.Token
 
-arithmeticTokens = [Lexer.Token.CLASS, 
-                        Lexer.Token.IDENTIFIER "Arithmetic", 
+arithmeticTokens = [Lexer.Token.CLASS,
+                        Lexer.Token.IDENTIFIER "Arithmetic",
                         Lexer.Token.LEFT_BRACE,
                         Lexer.Token.INTEGER,
                         Lexer.Token.IDENTIFIER "i",
@@ -41,7 +41,7 @@ arithmeticTokens = [Lexer.Token.CLASS,
                         Lexer.Token.INTEGER_LITERAL 3,
                         Lexer.Token.SEMICOLON,
                         Lexer.Token.IDENTIFIER "i",
-                        Lexer.Token.INCREMENT, 
+                        Lexer.Token.INCREMENT,
                         Lexer.Token.SEMICOLON,
                         Lexer.Token.IDENTIFIER "i",
                         Lexer.Token.DECREMENT,

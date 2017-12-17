@@ -61,7 +61,7 @@ instance Binary ClassFile where
                                 tamIf mapIf tamFd mapFd tamMth mapMth 
                                 tamAttr mapAttr
                  
-genMap str = fmap (HM.fromList . (map (first ((str ++) . show)) . zip  [1..])) . getMany
+genMap str = fmap (HM.fromList . map (first ((str ++) . show)) . zip  [1..]) . getMany
     
 
 instance Binary Magic where

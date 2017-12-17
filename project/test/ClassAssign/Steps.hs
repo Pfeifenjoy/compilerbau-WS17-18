@@ -1,8 +1,8 @@
 module ClassAssign.Steps where
 
-import Lexer.Token
+import           Lexer.Token
 
-classAssignTokens = [Lexer.Token.CLASS, 
+classAssignTokens = [Lexer.Token.CLASS,
                     Lexer.Token.IDENTIFIER "ClassAssign",
                     Lexer.Token.LEFT_BRACE,
                     Lexer.Token.INTEGER,

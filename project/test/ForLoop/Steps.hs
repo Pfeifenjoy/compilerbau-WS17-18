@@ -1,8 +1,8 @@
 module ForLoop.Steps where
 
-import Lexer.Token
+import           Lexer.Token
 
-forLoopTokens = [Lexer.Token.CLASS, 
+forLoopTokens = [Lexer.Token.CLASS,
                     Lexer.Token.IDENTIFIER "ForLoop",
                     Lexer.Token.LEFT_BRACE,
                     Lexer.Token.VOID,
@@ -27,7 +27,7 @@ forLoopTokens = [Lexer.Token.CLASS,
                     Lexer.Token.IDENTIFIER "i",
                     Lexer.Token.LESSER,
                     Lexer.Token.INTEGER_LITERAL 3,
-                    Lexer.Token.SEMICOLON, 
+                    Lexer.Token.SEMICOLON,
                     Lexer.Token.IDENTIFIER "i",
                     Lexer.Token.INCREMENT,
                     Lexer.Token.RIGHT_PARANTHESES,

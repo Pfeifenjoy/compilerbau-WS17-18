@@ -1,17 +1,16 @@
 class ClassMethod {
-	int i;
+	int i = null;
 
 	int getInt() {
 		return 1;
 	}
 
-	int returnInt(int x) {
+	public static int returnInt(int x) {
 		return x;
 	}
 
-	int doStuff() {
+	private int doStuff() {
 		return i;
 	}
-
 
 }
