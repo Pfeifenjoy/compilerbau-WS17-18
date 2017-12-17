@@ -181,7 +181,7 @@ Statement
 Expression
     : THIS                                  { This }
     | IDENTIFIER                            { LocalOrFieldVar $1 }
-    -- | Expression DOT IDENTIFIER        { InstVar $1 $3 }
+    | Expression DOT IDENTIFIER             { InstVar $1 $3 }
     -- Operators
     | NOT Expression                        { Unary "!" $2 }
     | Expression ADD Expression             { Binary "+" $1 $3 }
