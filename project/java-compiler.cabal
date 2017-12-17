@@ -16,7 +16,7 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Lexer, Lexer.Token, ABSTree
+  exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser
                        --, Codegen.Data.ClassFormat,
                        -- Codegen.Data.MethodFormat, Codegen.BinaryClass
   build-depends:       base <= 4.10.1 , array, hashtables

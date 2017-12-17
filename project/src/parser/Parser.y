@@ -109,7 +109,7 @@ import Data.Int
 %left BITWISE_OR
 %left BITWISE_AND
 %left EQUAL NOT_EQUAL
-%nonassoc LESSER GREATER LOWER_EQUAL LESSER_EQUAL INSTANCEOF
+%nonassoc LESSER GREATER LESSER_EQUAL GREATER_EQUAL INSTANCEOF
 %left SHIFTLEFT SHIFTRIGHT UNSIGNED_SHIFTRIGHT
 %left ADD SUBTRACT
 %left MULTIPLY DIVIDE MODULO
@@ -121,10 +121,15 @@ import Data.Int
 Program
     : Class                                 { [$1] }
     | Program Class                         { $1 ++ [$2] }
+    | Program SEMICOLON                     { $1 }
 
 SingleStatement
     : Statement SEMICOLON                   { $1 }
     | Block                                 { $1 }
+
+Block
+    : LEFT_BRACE RIGHT_BRACE                { Block [] }
+    | LEFT_BRACE Statements RIGHT_BRACE     { Block $2 }
 
 Statement
     : RETURN Expression                     { ABSTree.Return $2 }
@@ -164,8 +169,22 @@ Expression
     | Expression BITWISE_AND Expression     { Binary "&" $1 $3 }
     | Expression BITWISE_OR Expression      { Binary "|" $1 $3 }
     | Expression BITWISE_XOR Expression     { Binary "^" $1 $3 }
+    | INCREMENT Expression                  { StmtExprExpr $ Assign $2 $ Binary "+" $2 $ IntegerLiteral 1 }
+    | DECREMENT Expression                  { StmtExprExpr $ Assign $2 $ Binary "-" $2 $ IntegerLiteral 1 }
+    | Expression INCREMENT                  { StmtExprExpr $ LazyAssign $1 $ Binary "+" $1 $ IntegerLiteral 1 }
+    | Expression DECREMENT                  { StmtExprExpr $ LazyAssign $1 $ Binary "-" $1 $ IntegerLiteral 1 }
+    | Expression SHIFTLEFT Expression       { Binary "<<" $1 $3 }
+    | Expression SHIFTRIGHT Expression      { Binary ">>" $1 $3 }
+    | Expression UNSIGNED_SHIFTRIGHT
+        Expression                          { Binary ">>>" $1 $3 }
     | Expression QUESTIONMARK Expression
         COLON Expression                    { Ternary $1 $3 $5 }
+    | Expression EQUAL Expression           { Binary "==" $1 $3 }
+    | Expression NOT_EQUAL Expression       { Not $ Binary "==" $1 $3 }
+    | Expression LESSER Expression          { Binary "<" $1 $3 }
+    | Expression GREATER Expression         { Binary ">" $1 $3 }
+    | Expression LESSER_EQUAL Expression    { Binary "<=" $1 $3 }
+    | Expression GREATER_EQUAL Expression   { Binary ">=" $1 $3 }
     -- Paranthesis
     | LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { $2 }
@@ -185,18 +204,24 @@ Statements
     : SingleStatement                       { [$1] }
     | Statements SingleStatement            { $1 ++ [$2] }
 
-Block
-    : LEFT_BRACE RIGHT_BRACE                { Block [] }
-    | LEFT_BRACE Statements RIGHT_BRACE     { Block $2 }
-
 StatementExpression
     : Expression ASSIGN Expression          { Assign $1 $3 }
     | NEW IDENTIFIER LEFT_PARANTHESES
         Arguments RIGHT_PARANTHESES         { New $2 $4 }
-    | INCREMENT Expression                  { Assign $2 (Binary "+" $2 (IntegerLiteral 1)) }
-    | DECREMENT Expression                  { Assign $2 (Binary "-" $2 (IntegerLiteral 1)) }
-    | Expression INCREMENT                  { LazyAssign $1 (Binary "+" $1 (IntegerLiteral 1)) }
-    | Expression DECREMENT                  { LazyAssign $1 (Binary "-" $1 (IntegerLiteral 1)) }
+    | Expression ADD_ASSIGN Expression      { Assign $1 $ Binary "+" $1 $2 }
+    | Expression SUBTRACT_ASSIGN Expression { Assign $1 $ Binary "-" $1 $2 }
+    | Expression MULTIPLY_ASSIGN Expression { Assign $1 $ Binary "*" $1 $2 }
+    | Expression DIVIDE_ASSIGN Expression   { Assign $1 $ Binary "/" $1 $2 }
+    | Expression MODULO_ASSIGN Expression   { Assign $1 $ Binary "%" $1 $2 }
+    | Expression AND_ASSIGN Expression      { Assign $1 $ Binary "&" $1 $2 }
+    | Expression OR_ASSIGN Expression       { Assign $1 $ Binary "|" $1 $2 }
+    | Expression XOR_ASSIGN Expression      { Assign $1 $ Binary "^" $1 $2 }
+    | Expression SHIFTLEFT_ASSIGN Expression
+                                            { Assign $1 $ Binary "<<" $1 $2 }
+    | Expression SHIFTRIGHT_ASSIGN
+        Expression                          { Assign $1 $ Binary ">>" $1 $2 }
+    | Expression UNSIGNED_SHIFTRIGHT_ASSIGN
+        Expression                          { Assign $1 $ Binary ">>" $1 $2 }
     | Expression DOT IDENTIFIER
         LEFT_PARANTHESES Arguments
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
@@ -206,6 +231,7 @@ Type
     | BOOLEAN                               { "bool" }
     | CHARACTER                             { "char" }
     | INTEGER                               { "int" }
+    | VOID                                  { "void" }
 
 VariableDecl
     : Type IDENTIFIER                       { VariableDecl $1 $2 False }
