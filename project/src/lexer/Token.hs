@@ -71,6 +71,7 @@ data Token
      | ELSE
      | SWITCH
      | CASE
+     | FINALLY
      | QUESTIONMARK
      -- Class
      | CLASS

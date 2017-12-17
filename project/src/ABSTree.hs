@@ -44,7 +44,7 @@ data StmtExpr
     | TypedStmtExpr StmtExpr Type
     deriving(Eq, Show)
 
-data SwitchCase = Expr Stmt
+data SwitchCase = SwitchCase Expr [ Stmt ]
     deriving(Eq, Show)
 
 data Stmt
@@ -60,7 +60,7 @@ data Stmt
     | Continue
     -- Conditional Statements
     | If Expr Stmt (Maybe Stmt) -- condition, stmt, elseStmt
-    | Switch Expr [SwitchCase] (Maybe Stmt) -- variable, cases, finally
+    | Switch Expr [SwitchCase] (Maybe [Stmt]) -- variable, cases, finally
     -- other
     | LocalVarDecl VariableDecl
     | StmtExprStmt StmtExpr

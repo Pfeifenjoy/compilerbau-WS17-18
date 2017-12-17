@@ -76,6 +76,7 @@ import Data.Int
     ELSE                                { ELSE }
     SWITCH                              { SWITCH }
     CASE                                { CASE }
+    FINALLY                             { FINALLY }
     QUESTIONMARK                        { QUESTIONMARK }
     -- Class
     CLASS                               { CLASS }
@@ -126,10 +127,33 @@ Program
 SingleStatement
     : Statement SEMICOLON                   { $1 }
     | Block                                 { $1 }
+ 
+Statements
+    : SingleStatement                       { [$1] }
+    | Statements SingleStatement            { $1 ++ [$2] }
 
 Block
     : LEFT_BRACE RIGHT_BRACE                { Block [] }
     | LEFT_BRACE Statements RIGHT_BRACE     { Block $2 }
+
+SwitchCase
+    : CASE Expression COLON Statements      { SwitchCase $2 $4 }
+
+FinallyCase
+    : FINALLY Statements                    { $2 }
+
+SwitchCases
+    : SwitchCase                            { [$1] }
+    | SwitchCases SwitchCase                { $1 ++ [$2] }
+
+Switch
+    : SWITCH Expression
+        LEFT_BRACE SwitchCases RIGHT_BRACE  { Switch $2 $4 Nothing }
+    | SWITCH Expression
+        LEFT_BRACE
+            SwitchCases
+            FinallyCase
+        RIGHT_BRACE                         { Switch $2 $4 $ Just $5 }
 
 Statement
     : RETURN Expression                     { ABSTree.Return $2 }
@@ -149,7 +173,8 @@ Statement
         SingleStatement ELSE SingleStatement
                                             { If $3 $5 (Just $7) }
     | IF LEFT_PARANTHESES Expression
-        RIGHT_PARANTHESES SingleStatement       { If $3 $5 Nothing }
+        RIGHT_PARANTHESES SingleStatement   { If $3 $5 Nothing }
+    | Switch                                { $1 }
     | StatementExpression                   { StmtExprStmt $1 }
 
 
@@ -180,11 +205,12 @@ Expression
     | Expression QUESTIONMARK Expression
         COLON Expression                    { Ternary $1 $3 $5 }
     | Expression EQUAL Expression           { Binary "==" $1 $3 }
-    | Expression NOT_EQUAL Expression       { Not $ Binary "==" $1 $3 }
+    | Expression NOT_EQUAL Expression       { Unary "!" $ Binary "==" $1 $3 }
     | Expression LESSER Expression          { Binary "<" $1 $3 }
     | Expression GREATER Expression         { Binary ">" $1 $3 }
     | Expression LESSER_EQUAL Expression    { Binary "<=" $1 $3 }
     | Expression GREATER_EQUAL Expression   { Binary ">=" $1 $3 }
+    | Expression INSTANCEOF Type            { InstanceOf $1 $3 }
     -- Paranthesis
     | LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { $2 }
@@ -199,29 +225,25 @@ Arguments
     :                                       { [] }
     | Expression                            { [$1] }
     | Arguments COMMA Expression            { $1 ++ [$3] }
- 
-Statements
-    : SingleStatement                       { [$1] }
-    | Statements SingleStatement            { $1 ++ [$2] }
 
 StatementExpression
     : Expression ASSIGN Expression          { Assign $1 $3 }
     | NEW IDENTIFIER LEFT_PARANTHESES
         Arguments RIGHT_PARANTHESES         { New $2 $4 }
-    | Expression ADD_ASSIGN Expression      { Assign $1 $ Binary "+" $1 $2 }
-    | Expression SUBTRACT_ASSIGN Expression { Assign $1 $ Binary "-" $1 $2 }
-    | Expression MULTIPLY_ASSIGN Expression { Assign $1 $ Binary "*" $1 $2 }
-    | Expression DIVIDE_ASSIGN Expression   { Assign $1 $ Binary "/" $1 $2 }
-    | Expression MODULO_ASSIGN Expression   { Assign $1 $ Binary "%" $1 $2 }
-    | Expression AND_ASSIGN Expression      { Assign $1 $ Binary "&" $1 $2 }
-    | Expression OR_ASSIGN Expression       { Assign $1 $ Binary "|" $1 $2 }
-    | Expression XOR_ASSIGN Expression      { Assign $1 $ Binary "^" $1 $2 }
+    | Expression ADD_ASSIGN Expression      { Assign $1 $ Binary "+" $1 $3 }
+    | Expression SUBTRACT_ASSIGN Expression { Assign $1 $ Binary "-" $1 $3 }
+    | Expression MULTIPLY_ASSIGN Expression { Assign $1 $ Binary "*" $1 $3 }
+    | Expression DIVIDE_ASSIGN Expression   { Assign $1 $ Binary "/" $1 $3 }
+    | Expression MODULO_ASSIGN Expression   { Assign $1 $ Binary "%" $1 $3 }
+    | Expression AND_ASSIGN Expression      { Assign $1 $ Binary "&" $1 $3 }
+    | Expression OR_ASSIGN Expression       { Assign $1 $ Binary "|" $1 $3 }
+    | Expression XOR_ASSIGN Expression      { Assign $1 $ Binary "^" $1 $3 }
     | Expression SHIFTLEFT_ASSIGN Expression
-                                            { Assign $1 $ Binary "<<" $1 $2 }
+                                            { Assign $1 $ Binary "<<" $1 $3 }
     | Expression SHIFTRIGHT_ASSIGN
-        Expression                          { Assign $1 $ Binary ">>" $1 $2 }
+        Expression                          { Assign $1 $ Binary ">>" $1 $3 }
     | Expression UNSIGNED_SHIFTRIGHT_ASSIGN
-        Expression                          { Assign $1 $ Binary ">>" $1 $2 }
+        Expression                          { Assign $1 $ Binary ">>" $1 $3 }
     | Expression DOT IDENTIFIER
         LEFT_PARANTHESES Arguments
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
