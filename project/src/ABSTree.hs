@@ -33,7 +33,7 @@ data Expr
     deriving(Eq, Show)
 
 data VariableDecl
-    = VariableDecl String Type Bool -- name, type, final
+    = VariableDecl String Type Bool (Maybe Expr) -- name, type, final, initial value
     deriving(Eq, Show)
 
 data StmtExpr
@@ -62,7 +62,7 @@ data Stmt
     | If Expr Stmt (Maybe Stmt) -- condition, stmt, elseStmt
     | Switch Expr [SwitchCase] (Maybe [Stmt]) -- variable, cases, finally
     -- other
-    | LocalVarDecl VariableDecl
+    | LocalVarDecls [VariableDecl]
     | StmtExprStmt StmtExpr
     | TypedStmt Stmt Type
     deriving(Eq, Show)
@@ -76,10 +76,12 @@ data Visibility
 
 -- Classes
 data FieldDecl
-    = FieldDecl VariableDecl Visibility Bool -- variable, private/protected, static
+    = FieldDecl [VariableDecl] Visibility Bool -- variable, private/protected, static
     deriving(Eq, Show)
 
-type ArgumentDecl = VariableDecl
+data ArgumentDecl
+    = ArgumentDecl String Type Bool -- name, type, final
+    deriving(Eq, Show)
 
 type ArgumentDecls = [ArgumentDecl]
 
