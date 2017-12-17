@@ -117,6 +117,8 @@ import Data.Int
 %left NOT
 %left DOT
 %nonassoc INCREMENT DECREMENT
+%nonassoc THEN
+%nonassoc ELSE
 %%
 
 Program
@@ -124,13 +126,30 @@ Program
     | Program Class                         { $1 ++ [$2] }
     | Program SEMICOLON                     { $1 }
 
-SingleStatement
-    : Statement SEMICOLON                   { $1 }
+Statement
+    : SingleStatement SEMICOLON             { $1 }
     | Block                                 { $1 }
+    | WHILE LEFT_PARANTHESES Expression
+        RIGHT_PARANTHESES Statement
+                                            { While $3 $5 }
+    | DO Statement WHILE
+        LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+                                            { DoWhile $5 $2 }
+    | FOR LEFT_PARANTHESES SingleStatement
+        SEMICOLON Expression SEMICOLON
+        SingleStatement RIGHT_PARANTHESES Statement
+                                            { For $3 $5 $7 $9 }
+    | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+        Statement ELSE Statement
+                                            { If $3 $5 (Just $7) }
+    | IF LEFT_PARANTHESES Expression
+        RIGHT_PARANTHESES Statement
+        %prec THEN                          { If $3 $5 Nothing }
+    | Switch                                { $1 }
  
 Statements
-    : SingleStatement                       { [$1] }
-    | Statements SingleStatement            { $1 ++ [$2] }
+    : Statement                       { [$1] }
+    | Statements Statement            { $1 ++ [$2] }
 
 Block
     : LEFT_BRACE RIGHT_BRACE                { Block [] }
@@ -177,26 +196,11 @@ VariableDecl
 LocalVariableDecl
     : VariableDecl                          { LocalVarDecls $1 }
 
-Statement
-    : RETURN Expression                     { ABSTree.Return $2 }
-    | WHILE LEFT_PARANTHESES Expression
-        RIGHT_PARANTHESES SingleStatement
-                                            { While $3 $5 }
-    | DO SingleStatement WHILE
-        LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-                                            { DoWhile $5 $2 }
-    | FOR LEFT_PARANTHESES Statement
-        SEMICOLON Expression SEMICOLON
-        Statement RIGHT_PARANTHESES SingleStatement
-                                            { For $3 $5 $7 $9 }
+SingleStatement
+    :                                       { Block [] }
+    | RETURN Expression                     { ABSTree.Return $2 }
     | BREAK                                 { Break }
     | CONTINUE                              { Continue }
-    | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-        SingleStatement ELSE SingleStatement
-                                            { If $3 $5 (Just $7) }
-    | IF LEFT_PARANTHESES Expression
-        RIGHT_PARANTHESES SingleStatement   { If $3 $5 Nothing }
-    | Switch                                { $1 }
     | LocalVariableDecl                     { $1 }
     | StatementExpression                   { StmtExprStmt $1 }
 
@@ -217,10 +221,6 @@ Expression
     | Expression BITWISE_AND Expression     { Binary "&" $1 $3 }
     | Expression BITWISE_OR Expression      { Binary "|" $1 $3 }
     | Expression BITWISE_XOR Expression     { Binary "^" $1 $3 }
-    | INCREMENT Expression                  { StmtExprExpr $ Assign $2 $ Binary "+" $2 $ IntegerLiteral 1 }
-    | DECREMENT Expression                  { StmtExprExpr $ Assign $2 $ Binary "-" $2 $ IntegerLiteral 1 }
-    | Expression INCREMENT                  { StmtExprExpr $ LazyAssign $1 $ Binary "+" $1 $ IntegerLiteral 1 }
-    | Expression DECREMENT                  { StmtExprExpr $ LazyAssign $1 $ Binary "-" $1 $ IntegerLiteral 1 }
     | Expression SHIFTLEFT Expression       { Binary "<<" $1 $3 }
     | Expression SHIFTRIGHT Expression      { Binary ">>" $1 $3 }
     | Expression UNSIGNED_SHIFTRIGHT
@@ -263,6 +263,10 @@ StatementExpression
     | Expression XOR_ASSIGN Expression      { Assign $1 $ Binary "^" $1 $3 }
     | Expression SHIFTLEFT_ASSIGN Expression
                                             { Assign $1 $ Binary "<<" $1 $3 }
+    | INCREMENT Expression                  { Assign $2 $ Binary "+" $2 $ IntegerLiteral 1 }
+    | DECREMENT Expression                  { Assign $2 $ Binary "-" $2 $ IntegerLiteral 1 }
+    | Expression INCREMENT                  { LazyAssign $1 $ Binary "+" $1 $ IntegerLiteral 1 }
+    | Expression DECREMENT                  { LazyAssign $1 $ Binary "-" $1 $ IntegerLiteral 1 }
     | Expression SHIFTRIGHT_ASSIGN
         Expression                          { Assign $1 $ Binary ">>" $1 $3 }
     | Expression UNSIGNED_SHIFTRIGHT_ASSIGN
@@ -331,7 +335,7 @@ Class
 
 {
 parseError :: [Lexer.Token.Token] -> a
-parseError (x:xs) = error ("Parse error " ++ (show x))
+parseError tokens = error ("Parse error " ++ (show tokens))
 
 prototypeVariableDecl :: VariableDecl -> (String, Maybe Expr) -> VariableDecl
 prototypeVariableDecl (VariableDecl _ t f _) (name, initial)
