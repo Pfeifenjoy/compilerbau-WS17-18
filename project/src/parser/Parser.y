@@ -115,7 +115,7 @@ import Data.Int
 %left MULTIPLY DIVIDE MODULO
 %left NOT
 %left DOT
-%nonassoc INCREMENT DECREMENT --todo postfix
+%nonassoc INCREMENT DECREMENT
 %%
 
 Program
@@ -166,8 +166,6 @@ Expression
     | Expression BITWISE_XOR Expression     { Binary "^" $1 $3 }
     | Expression QUESTIONMARK Expression
         COLON Expression                    { Ternary $1 $3 $5 }
-    | INCREMENT Expression                  { StmtExprExpr (Assign $2 (Binary "+" $2 (IntegerLiteral 1))) }
-    | DECREMENT Expression                  { StmtExprExpr (Assign $2 (Binary "-" $2 (IntegerLiteral 1))) }
     -- TODO back increment, back drecrement
     -- Paranthesis
     | LEFT_PARANTHESES Expression RIGHT_PARANTHESES
@@ -196,6 +194,10 @@ StatementExpression
     : Expression ASSIGN Expression          { Assign $1 $3 }
     | NEW IDENTIFIER LEFT_PARANTHESES
         Arguments RIGHT_PARANTHESES         { New $2 $4 }
+    | INCREMENT Expression                  { Assign $2 (Binary "+" $2 (IntegerLiteral 1)) }
+    | DECREMENT Expression                  { Assign $2 (Binary "-" $2 (IntegerLiteral 1)) }
+    | Expression INCREMENT                  { LazyAssign $1 (Binary "+" $1 (IntegerLiteral 1)) }
+    | Expression DECREMENT                  { LazyAssign $1 (Binary "-" $1 (IntegerLiteral 1)) }
     | Expression DOT IDENTIFIER
         LEFT_PARANTHESES Arguments
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }

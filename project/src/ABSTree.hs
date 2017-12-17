@@ -40,6 +40,7 @@ data StmtExpr
     = Assign Expr Expr
     | New Type [Expr] -- type, arguments
     | MethodCall Expr String [Expr]
+    | LazyAssign Expr Expr -- e.g. a++; -> a (a + 1)
     | TypedStmtExpr StmtExpr Type
     deriving(Eq, Show)
 
