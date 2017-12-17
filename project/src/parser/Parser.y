@@ -129,22 +129,22 @@ SingleStatement
 Statement
     : RETURN Expression                     { ABSTree.Return $2 }
     | WHILE LEFT_PARANTHESES Expression
-    RIGHT_PARANTHESES SingleStatement
+        RIGHT_PARANTHESES SingleStatement
                                             { While $3 $5 }
     | DO SingleStatement WHILE
-    LEFT_PARANTHESES Expression RIGHT_PARANTHESES
+        LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { DoWhile $5 $2 }
     | FOR LEFT_PARANTHESES Statement
-    SEMICOLON Expression SEMICOLON
-    Statement RIGHT_PARANTHESES SingleStatement
+        SEMICOLON Expression SEMICOLON
+        Statement RIGHT_PARANTHESES SingleStatement
                                             { For $3 $5 $7 $9 }
     | BREAK                                 { Break }
     | CONTINUE                              { Continue }
     | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-    SingleStatement ELSE SingleStatement
+        SingleStatement ELSE SingleStatement
                                             { If $3 $5 (Just $7) }
     | IF LEFT_PARANTHESES Expression
-    RIGHT_PARANTHESES SingleStatement       { If $3 $5 Nothing }
+        RIGHT_PARANTHESES SingleStatement       { If $3 $5 Nothing }
     | StatementExpression                   { StmtExprStmt $1 }
 
 
@@ -166,7 +166,6 @@ Expression
     | Expression BITWISE_XOR Expression     { Binary "^" $1 $3 }
     | Expression QUESTIONMARK Expression
         COLON Expression                    { Ternary $1 $3 $5 }
-    -- TODO back increment, back drecrement
     -- Paranthesis
     | LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { $2 }
