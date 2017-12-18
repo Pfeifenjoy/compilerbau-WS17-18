@@ -1,6 +1,7 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Codegen.Data.ClassFormat where
 
-{-# LANGUAGE DeriveGeneric #-}
 import GHC.Generics (Generic)
 import Data.Hashable
 import Data.Word
@@ -104,7 +105,7 @@ data CPInfo =
                 }
             deriving (Show,Eq,Generic)
 
-inctance Hashable CPInfo 
+instance Hashable CPInfo 
 
 showCPInfos :: [CPInfo] -> Int -> String
 showCPInfos [] n = ""

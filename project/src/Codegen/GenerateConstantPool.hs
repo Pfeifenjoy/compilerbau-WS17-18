@@ -65,12 +65,13 @@ generateStmt hm (If condExpr stmt Nothing ) index = undefined
 generateStmt hm (Switch varExprs [cases] (Just finalStmt) ) index = undefined 
 generateStmt hm (Switch varExprs [cases] Nothing ) index = undefined 
 -- other
-generateStmt hm (LocalVarDecl variableDecl) index = undefined 
+generateStmt hm (LocalVarDecls variableDecls) index = undefined 
 generateStmt hm (StmtExprStmt stmtExpr) index = undefined 
 generateStmt hm (TypedStmt stmt typ) index = undefined 
 
 generateStmtVariableDecl :: CPInfos -> VariableDecl -> Word8 -> (CPInfos,Word8)
-generateStmtVariableDecl hm (VariableDecl name typ final) index = undefined 
+generateStmtVariableDecl hm (VariableDecl name typ final (Just expr)) index = undefined 
+generateStmtVariableDecl hm (VariableDecl name typ final Nothing    ) index = undefined 
 
 generateStmtExpr :: CPInfos -> StmtExpr -> Word8 -> (CPInfos,Word8)
 generateStmtExpr hm (Assign expr1 expr2) index = undefined 
@@ -79,4 +80,4 @@ generateStmtExpr hm (MethodCall expr str exprs) index = undefined
 generateStmtExpr hm (TypedStmtExpr stmtExpr typ) index = undefined 
 
 generateStmtSwitchCase :: CPInfos -> SwitchCase -> Word8 -> (CPInfos,Word8)
-generateStmtSwitchCase hm (Expr stmt) index = undefined 
+generateStmtSwitchCase hm (SwitchCase expr stmts) index = undefined 
