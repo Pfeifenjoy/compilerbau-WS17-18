@@ -9,7 +9,8 @@ type LocVarTable = [(String, Type)]
 checkTypes :: [Class] -> [Class]
 checkTypes abs = []
 
--- TYPECHECK EXPRESSIONS
+-- TYPECHECK EXPRESSIONS:
+-------------------------
 typeCheckExpr :: Expr -> LocVarTable -> [Class] -> Expr
 -- handling literals 
 typeCheckExpr expr@(BooleanLiteral _) _ _ = TypedExpr expr "boolean"
@@ -83,13 +84,20 @@ typeCheckExpr (InstVar instanceExpr varName) tbl cls =
     in case classLookup instanceType cls of
         Nothing            -> error "..."
         Just instanceClass -> 
-            case classVarTypeLookup varName instanceClass of
+            case classFieldTypeLookup varName instanceClass of
                 Nothing          -> error "..."
                 Just instVarType ->
                     TypedExpr (InstVar typedInstanceExpr varName) instVarType
-                                
--- handling Null
+-- handling statement expressions
+typeCheckExpr (StmtExprExpr stmtExpr) tbl cls = 
+    let typedStmtExpr = typeCheckStmtExpr stmtExpr tbl cls
+        stmtExprType = getTypeFromTypedStmtExpr typedStmtExpr
+    in TypedExpr (StmtExprExpr typedStmtExpr) stmtExprType                   
+-- handling null
 typeCheckExpr JNull _ _ = TypedExpr JNull "void"
+-- handling already type expressions
+typeCheckExpr (TypedExpr _ _) _ _ =
+    error "Trying to typecheck an already typechecked expression"
 
 -- TYPECHECKER EXPRESSION STATEMENTS
 typeCheckStmtExpr :: StmtExpr -> LocVarTable -> [Class] -> StmtExpr
@@ -106,10 +114,26 @@ classLookup _         []     = Nothing
 classLookup t (cl@(Class s _ _):cls) | t == s = Just cl
                                      | otherwise = classLookup t cls
 
--- lookup the type of a variable in a class
-classVarTypeLookup :: String -> Class -> Maybe Type
-classVarTypeLookup = undefined                                     
+-- lookup the type of a fieldname in a class
+classFieldTypeLookup :: String -> Class -> Maybe Type
+classFieldTypeLookup varName (Class _ fieldDecList _) =
+    let publicFieldDecList = filter (\(FieldDecl _ vis _) -> vis == Public) 
+                                    fieldDecList
+    in fieldDecListLookup $ publicFieldDecList
+    where
+        -- TODO: Multiple entries possible (???)
+        fieldDecListLookup [] = Nothing
+        fieldDecListLookup ((FieldDecl varDecList _ _):xs) =
+            case filter (\(VariableDecl fieldName _ _ _) -> fieldName == varName)
+                        varDecList
+            of
+                [(VariableDecl _ fieldType _ _)] -> Just fieldType 
+                _                                -> Nothing 
 
 -- extract type from typed expression
 getTypeFromTypedExpr :: Expr -> Type
 getTypeFromTypedExpr (TypedExpr _ exprType) = exprType
+
+-- extract type from type statement expression
+getTypeFromTypedStmtExpr :: StmtExpr -> Type
+getTypeFromTypedStmtExpr (TypedStmtExpr _ stmtExprType) = stmtExprType
