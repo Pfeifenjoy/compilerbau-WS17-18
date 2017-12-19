@@ -1,9 +1,10 @@
 module WhileLoop.Steps where
 
-import Lexer.Token
+import           ABSTree
+import           Lexer.Token
 
-whileLoopTokens = [Lexer.Token.CLASS, 
-                        Lexer.Token.IDENTIFIER "WhileLoop", 
+whileLoopTokens = [Lexer.Token.CLASS,
+                        Lexer.Token.IDENTIFIER "WhileLoop",
                         Lexer.Token.LEFT_BRACE,
                         Lexer.Token.VOID,
                         Lexer.Token.IDENTIFIER "doLoop",
@@ -21,7 +22,7 @@ whileLoopTokens = [Lexer.Token.CLASS,
                         Lexer.Token.RIGHT_PARANTHESES,
                         Lexer.Token.LEFT_BRACE,
                         Lexer.Token.IDENTIFIER "i",
-                        Lexer.Token.ASSIGN, 
+                        Lexer.Token.ASSIGN,
                         Lexer.Token.IDENTIFIER "i",
                         Lexer.Token.ADD,
                         Lexer.Token.INTEGER_LITERAL 1,
@@ -30,3 +31,13 @@ whileLoopTokens = [Lexer.Token.CLASS,
                         Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
+
+whileLoopABS = [Class "WhileLoop" []
+                [MethodDecl "doLoop" "void" []
+                    (Block [LocalVarDecls [VariableDecl "i" "int" False (Just (IntegerLiteral 0))],
+                            While (BooleanLiteral True)
+                                (Block [StmtExprStmt (Assign (LocalOrFieldVar "i") (Binary "+" (LocalOrFieldVar "i") (IntegerLiteral 1)))])
+                            ]
+                     ) Public False]
+               ]
+

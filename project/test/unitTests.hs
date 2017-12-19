@@ -15,7 +15,9 @@ import           Lexer
 import           Lexer.Token
 import           LocalVariable.Steps
 import           LogicOperations.Steps
+import           NewClass.Steps
 import           Parser
+import           ShortIf.Steps
 import           SimpleIf.Steps
 import           System.Directory
 import           System.IO.Unsafe
@@ -124,11 +126,13 @@ lexTests = [LexerUnit "EmptyClass" emptyTokens,
             LexerUnit "ForLoop" forLoopTokens,
             LexerUnit "LocalVariable" localVariableTokens,
             LexerUnit "SimpleIf" simpleIfTokens,
+            LexerUnit "ShortIf" shortIfTokens,
             LexerUnit "WhileLoop" whileLoopTokens,
             LexerUnit "WhileLoopCondition" whileLoopConditionTokens,
             LexerUnit "Arithmetic" arithmeticTokens,
             LexerUnit "LogicOperations" logicOperationsTokens,
-            LexerUnit "BitWiseOperation" bitWiseOperationTokens
+            LexerUnit "BitWiseOperation" bitWiseOperationTokens,
+            LexerUnit "NewClass" newClassTokens
            ]
 
 
@@ -136,7 +140,17 @@ parserTests :: [TestUnit]
 parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "InstanzVariable" instanzVariableABS,
                ParserUnit "ClassAssign" classAssignABS,
-               ParserUnit "Arithmetic" emptyABS
+               ParserUnit "ClassMethods" classMethodsABS,
+               ParserUnit "ForLoop" forLoopABS,
+               ParserUnit "LocalVariable" localVariableABS,
+               ParserUnit "SimpleIf" simpleIfABS,
+               ParserUnit "ShortIf" shortIfABS,
+               ParserUnit "WhileLoop" whileLoopABS,
+               ParserUnit "WhileLoopCondition" whileLoopConditionABS,
+               ParserUnit "Arithmetic" emptyABS,
+               ParserUnit "LogicOperations" logicOperationsABS,
+               ParserUnit "BitWiseOperation" bitWiseOperationABS,
+               ParserUnit "NewClass" newClassABS
                ]
 
 allTests :: [TestUnit]

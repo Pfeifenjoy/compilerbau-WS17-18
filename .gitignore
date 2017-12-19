@@ -264,4 +264,7 @@ TSWLatexianTemp*
 # Visio autosave temporary files
 *.~vsd*
 
+# nix files
+*.nix
+
 # End of https://www.gitignore.io/api/latex,haskell,microsoftoffice

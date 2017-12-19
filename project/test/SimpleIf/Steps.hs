@@ -1,10 +1,11 @@
 module SimpleIf.Steps where
 
-import Lexer.Token
+import           ABSTree
+import           Lexer.Token
 
-simpleIfTokens = [Lexer.Token.CLASS, 
-                        Lexer.Token.IDENTIFIER "SimpleIf", 
-                        Lexer.Token.LEFT_BRACE, 
+simpleIfTokens = [Lexer.Token.CLASS,
+                        Lexer.Token.IDENTIFIER "SimpleIf",
+                        Lexer.Token.LEFT_BRACE,
                         Lexer.Token.INTEGER,
                         Lexer.Token.IDENTIFIER "i",
                         Lexer.Token.SEMICOLON,
@@ -46,3 +47,22 @@ simpleIfTokens = [Lexer.Token.CLASS,
                         Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
+
+simpleIfABS = [Class "SimpleIf" [FieldDecl [VariableDecl "i" "int" False Nothing] Public False]
+               [MethodDecl "doIf" "void" []
+                   (Block [LocalVarDecls [VariableDecl "a" "int" False Nothing],
+                           StmtExprStmt (Assign (LocalOrFieldVar "a") (IntegerLiteral 5)),
+                           StmtExprStmt (Assign (LocalOrFieldVar "i") (IntegerLiteral 0)),
+                           If (Binary "<" (LocalOrFieldVar "a") (IntegerLiteral 5))
+                               (Block [StmtExprStmt (Assign (LocalOrFieldVar "i") (LocalOrFieldVar "a"))]
+                                )
+                               (Just (Block [StmtExprStmt (Assign (LocalOrFieldVar "i") (IntegerLiteral 2))]))]
+                  ) Public False
+                ]
+              ]
+
+
+
+
+
+

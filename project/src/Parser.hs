@@ -6,3 +6,4 @@ import Parser.Parser
 
 parse :: [Token] -> [Class]
 parse = Parser.Parser.parse
+

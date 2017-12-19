@@ -1,5 +1,6 @@
 module ForLoop.Steps where
 
+import           ABSTree
 import           Lexer.Token
 
 forLoopTokens = [Lexer.Token.CLASS,
@@ -42,5 +43,15 @@ forLoopTokens = [Lexer.Token.CLASS,
                     Lexer.Token.RIGHT_BRACE,
                     Lexer.Token.RIGHT_BRACE
                    ]
+
+forLoopABS = [Class "ForLoop"
+              []
+              [MethodDecl "doLoop" "void" []
+                  (Block [LocalVarDecls [VariableDecl "a" "int" False Nothing],
+                          StmtExprStmt (Assign (LocalOrFieldVar "a") (IntegerLiteral 0)),
+                          For (LocalVarDecls [VariableDecl "i" "int" False (Just (IntegerLiteral 0))]) (Binary "<" (LocalOrFieldVar "i") (IntegerLiteral 3)) (StmtExprStmt (LazyAssign (LocalOrFieldVar "i") (Binary "+" (LocalOrFieldVar "i") (IntegerLiteral 1))))
+                              (Block [StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "+" (LocalOrFieldVar "a") (LocalOrFieldVar "i")))])
+                          ]) Public False]
+             ]
 
 
