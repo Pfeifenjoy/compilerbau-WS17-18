@@ -33,4 +33,18 @@ logicOperationsTokens = [Lexer.Token.CLASS,
                         Lexer.Token.RIGHT_BRACE
                        ]
 
-
+logicOperationsABS = [Class "LogicOperations" []
+                      [MethodDecl "doStuff" "void" []
+                          (Block [LocalVarDecls [VariableDecl "i" "boolean" False
+                              (Just
+                                    (Binary "=="
+                                          (Binary "||"
+                                                (Binary "&&"
+                                                      (Unary "!" (BooleanLiteral True))
+                                                (BooleanLiteral False))
+                                                (BooleanLiteral False))
+                                          (Unary "!" (Binary "==" (BooleanLiteral False) (BooleanLiteral True)))))]
+                                 ]
+                           ) Public False
+                       ]
+                     ]

@@ -19,7 +19,7 @@ instanzVariableTokens = [Lexer.Token.CLASS,
 
 instanzVariableABS = [Class "InstanzVariable"
                       [FieldDecl [VariableDecl "i" "int" False Nothing] Public False,
-                       FieldDecl [VariableDecl "b" "bool" False Nothing] Public False,
+                       FieldDecl [VariableDecl "b" "boolean" False Nothing] Public False,
                        FieldDecl [VariableDecl "c" "char" False Nothing] Public False
                       ]
                       []]

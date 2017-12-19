@@ -142,7 +142,8 @@ parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "SimpleIf" simpleIfABS,
                ParserUnit "WhileLoop" whileLoopABS,
                ParserUnit "WhileLoopCondition" whileLoopConditionABS,
-               ParserUnit "Arithmetic" emptyABS
+               ParserUnit "Arithmetic" emptyABS,
+               ParserUnit "LogicOperations" logicOperationsABS
                ]
 
 allTests :: [TestUnit]
