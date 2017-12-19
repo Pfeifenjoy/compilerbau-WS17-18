@@ -1,5 +1,6 @@
 module BitWiseOperation.Steps where
 
+import           ABSTree
 import           Lexer.Token
 
 bitWiseOperationTokens = [Lexer.Token.CLASS,
@@ -59,5 +60,19 @@ bitWiseOperationTokens = [Lexer.Token.CLASS,
                         Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
+
+bitWiseOperationABS = [Class "BitWiseOperation" []
+                       [MethodDecl "doStuff" "void" []
+                           (Block [LocalVarDecls [VariableDecl "a" "int" False (Just (IntegerLiteral 1))],
+                                   LocalVarDecls [VariableDecl "b" "int" False (Just (IntegerLiteral 2))],
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "&" (LocalOrFieldVar "a") (LocalOrFieldVar "b"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "|" (LocalOrFieldVar "a") (LocalOrFieldVar "b"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "^" (LocalOrFieldVar "a") (LocalOrFieldVar "b"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "<<" (LocalOrFieldVar "a") (IntegerLiteral 2))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>" (LocalOrFieldVar "a") (IntegerLiteral 2))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>>" (LocalOrFieldVar "a") (IntegerLiteral 2)))
+                           ]) Public False
+                        ]
+                      ]
 
 
