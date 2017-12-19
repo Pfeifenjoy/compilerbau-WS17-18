@@ -5,6 +5,11 @@ import           Lexer.Token
 bitWiseOperationTokens = [Lexer.Token.CLASS,
                         Lexer.Token.IDENTIFIER "BitWiseOperation",
                         Lexer.Token.LEFT_BRACE,
+                        Lexer.Token.VOID,
+                        Lexer.Token.IDENTIFIER "doStuff",
+                        Lexer.Token.LEFT_PARANTHESES,
+                        Lexer.Token.RIGHT_PARANTHESES,
+                        Lexer.Token.LEFT_BRACE,
                         Lexer.Token.INTEGER,
                         Lexer.Token.IDENTIFIER "a",
                         Lexer.Token.ASSIGN,
@@ -51,6 +56,7 @@ bitWiseOperationTokens = [Lexer.Token.CLASS,
                         Lexer.Token.UNSIGNED_SHIFTRIGHT,
                         Lexer.Token.INTEGER_LITERAL 2,
                         Lexer.Token.SEMICOLON,
+                        Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
 

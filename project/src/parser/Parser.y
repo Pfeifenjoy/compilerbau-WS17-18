@@ -277,7 +277,7 @@ StatementExpression
 
 Type
     : IDENTIFIER                            { $1 }
-    | BOOLEAN                               { "bool" }
+    | BOOLEAN                               { "boolean" }
     | CHARACTER                             { "char" }
     | INTEGER                               { "int" }
     | VOID                                  { "void" }

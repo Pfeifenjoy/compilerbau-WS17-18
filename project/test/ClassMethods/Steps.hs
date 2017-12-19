@@ -1,5 +1,6 @@
 module ClassMethods.Steps where
 
+import           ABSTree
 import           Lexer.Token
 
 classMethodTokens = [Lexer.Token.CLASS,
@@ -46,3 +47,13 @@ classMethodTokens = [Lexer.Token.CLASS,
                    ]
 
 
+classMethodsABS = [Class "ClassMethod"
+                   [FieldDecl [VariableDecl "i" "int" False (Just JNull)] Public False]
+                   [MethodDecl "getInt" "int" []
+                       (Block [Return (IntegerLiteral 1)]) Public False,
+                    MethodDecl "returnInt" "int" [ArgumentDecl "x" "int" False]
+                        (Block [Return (LocalOrFieldVar "x")]) Public True,
+                    MethodDecl "doStuff" "int" []
+                        (Block [Return (LocalOrFieldVar "i")]) Private False
+                   ]
+                  ]

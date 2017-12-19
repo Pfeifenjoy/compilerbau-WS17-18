@@ -1,3 +1,6 @@
 class LogicOperations {
-	boolean i = (!true && false || false) == (false != true);
+
+	void doStuff() {
+		boolean i = (!true && false || false) == (false != true);
+	}
 }
