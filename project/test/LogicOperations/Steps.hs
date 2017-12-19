@@ -1,9 +1,15 @@
 module LogicOperations.Steps where
 
-import Lexer.Token
+import           ABSTree
+import           Lexer.Token
 
-logicOperationsTokens = [Lexer.Token.CLASS, 
-                        Lexer.Token.IDENTIFIER "LogicOperations", 
+logicOperationsTokens = [Lexer.Token.CLASS,
+                        Lexer.Token.IDENTIFIER "LogicOperations",
+                        Lexer.Token.LEFT_BRACE,
+                        Lexer.Token.VOID,
+                        Lexer.Token.IDENTIFIER "doStuff",
+                        Lexer.Token.LEFT_PARANTHESES,
+                        Lexer.Token.RIGHT_PARANTHESES,
                         Lexer.Token.LEFT_BRACE,
                         Lexer.Token.BOOLEAN,
                         Lexer.Token.IDENTIFIER "i",
@@ -23,5 +29,8 @@ logicOperationsTokens = [Lexer.Token.CLASS,
                         Lexer.Token.BOOLEAN_LITERAL True,
                         Lexer.Token.RIGHT_PARANTHESES,
                         Lexer.Token.SEMICOLON,
+                        Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
+
+

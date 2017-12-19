@@ -136,6 +136,12 @@ parserTests :: [TestUnit]
 parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "InstanzVariable" instanzVariableABS,
                ParserUnit "ClassAssign" classAssignABS,
+               ParserUnit "ClassMethods" classMethodsABS,
+               ParserUnit "ForLoop" forLoopABS,
+               ParserUnit "LocalVariable" localVariableABS,
+               ParserUnit "SimpleIf" simpleIfABS,
+               ParserUnit "WhileLoop" whileLoopABS,
+               ParserUnit "WhileLoopCondition" whileLoopConditionABS,
                ParserUnit "Arithmetic" emptyABS
                ]
 
