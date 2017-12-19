@@ -1,12 +1,8 @@
-dist: trusty
-sudo: false
 ghc:
-    - "8.0"
+    - "7.10"
+    - "7.8"
+    - "7.6"
+env:
+    - PACKAGEDIR="project"
 
-os:
-    - linux
-    - osx
-
-script:
-    - pushd project
-    - cabal install --only-dependencies --enable-tests && cabal build && cabal test
+before_install: cd ${PACKAGEDIR}
