@@ -1,10 +1,14 @@
 language: haskell
 
 ghc:
-    - "7.10"
-    - "7.8"
-    - "7.6"
+    - "8.0"
 env:
     - PACKAGEDIR="project"
 
 before_install: cd ${PACKAGEDIR}
+
+install:
+    - cabal install --only-dependencies --enable-tests
+
+script:
+    - cabal configure --enable-tests && cabal build && cabal test --show-details
