@@ -1,4 +1,4 @@
-module Data.MethodFormat (
+module Codegen.Data.MethodFormat (
 ) where
 import Data.Word
 import qualified Data.ByteString.Lazy as BS

@@ -1,4 +1,4 @@
-module GenerateConstantPool where 
+module Codegen.GenerateConstantPool where 
 import Codegen.Data.ClassFormat
 import ABSTree
 import Data.Word
