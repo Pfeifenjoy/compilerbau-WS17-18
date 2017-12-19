@@ -8,7 +8,9 @@ env:
 before_install: cd ${PACKAGEDIR}
 
 install:
+    - cabal install alex
+    - cabal install happy
     - cabal install --enable-tests
 
 script:
-    - cabal install alex && cabal install happy && cabal configure --enable-tests && cabal build && cabal test --show-details
+    - cabal configure --enable-tests && cabal build && cabal test --show-details
