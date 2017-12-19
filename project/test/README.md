@@ -21,3 +21,7 @@ Die Struktur ist wie folgt (Ordnername):
 | ForLoop            |  0                |  1         | Einfache ForLoop mit einfachem Body                             |
 
 **ToDo:** Testfunktionalität für einfachen Vergleich zwischen Compilter-Ergebnis und händischem Ergebnis
+
+# Running tests
+
+Entweder per ``` cabal repl test-core ``` in die test repl und dort main ausführen, oder ```cabal test --show-details``` für ausführliche Tests (inklusive Ausgabe) (im project Verzeichnis).

@@ -2,8 +2,8 @@ module Parser where
 
 import ABSTree
 import Lexer.Token
--- import Parser.Parser
+import Parser.Parser
 
 parse :: [Token] -> [Class]
--- parse = Parser.Parser.parse
-parse _ = []
+parse = Parser.Parser.parse
+
