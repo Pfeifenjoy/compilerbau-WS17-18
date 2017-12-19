@@ -6,3 +6,7 @@ ghc:
 os:
     - linux
     - osx
+
+script:
+    - pushd project
+    - cabal install --only-dependencies --enable-tests && cabal build && cabal test
