@@ -20,12 +20,14 @@ data TestUnit = LexerUnit String [Token] -- TestName, TestTokens
               | ParserUnit String [Class] -- Testname, TestClasses, fromTokens
                 deriving(Eq, Show)
 
+-- Some colors for pretty output
 data Color
     = Green
     | Purple
     | Blue
     | Red
 
+-- Take a color and a string to get the string in the given color
 color :: Color -> String -> String
 color Green text  = "\x1b[32m" ++ text ++ "\x1b[0m"
 color Purple text = "\x1b[35m" ++ text ++ "\x1b[0m"
