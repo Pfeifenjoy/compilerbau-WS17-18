@@ -33,6 +33,11 @@ newClassTokens = [Lexer.Token.CLASS,
                   Lexer.Token.DOT,
                   Lexer.Token.IDENTIFIER "a",
                   Lexer.Token.SEMICOLON,
+                  Lexer.Token.IDENTIFIER "A",
+                  Lexer.Token.IDENTIFIER "c",
+                  Lexer.Token.ASSIGN,
+                  Lexer.Token.JNULL,
+                  Lexer.Token.SEMICOLON,
                   Lexer.Token.RIGHT_BRACE,
                   Lexer.Token.RIGHT_BRACE
                  ]
@@ -40,7 +45,8 @@ newClassTokens = [Lexer.Token.CLASS,
 newClassABS = [Class "A" [FieldDecl [VariableDecl "a" "int" False Nothing] Public False] [],
                Class "B" [] [MethodDecl "doStuff" "void" []
                                  (Block [LocalVarDecls [VariableDecl "a" "A" False (Just (StmtExprExpr (New "A" [])))],
-                                         LocalVarDecls [VariableDecl "b" "int" False (Just (InstVar (LocalOrFieldVar "a") "a"))]
+                                         LocalVarDecls [VariableDecl "b" "int" False (Just (InstVar (LocalOrFieldVar "a") "a"))],
+                                         LocalVarDecls [VariableDecl "c" "A" False (Just JNull)]
                                  ]) Public False
                             ]
               ]
