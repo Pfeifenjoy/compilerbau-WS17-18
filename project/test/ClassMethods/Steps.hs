@@ -9,7 +9,7 @@ classMethodTokens = [Lexer.Token.CLASS,
                     Lexer.Token.INTEGER,
                     Lexer.Token.IDENTIFIER "i",
                     Lexer.Token.ASSIGN,
-                    Lexer.Token.JNULL,
+                    Lexer.Token.INTEGER_LITERAL 0,
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.INTEGER,
                     Lexer.Token.IDENTIFIER "getInt",
@@ -40,6 +40,8 @@ classMethodTokens = [Lexer.Token.CLASS,
                     Lexer.Token.RIGHT_PARANTHESES,
                     Lexer.Token.LEFT_BRACE,
                     Lexer.Token.RETURN,
+                    Lexer.Token.THIS,
+                    Lexer.Token.DOT,
                     Lexer.Token.IDENTIFIER "i",
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.RIGHT_BRACE,
@@ -48,12 +50,12 @@ classMethodTokens = [Lexer.Token.CLASS,
 
 
 classMethodsABS = [Class "ClassMethod"
-                   [FieldDecl [VariableDecl "i" "int" False (Just JNull)] Public False]
+                   [FieldDecl [VariableDecl "i" "int" False (Just (IntegerLiteral 0))] Public False]
                    [MethodDecl "getInt" "int" []
                        (Block [Return (IntegerLiteral 1)]) Public False,
                     MethodDecl "returnInt" "int" [ArgumentDecl "x" "int" False]
                         (Block [Return (LocalOrFieldVar "x")]) Public True,
                     MethodDecl "doStuff" "int" []
-                        (Block [Return (LocalOrFieldVar "i")]) Private False
+                        (Block [Return (InstVar This "i")]) Private False
                    ]
                   ]

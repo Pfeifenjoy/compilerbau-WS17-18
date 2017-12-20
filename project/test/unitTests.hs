@@ -8,6 +8,7 @@ import           ClassMethods.Steps
 import           Control.Exception
 import           Control.Monad
 import           Data.List
+import           DoWhile.Steps
 import           EmptyClass.Steps
 import           ForLoop.Steps
 import           InstanzVariable.Steps
@@ -19,11 +20,11 @@ import           NewClass.Steps
 import           Parser
 import           ShortIf.Steps
 import           SimpleIf.Steps
+import           SwitchCase.Steps
 import           System.Directory
 import           System.IO.Unsafe
 import           WhileLoop.Steps
 import           WhileLoopCondition.Steps
-
 
 data TestUnit = LexerUnit String [Token] -- TestName, TestTokens
               | ParserUnit String [Class] -- Testname, TestClasses, fromTokens
@@ -127,8 +128,10 @@ lexTests = [LexerUnit "EmptyClass" emptyTokens,
             LexerUnit "LocalVariable" localVariableTokens,
             LexerUnit "SimpleIf" simpleIfTokens,
             LexerUnit "ShortIf" shortIfTokens,
+            LexerUnit "SwitchCase" switchCaseTokens,
             LexerUnit "WhileLoop" whileLoopTokens,
             LexerUnit "WhileLoopCondition" whileLoopConditionTokens,
+            LexerUnit "DoWhile" doWhileTokens,
             LexerUnit "Arithmetic" arithmeticTokens,
             LexerUnit "LogicOperations" logicOperationsTokens,
             LexerUnit "BitWiseOperation" bitWiseOperationTokens,
@@ -145,8 +148,10 @@ parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "LocalVariable" localVariableABS,
                ParserUnit "SimpleIf" simpleIfABS,
                ParserUnit "ShortIf" shortIfABS,
+               ParserUnit "SwitchCase" switchCaseABS,
                ParserUnit "WhileLoop" whileLoopABS,
                ParserUnit "WhileLoopCondition" whileLoopConditionABS,
+               ParserUnit "DoWhile" doWhileABS,
                ParserUnit "Arithmetic" emptyABS,
                ParserUnit "LogicOperations" logicOperationsABS,
                ParserUnit "BitWiseOperation" bitWiseOperationABS,

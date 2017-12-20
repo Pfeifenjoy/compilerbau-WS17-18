@@ -1,5 +1,5 @@
 class ClassMethod {
-	int i = null;
+	int i = 0;
 
 	int getInt() {
 		return 1;
@@ -10,7 +10,7 @@ class ClassMethod {
 	}
 
 	private int doStuff() {
-		return i;
+		return this.i;
 	}
 
 }
