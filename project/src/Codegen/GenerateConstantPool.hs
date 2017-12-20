@@ -6,23 +6,56 @@ import Prelude hiding ((!))
 import qualified Data.HashMap.Lazy as HM
 import Data.HashMap.Lazy ((!))
 
-generateUTF8 :: CPInfos -> String -> Word8 -> (CPInfos,Word8)
-generateUTF8 hm str index = (newHM , newHM ! utf8info)
+generateUTF8 :: CPInfos -- ^ current ConstantPool
+             -> String -- ^ string to insert in the ConstantPool
+             -> Word8 -- ^ current highest index in ConstantPool
+             -> (CPInfos -- ^ new ConstantPool
+                ,Word8 -- ^ location of String in ConstantPool
+                ,Word8) -- ^ new highest index in ConstantPool 
+generateUTF8 hm str index = (newHM , newHM ! utf8info, newIndex)
   where
     utf8info = Utf8Info { tamCp = length str
                         , cadCp = str
                         , desc  = ""
                         }
     newHM = HM.insert utf8info (index+1) hm
+    newIndex = max (newHM ! utf8info) index
 
-generateExpr :: CPInfos -> Expr -> Word8 -> (CPInfos,Word8)
-generateExpr hm This index = (newHM ,newHM ! clInfo)
+generateNameAndType :: CPInfos -- ^ current ConstantPool
+                    -> String -- ^ name of the variable 
+                    -> Type -- ^ type of the variable 
+                    -> Word8 -- ^ current highest index in ConstantPool
+                    -> (CPInfos -- ^ new ConstantPool
+                       ,Word8 -- ^ location of String in ConstantPool
+                       ,Word8) -- ^ new highest index in ConstantPool 
+generateNameAndType hm name typ index = (newHM
+                                        , newHM ! nameTypeInfo
+                                        , newIndex
+                                        )
+  where
+    nameTypeInfo = NameAndTypeInfo { indexNameCp = indexName
+                                   , indexTypeCp = indexType
+                                   , desc        = ""
+                                   } 
+    newHM = HM.insert nameTypeInfo (newIndex+1) hm''
+    (hm',indexName,maxIndex') = generateUTF8 hm name index
+    (hm'',indexType,maxIndex'') = generateUTF8 hm' typ $ index + 1
+    newIndex = maximum [index, newHM ! nameTypeInfo , maxIndex', maxIndex'']
+
+generateExpr :: CPInfos -- ^ current ConstantPool
+             -> Expr 
+             -> Word8 -- ^ current highest index in ConstantPool
+             -> (CPInfos -- ^ new ConstantPool
+                ,Word8 -- ^ location of String in ConstantPool
+                ,Word8) -- ^ new highest index in ConstantPool 
+generateExpr hm This index = (newHM ,newHM ! clInfo, newIndex)
   where
     clInfo = ClassInfo { indexCp = indexName 
                        , desc = ""
                        }
-    newHM = HM.insert clInfo (index+1) hm
-    (hm',indexName) = generateUTF8 hm "This" index
+    newHM = HM.insert clInfo (index+1) hm'
+    (hm',indexName,maxIndex) = generateUTF8 hm "This" index
+    newIndex = maximum [index, newHM ! clInfo, maxIndex]
                                            
 -- generate Super 
 -- variables
@@ -47,6 +80,7 @@ generateExpr hm JNull index = undefined
     -- other
 generateExpr hm (StmtExprExpr stmtExpr) index = undefined 
 generateExpr hm (TypedExpr expr _ ) index = undefined 
+generateExpt hm _ index = (hm,index)
 
 
 generateStmt :: CPInfos -> Stmt -> Word8 -> (CPInfos,Word8)

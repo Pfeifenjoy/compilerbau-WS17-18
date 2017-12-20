@@ -95,7 +95,7 @@ data CPInfo =
                 }
         | NameAndTypeInfo 
                 { indexNameCp           :: IndexConstantPool
-                , indexDescrCp          :: IndexConstantPool
+                , indexTypeCp           :: IndexConstantPool
                 , desc                  :: String -- comment in Bytcode
                 }
         | Utf8Info 
