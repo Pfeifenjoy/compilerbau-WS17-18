@@ -1,5 +1,7 @@
 # compilerbau-WS17-18
 
+[![Build Status](https://travis-ci.com/Pfeifenjoy/compilerbau-WS17-18.svg?token=FpJ5U6QQLsfb6qvQ5Fsg&branch=master)](https://travis-ci.com/Pfeifenjoy/compilerbau-WS17-18)
+
 *We're building a compiler. It'll compile things.*
 
 More specifically, this compiler will be able to translate a narrow subset of Java to JVM bytecode, taking a scenic tour through all the necessary steps in the form of multiple passes: lexing, parsing, typechecking, codegen'ing and serializing. TODO more prose?
