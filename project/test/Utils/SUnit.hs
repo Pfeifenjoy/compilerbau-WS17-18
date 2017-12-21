@@ -90,7 +90,7 @@ skipParameter :: Token -> Token
 skipParameter (IDENTIFIER _)        = IDENTIFIER ""
 skipParameter (BOOLEAN_LITERAL _)   = BOOLEAN_LITERAL True
 skipParameter (CHARACTER_LITERAL _) = CHARACTER_LITERAL 'a'
-skipParameter (INTEGER_LITERAL _)   = INTEGER_LITERAL 0
+skipParameter (INTEGER_LITERAL _)   = INTEGER_LITERAL 1
 skipParameter a                     = a
 
 tokenCovering :: [TestUnit] -> Int
@@ -100,6 +100,10 @@ tokenCovering a = length (nub (map skipParameter (foldr ((++) . getLexerRealToke
 intDivisionPercentage :: Int -> Int -> Int
 intDivisionPercentage a b = ceiling((fromIntegral a / fromIntegral b) * 100)
 
+missingTokens :: [Token] -> [TestUnit] -> [Token]
+missingTokens allTokens a = let unique_tokens = nub (map skipParameter (foldr ((++) . getLexerRealToken) [] a))
+                in
+                   allTokens \\ unique_tokens
 
 
 

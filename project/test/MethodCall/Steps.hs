@@ -3,6 +3,7 @@ module MethodCall.Steps where
 import           ABSTree
 import           Lexer.Token
 
+methodCallTokens :: [Token]
 methodCallTokens = [Lexer.Token.CLASS,
                     Lexer.Token.IDENTIFIER "B",
                     Lexer.Token.LEFT_BRACE,
@@ -43,6 +44,7 @@ methodCallTokens = [Lexer.Token.CLASS,
                     Lexer.Token.RIGHT_BRACE
                    ]
 
+methodCallABS :: [Class]
 methodCallABS = [Class "B" []
                  [MethodDecl "getInt" "int" []
                      (Block [Return (IntegerLiteral 1)

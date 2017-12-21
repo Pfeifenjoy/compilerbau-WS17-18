@@ -57,6 +57,26 @@ bitWiseOperationTokens = [Lexer.Token.CLASS,
                         Lexer.Token.UNSIGNED_SHIFTRIGHT,
                         Lexer.Token.INTEGER_LITERAL 2,
                         Lexer.Token.SEMICOLON,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.XOR_ASSIGN,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SEMICOLON,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.AND_ASSIGN,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SEMICOLON,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.OR_ASSIGN,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SEMICOLON,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SHIFTLEFT_ASSIGN,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SEMICOLON,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SHIFTRIGHT_ASSIGN,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SEMICOLON,
                         Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
@@ -70,7 +90,12 @@ bitWiseOperationABS = [Class "BitWiseOperation" []
                                    StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "^" (LocalOrFieldVar "a") (LocalOrFieldVar "b"))),
                                    StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "<<" (LocalOrFieldVar "a") (IntegerLiteral 2))),
                                    StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>" (LocalOrFieldVar "a") (IntegerLiteral 2))),
-                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>>" (LocalOrFieldVar "a") (IntegerLiteral 2)))
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>>" (LocalOrFieldVar "a") (IntegerLiteral 2))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "^" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "&" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "|" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "<<" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>" (LocalOrFieldVar "a") (LocalOrFieldVar "a")))
                            ]) Public False
                         ]
                       ]
