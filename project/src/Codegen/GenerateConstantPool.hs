@@ -77,13 +77,51 @@ generateInteger hm int index = (newHM , newHM ! intInfo, newIndex)
     newIndex = max (newHM ! intInfo) index
 
 -- | insert a float in the constant pool
-generateFloat = undefined
+generateFloat :: CPInfos -- ^ current constant pool
+              -> Float -- ^ Float to insert in the constant pool
+              -> Word8 -- ^ current highest index in constant pool
+              -> (CPInfos -- ^ new constant pool
+                 ,Word8 -- ^ location of int in constant pool
+                 ,Word8) -- ^ new highest index in constant pool 
+generateFloat hm float index = (newHM , newHM ! floatInfo, newIndex)
+  where
+    floatInfo = FloatInfo { numfCp = float 
+                          , desc  = ""
+                          }
+    newHM = HM.insert floatInfo (index+1) hm
+    newIndex = max (newHM ! floatInfo) index
 
 -- | insert a long in the constant pool
-generateLong = undefined
+generateLong :: CPInfos -- ^ current constant pool
+              -> (Int,Int) -- ^ Long to insert in the constant pool
+              -> Word8 -- ^ current highest index in constant pool
+              -> (CPInfos -- ^ new constant pool
+                 ,Word8 -- ^ location of int in constant pool
+                 ,Word8) -- ^ new highest index in constant pool 
+generateLong hm (int1,int2) index = (newHM , newHM ! longInfo, newIndex)
+  where
+    longInfo = LongInfo { numiL1Cp = int1 
+                        , numiL2Cp = int2 
+                        , desc  = ""
+                        }
+    newHM = HM.insert longInfo (index+1) hm
+    newIndex = max (newHM ! longInfo) index
 
 -- | insert a double in the constant pool
-generateDouble = undefined
+generateDouble :: CPInfos -- ^ current constant pool
+              -> (Int,Int) -- ^ Double to insert in the constant pool
+              -> Word8 -- ^ current highest index in constant pool
+              -> (CPInfos -- ^ new constant pool
+                 ,Word8 -- ^ location of int in constant pool
+                 ,Word8) -- ^ new highest index in constant pool 
+generateDouble hm (int1,int2) index = (newHM , newHM ! doubleInfo, newIndex)
+  where
+    doubleInfo = DoubleInfo { numiD1Cp = int1 
+                            , numiD2Cp = int2 
+                            , desc  = ""
+                            }
+    newHM = HM.insert doubleInfo (index+1) hm
+    newIndex = max (newHM ! doubleInfo) index
 
 -- | insert name and type
 generateNameAndType :: CPInfos -- ^ current constant pool
