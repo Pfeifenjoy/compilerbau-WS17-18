@@ -20,26 +20,23 @@ data TestUnit = LexerUnit String [Token] -- TestName, TestTokens
               | ParserUnit String [Class] -- Testname, TestClasses, fromTokens
                 deriving(Eq, Show)
 
+-- Some colors for pretty output
 data Color
     = Green
     | Purple
     | Blue
     | Red
 
+-- Take a color and a string to get the string in the given color
 color :: Color -> String -> String
 color Green text  = "\x1b[32m" ++ text ++ "\x1b[0m"
 color Purple text = "\x1b[35m" ++ text ++ "\x1b[0m"
 color Blue text   = "\x1b[36m" ++ text ++ "\x1b[0m"
 color Red text    = "\x1b[31m" ++ text ++ "\x1b[0m"
 
-getLexerName :: TestUnit -> String
-getLexerName (LexerUnit name testToken) = name
-
-getLexerTestToken :: TestUnit -> [Token]
-getLexerTestToken (LexerUnit name testToken) = testToken
-
 getLexerRealToken :: TestUnit -> [Token]
-getLexerRealToken (LexerUnit name testToken) = readTokens name
+getLexerRealToken (LexerUnit name _) = readTokens name
+getLexerRealToken _                  = []
 
 readTokens :: String -> [Token]
 readTokens s = Lexer.lex (unsafePerformIO . readFile $ ("./test/" ++ s ++ "/Class.java"))
@@ -48,14 +45,23 @@ runTest :: TestUnit -> IO Bool
 runTest (LexerUnit name expectedTokens) = do
                                               result <- try (evaluate (readTokens name)) :: IO (Either SomeException [Token])
                                               case result of
-                                                Left ex -> return False
+                                                Left _ -> return False
                                                 Right val -> return (val == expectedTokens)
 
 runTest (ParserUnit name expectedClass) = do
                                             result <- try (evaluate (Parser.parse (readTokens name))) :: IO (Either SomeException [Class])
                                             case result of
-                                              Left ex   -> return False
+                                              Left _   -> return False
                                               Right val -> return (val == expectedClass)
+
+testOutput :: (Eq a, Show a) => String -> String -> a -> a -> String
+testOutput step name expected got = let stepName = step ++ ": [" ++ name ++ "] "
+                                    in
+                                    if expected == got
+                                    then color Green (stepName ++  "passed")
+                                    else color Purple (stepName ++ "failed \n\t") ++
+                                    color Blue ("expected: " ++ show expected ++ "\n\t") ++
+                                    color Blue ("got: " ++ show got ++ " \n\t")
 
 
 evalTest :: TestUnit -> IO String
@@ -63,31 +69,13 @@ evalTest (LexerUnit name expectedTokens) = do
                                                result <- try (evaluate (readTokens name)) :: IO (Either SomeException [Token])
                                                case result of
                                                 Left ex ->  return (color Red ("Lexer: [" ++ name ++ "] failed with exception: ") ++ show ex)
-                                                Right lexerToken -> if lexerToken == expectedTokens
-                                                then
-                                                  return (color Green ("Lexer: [" ++ name ++ "] passed"))
-                                                else
-                                                  return (color Purple ("Lexer: [" ++ name ++ "] failed" ++ "\n\t") ++
-                                                          color Blue "expected:" ++ show expectedTokens ++ "\n\t" ++
-                                                          color Blue "got:" ++ show lexerToken ++ "\n\t" ++
-                                                          color Blue "difference:" ++ show (nub ((expectedTokens \\ lexerToken) ++ (lexerToken \\ expectedTokens))))
-
-
+                                                Right lexerToken -> return (testOutput "Lexer" name expectedTokens lexerToken)
 
 evalTest (ParserUnit name expectedClass) = do
                                                result <- try (evaluate (Parser.parse (readTokens name))) :: IO (Either SomeException [Class])
                                                case result of
                                                 Left ex ->  return (color Red ("Parser: [" ++ name ++ "] failed with exception: ")  ++ show ex)
-                                                Right parserClass -> if parserClass == expectedClass
-                                                then
-                                                  return (color Green ("Parser: [" ++ name ++ "] passed"))
-                                                else
-                                                  return (color Purple ("Parser: [" ++ name ++ "] failed" ++ "\n\t") ++
-                                                          color Blue "expected:" ++ show expectedClass ++ "\n\t" ++
-                                                          color Blue "got:" ++ show parserClass ++ "\n\t" ++
-                                                          color Blue "difference:" ++ show (nub ((expectedClass \\ parserClass) ++ (parserClass \\ expectedClass))))
-
-
+                                                Right parserClass -> return (testOutput "Parser" name expectedClass parserClass)
 runTests :: [TestUnit] -> [IO Bool]
 runTests = map runTest
 
@@ -95,15 +83,31 @@ evalTests :: [TestUnit] -> [IO String]
 evalTests = map evalTest
 
 numberOfSuccess :: [TestUnit] -> Int
-numberOfSuccess a = sum (map ((\ a -> if a then 1 else 0) . unsafePerformIO) (runTests a))
+numberOfSuccess a = sum (map ((\b -> if b then 1 else 0) . unsafePerformIO) (runTests a))
 
 -- used to replace multiple tokens with different parameters
 skipParameter :: Token -> Token
-skipParameter (IDENTIFIER s)        = IDENTIFIER ""
-skipParameter (BOOLEAN_LITERAL c)   = BOOLEAN_LITERAL True
-skipParameter (CHARACTER_LITERAL c) = CHARACTER_LITERAL 'a'
-skipParameter (INTEGER_LITERAL c)   = INTEGER_LITERAL 0
+skipParameter (IDENTIFIER _)        = IDENTIFIER ""
+skipParameter (BOOLEAN_LITERAL _)   = BOOLEAN_LITERAL True
+skipParameter (CHARACTER_LITERAL _) = CHARACTER_LITERAL 'a'
+skipParameter (INTEGER_LITERAL _)   = INTEGER_LITERAL 1
 skipParameter a                     = a
 
 tokenCovering :: [TestUnit] -> Int
 tokenCovering a = length (nub (map skipParameter (foldr ((++) . getLexerRealToken) [] a))) -- get unique tokens used
+
+-- define int by int division resulting in float
+intDivisionPercentage :: Int -> Int -> Int
+intDivisionPercentage a b = ceiling((fromIntegral a / fromIntegral b) * 100)
+
+missingTokens :: [Token] -> [TestUnit] -> [Token]
+missingTokens allTokens a = let unique_tokens = nub (map skipParameter (foldr ((++) . getLexerRealToken) [] a))
+                in
+                   allTokens \\ unique_tokens
+
+
+
+
+
+
+
