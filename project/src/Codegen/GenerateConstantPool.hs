@@ -14,13 +14,14 @@ Use this module to insert a constant in the constant pool
 -- | insert a class in the constant pool
 generateClass hm str index = undefined
 
+
 -- | insert a field variable in the constant pool
 generateFieldRef :: CPInfos -- ^ current constant pool
-                    -> Expr -- ^ field to insert in constant pool
-                    -> Word8 -- ^ current highest index in constant pool
-                    -> (CPInfos -- ^ new constant pool
-                       ,Word8 -- ^ location of field in constant pool
-                       ,Word8) -- ^ new highest index in constant pool 
+                 -> Expr -- ^ field to insert in constant pool
+                 -> Word8 -- ^ current highest index in constant pool
+                 -> (CPInfos -- ^ new constant pool
+                    ,Word8 -- ^ location of field in constant pool
+                    ,Word8) -- ^ new highest index in constant pool 
 generateFieldRef hm (TypedExpr (LocalOrFieldVar name) typ) index 
   = (newHM
     , newHM ! fieldRefInfo
@@ -31,19 +32,31 @@ generateFieldRef hm (TypedExpr (LocalOrFieldVar name) typ) index
                                 , indexNameandtypeCp = indexNameType
                                 , desc               = ""
                                 } 
-    newHM = HM.insert fieldRefInfo (newIndex+1) hm''
-    (hm',indexName,maxIndex') = generateClass hm name index
-    (hm'',indexNameType,maxIndex'') = generateNameAndType hm name typ index
-    newIndex = maximum [index, newHM ! fieldRefInfo 
-                       , maxIndex', maxIndex''
-                       ]
+    (newHM,indexName,indexNameType,newIndex) 
+       = generateVarMethod hm index name typ fieldRefInfo
 
 -- | insert a method in the constant pool
-generateStmtMehodRef hm (TypedStmtExpr (MethodCall expr str exprs) typ) index 
-   = undefined
+generateMethodRef :: CPInfos -- ^ current constant pool
+                  -> StmtExpr -- ^ method to insert in constant pool
+                  -> Word8 -- ^ current highest index in constant pool
+                  -> (CPInfos -- ^ new constant pool
+                     ,Word8 -- ^ location of field in constant pool
+                     ,Word8) -- ^ new highest index in constant pool 
+generateMethodRef hm (TypedStmtExpr (MethodCall _ name _) typ) index 
+  = (newHM
+    , newHM ! methodRefInfo
+    , newIndex
+    )
+  where
+    methodRefInfo = MethodRefInfo { indexNameCp        = indexName
+                                  , indexNameandtypeCp = indexNameType
+                                  , desc               = ""
+                                  } 
+    (newHM,indexName,indexNameType,newIndex) 
+       = generateVarMethod hm index name typ methodRefInfo
 
 -- | insert a interface in the constant pool
-generateInterfaceMethodRef = undefined
+generateInterfaceRef = undefined
 
 -- | insert a string in the constant pool
 generateString = undefined
@@ -113,3 +126,16 @@ generateUTF8 hm str index = (newHM , newHM ! utf8info, newIndex)
                         }
     newHM = HM.insert utf8info (index+1) hm
     newIndex = max (newHM ! utf8info) index
+
+-- helper functions
+
+generateVarMethod hm index name typ refInfo = 
+  (newHM, indexName, indexNameType, newIndex)
+    where
+      newHM = HM.insert refInfo (newIndex+1) hm''
+      -- Use "This" here because there is no information about the class
+      (hm',indexName,maxIndex') = generateClass hm "This" index
+      (hm'',indexNameType,maxIndex'') = generateNameAndType hm name typ index
+      newIndex = maximum [index, newHM ! refInfo 
+                       , maxIndex', maxIndex''
+                       ]
