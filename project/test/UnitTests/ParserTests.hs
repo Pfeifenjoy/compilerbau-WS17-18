@@ -6,6 +6,7 @@ import           ClassMethods.Steps
 import           DoWhile.Steps
 import           EmptyClass.Steps
 import           ForLoop.Steps
+import           InstanceOf.Steps
 import           InstanzVariable.Steps
 import           LocalVariable.Steps
 import           LogicOperations.Steps
@@ -33,5 +34,6 @@ parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "Arithmetic" emptyABS,
                ParserUnit "LogicOperations" logicOperationsABS,
                ParserUnit "BitWiseOperation" bitWiseOperationABS,
-               ParserUnit "NewClass" newClassABS
+               ParserUnit "NewClass" newClassABS,
+               ParserUnit "InstanceOf" instanceOfABS
                ]

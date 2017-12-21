@@ -95,3 +95,15 @@ skipParameter a                     = a
 
 tokenCovering :: [TestUnit] -> Int
 tokenCovering a = length (nub (map skipParameter (foldr ((++) . getLexerRealToken) [] a))) -- get unique tokens used
+
+-- define int by int division resulting in float
+intDivisionPercentage :: Int -> Int -> Int
+intDivisionPercentage a b = ceiling((fromIntegral a / fromIntegral b) * 100)
+
+
+
+
+
+
+
+

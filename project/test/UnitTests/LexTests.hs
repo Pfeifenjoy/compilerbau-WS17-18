@@ -7,9 +7,11 @@ import           ClassMethods.Steps
 import           DoWhile.Steps
 import           EmptyClass.Steps
 import           ForLoop.Steps
+import           InstanceOf.Steps
 import           InstanzVariable.Steps
 import           LocalVariable.Steps
 import           LogicOperations.Steps
+import           LogicOperations2.Steps
 import           NewClass.Steps
 import           ShortIf.Steps
 import           SimpleIf.Steps
@@ -33,6 +35,8 @@ lexTests = [LexerUnit "EmptyClass" emptyTokens,
             LexerUnit "DoWhile" doWhileTokens,
             LexerUnit "Arithmetic" arithmeticTokens,
             LexerUnit "LogicOperations" logicOperationsTokens,
+            LexerUnit "LogicOperations2" logicOperations2Tokens,
             LexerUnit "BitWiseOperation" bitWiseOperationTokens,
-            LexerUnit "NewClass" newClassTokens
+            LexerUnit "NewClass" newClassTokens,
+            LexerUnit "InstanceOf" instanceOfTokens
             ]
