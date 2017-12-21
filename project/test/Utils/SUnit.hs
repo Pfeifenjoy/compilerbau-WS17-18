@@ -16,8 +16,9 @@ all_tokens = [ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO, INCREMENT, DECREMENT, NOT
               SHIFTRIGHT_ASSIGN, UNSIGNED_SHIFTRIGHT_ASSIGN, BOOLEAN, CHARACTER, INTEGER, VOID, FOR, WHILE, DO, BREAK, CONTINUE, IF, ELSE, SWITCH, CASE, QUESTIONMARK, CLASS, NEW, PRIVATE, PUBLIC, STATIC, THIS, RETURN, BOOLEAN_LITERAL True, CHARACTER_LITERAL 'a',
               INTEGER_LITERAL 1, IDENTIFIER "", JNULL, INSTANCEOF, FINAL]
 
-data TestUnit = LexerUnit String [Token] -- TestName, TestTokens
+data TestUnit = LexerUnit String [Token]  -- TestName, TestTokens, Expected Exception
               | ParserUnit String [Class] -- Testname, TestClasses, fromTokens
+              | ParserException String [Class] -- Testname, TestClasses, expects exception
                 deriving(Eq, Show)
 
 -- Some colors for pretty output
@@ -54,6 +55,12 @@ runTest (ParserUnit name expectedClass) = do
                                               Left _   -> return False
                                               Right val -> return (val == expectedClass)
 
+runTest (ParserException name _) = do
+                                                  result <- try (evaluate (Parser.parse (readTokens name))) :: IO (Either SomeException [Class])
+                                                  case result of
+                                                    Left _  -> return True
+                                                    Right _ -> return False
+
 testOutput :: (Eq a, Show a) => String -> String -> a -> a -> String
 testOutput step name expected got = let stepName = step ++ ": [" ++ name ++ "] "
                                     in
@@ -76,6 +83,12 @@ evalTest (ParserUnit name expectedClass) = do
                                                case result of
                                                 Left ex ->  return (color Red ("Parser: [" ++ name ++ "] failed with exception: ")  ++ show ex)
                                                 Right parserClass -> return (testOutput "Parser" name expectedClass parserClass)
+
+evalTest (ParserException name _) = do
+                                        result <- try (evaluate (Parser.parse (readTokens name))) :: IO (Either SomeException [Class])
+                                        case result of
+                                          Left _ -> return (color Blue ("Parser: [" ++ name ++ "] passed with expected exception"))
+                                          Right _ -> return (color Red ("Parser [" ++ name ++ "] passed without exception, exception expected"))
 runTests :: [TestUnit] -> [IO Bool]
 runTests = map runTest
 
