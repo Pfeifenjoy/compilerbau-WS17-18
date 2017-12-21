@@ -116,8 +116,8 @@ intDivisionPercentage a b = ceiling((fromIntegral a / fromIntegral b) * 100)
 -- return missing tokens from testset, when allTokens are all possible tokens
 missingTokens :: [Token] -> [TestUnit] -> [Token]
 missingTokens allTokens a = let unique_tokens = nub (map skipParameter (foldr ((++) . getLexerRealToken) [] a))
-                in
-                   allTokens \\ unique_tokens
+                            in
+                              allTokens \\ unique_tokens
 
 
 
