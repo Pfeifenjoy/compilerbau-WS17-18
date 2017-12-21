@@ -12,6 +12,7 @@ import           InstanzVariable.Steps
 import           LocalVariable.Steps
 import           LogicOperations.Steps
 import           LogicOperations2.Steps
+import           MethodCall.Steps
 import           NewClass.Steps
 import           ShortIf.Steps
 import           SimpleIf.Steps
@@ -38,5 +39,6 @@ lexTests = [LexerUnit "EmptyClass" emptyTokens,
             LexerUnit "LogicOperations2" logicOperations2Tokens,
             LexerUnit "BitWiseOperation" bitWiseOperationTokens,
             LexerUnit "NewClass" newClassTokens,
-            LexerUnit "InstanceOf" instanceOfTokens
+            LexerUnit "InstanceOf" instanceOfTokens,
+            LexerUnit "MethodCall" methodCallTokens
             ]

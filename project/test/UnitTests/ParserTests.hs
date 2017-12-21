@@ -10,6 +10,7 @@ import           InstanceOf.Steps
 import           InstanzVariable.Steps
 import           LocalVariable.Steps
 import           LogicOperations.Steps
+import           MethodCall.Steps
 import           NewClass.Steps
 import           ShortIf.Steps
 import           SimpleIf.Steps
@@ -35,5 +36,6 @@ parserTests = [ParserUnit "EmptyClass" emptyABS,
                ParserUnit "LogicOperations" logicOperationsABS,
                ParserUnit "BitWiseOperation" bitWiseOperationABS,
                ParserUnit "NewClass" newClassABS,
-               ParserUnit "InstanceOf" instanceOfABS
+               ParserUnit "InstanceOf" instanceOfABS,
+               ParserUnit "MethodCall" methodCallABS
                ]
