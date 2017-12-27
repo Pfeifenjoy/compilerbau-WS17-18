@@ -2,6 +2,7 @@ module Codegen.GenerateConstantPool where
 import Codegen.Data.ClassFormat
 import ABSTree
 import Data.Word
+import Control.Lens
 import Prelude hiding ((!))
 import qualified Data.HashMap.Lazy as HM
 import Data.HashMap.Lazy ((!))
@@ -11,49 +12,44 @@ import Data.HashMap.Lazy ((!))
 Use this module to insert a constant in the constant pool
 
 -}
+
 -- | insert a class in the constant pool
-generateClass hm str index = undefined
+generateClass cl str = undefined
 
 
 -- | insert a field variable in the constant pool
-generateFieldRef :: CPInfos -- ^ current constant pool
+generateFieldRef :: ClassFile -- ^ Class with current constant pool
                  -> Expr -- ^ field to insert in constant pool
-                 -> Word8 -- ^ current highest index in constant pool
-                 -> (CPInfos -- ^ new constant pool
-                    ,Word8 -- ^ location of field in constant pool
-                    ,Word8) -- ^ new highest index in constant pool 
-generateFieldRef hm (TypedExpr (LocalOrFieldVar name) typ) index 
-  = (newHM
-    , newHM ! fieldRefInfo
-    , newIndex
-    )
-  where
-    fieldRefInfo = FieldRefInfo { indexNameCp        = indexName
-                                , indexNameandtypeCp = indexNameType
-                                , desc               = ""
-                                } 
-    (newHM,indexName,indexNameType,newIndex) 
-       = generateVarMethod hm index name typ fieldRefInfo
+                 -> (ClassFile -- ^ new constant pool
+                    ,Word8) -- ^ location of field in constant pool
+generateFieldRef cl (TypedExpr (LocalOrFieldVar name) typ)
+  = (countrCp +~ n $ newCl, loc)
+    where
+      loc = (newCl^.arrayCp) ! fieldRefInfo
+      n = if loc > newCl^.countrCp then 1 else 0
+      fieldRefInfo = FieldRefInfo { _indexNameCp        = indexName
+                                  , _indexNameandtypeCp = indexNameType
+                                  , _desc               = ""
+                                  } 
+      (newCl, indexName, indexNameType) 
+         = generateVarMethod cl name typ fieldRefInfo
 
 -- | insert a method in the constant pool
-generateMethodRef :: CPInfos -- ^ current constant pool
+generateMethodRef :: ClassFile -- ^ current constant pool
                   -> StmtExpr -- ^ method to insert in constant pool
-                  -> Word8 -- ^ current highest index in constant pool
-                  -> (CPInfos -- ^ new constant pool
-                     ,Word8 -- ^ location of field in constant pool
-                     ,Word8) -- ^ new highest index in constant pool 
-generateMethodRef hm (TypedStmtExpr (MethodCall _ name _) typ) index 
-  = (newHM
-    , newHM ! methodRefInfo
-    , newIndex
-    )
+                  -> (ClassFile -- ^ new constant pool
+                     ,Word8) -- ^ location of field in constant pool
+generateMethodRef cl (TypedStmtExpr (MethodCall _ name _) typ)
+  = (countrCp +~ n $ newCl, loc)
   where
-    methodRefInfo = MethodRefInfo { indexNameCp        = indexName
-                                  , indexNameandtypeCp = indexNameType
-                                  , desc               = ""
+    loc = (newCl^.arrayCp) ! methodRefInfo
+    n = if loc > newCl^.countrCp then 1 else 0
+    methodRefInfo = MethodRefInfo { _indexNameCp        = indexName
+                                  , _indexNameandtypeCp = indexNameType
+                                  , _desc               = ""
                                   } 
-    (newHM,indexName,indexNameType,newIndex) 
-       = generateVarMethod hm index name typ methodRefInfo
+    (newCl, indexName, indexNameType) 
+       = generateVarMethod cl name typ methodRefInfo
 
 -- | insert a interface in the constant pool
 generateInterfaceRef = undefined
@@ -62,118 +58,106 @@ generateInterfaceRef = undefined
 generateString = undefined
 
 -- | inserts a integer in the constant pool
-generateInteger :: CPInfos -- ^ current constant pool
+generateInteger :: ClassFile -- ^ current constant pool
                 -> Int -- ^ Int to insert in the constant pool
                 -> Word8 -- ^ current highest index in constant pool
-                -> (CPInfos -- ^ new constant pool
-                   ,Word8 -- ^ location of int in constant pool
-                   ,Word8) -- ^ new highest index in constant pool 
-generateInteger hm int index = (newHM , newHM ! intInfo, newIndex)
+                -> (ClassFile -- ^ new constant pool
+                   ,Word8) -- ^ location of int in constant pool
+generateInteger cl int index
+  = (countrCp +~ n $ newCl, loc)
   where
-    intInfo = IntegerInfo { numiCp = int 
-                           , desc  = ""
-                           }
-    newHM = HM.insert intInfo (index+1) hm
-    newIndex = max (newHM ! intInfo) index
+    loc = (newCl^.arrayCp) ! intInfo
+    n = if loc > newCl^.countrCp then 1 else 0
+    intInfo = IntegerInfo { _numiCp = int 
+                          , _desc   = ""
+                          }
+    newCl = over arrayCp (HM.insert intInfo (cl^.countrCp+1)) cl 
 
 -- | insert a float in the constant pool
-generateFloat :: CPInfos -- ^ current constant pool
+generateFloat :: ClassFile -- ^ current constant pool
               -> Float -- ^ Float to insert in the constant pool
-              -> Word8 -- ^ current highest index in constant pool
-              -> (CPInfos -- ^ new constant pool
-                 ,Word8 -- ^ location of int in constant pool
-                 ,Word8) -- ^ new highest index in constant pool 
-generateFloat hm float index = (newHM , newHM ! floatInfo, newIndex)
+              -> (ClassFile -- ^ new constant pool
+                 ,Word8) -- ^ location of int in constant pool
+generateFloat cl float 
+  = (countrCp +~ n $ newCl, loc)
   where
-    floatInfo = FloatInfo { numfCp = float 
-                          , desc  = ""
+    loc = (newCl^.arrayCp) ! floatInfo
+    n = if loc > newCl^.countrCp then 1 else 0
+    floatInfo = FloatInfo { _numfCp = float 
+                          , _desc   = ""
                           }
-    newHM = HM.insert floatInfo (index+1) hm
-    newIndex = max (newHM ! floatInfo) index
+    newCl = over arrayCp (HM.insert floatInfo (cl^.countrCp+1)) cl 
 
 -- | insert a long in the constant pool
-generateLong :: CPInfos -- ^ current constant pool
+generateLong :: ClassFile -- ^ current constant pool
               -> (Int,Int) -- ^ Long to insert in the constant pool
-              -> Word8 -- ^ current highest index in constant pool
-              -> (CPInfos -- ^ new constant pool
-                 ,Word8 -- ^ location of int in constant pool
-                 ,Word8) -- ^ new highest index in constant pool 
-generateLong hm (int1,int2) index = (newHM , newHM ! longInfo, newIndex)
+              -> (ClassFile -- ^ new constant pool
+                 ,Word8) -- ^ location of int in constant pool
+generateLong cl (int1,int2)
+  = (countrCp +~ n $ newCl, loc)
   where
-    longInfo = LongInfo { numiL1Cp = int1 
-                        , numiL2Cp = int2 
-                        , desc  = ""
+    loc = (newCl^.arrayCp) ! longInfo
+    n = if loc > newCl^.countrCp then 1 else 0
+    longInfo = LongInfo { _numiL1Cp = int1 
+                        , _numiL2Cp = int2 
+                        , _desc     = ""
                         }
-    newHM = HM.insert longInfo (index+1) hm
-    newIndex = max (newHM ! longInfo) index
+    newCl = over arrayCp (HM.insert longInfo (cl^.countrCp+1)) cl 
 
 -- | insert a double in the constant pool
-generateDouble :: CPInfos -- ^ current constant pool
+generateDouble :: ClassFile -- ^ current constant pool
               -> (Int,Int) -- ^ Double to insert in the constant pool
-              -> Word8 -- ^ current highest index in constant pool
-              -> (CPInfos -- ^ new constant pool
-                 ,Word8 -- ^ location of int in constant pool
-                 ,Word8) -- ^ new highest index in constant pool 
-generateDouble hm (int1,int2) index = (newHM , newHM ! doubleInfo, newIndex)
+              -> (ClassFile -- ^ new constant pool
+                 ,Word8) -- ^ location of int in constant pool
+generateDouble cl (int1,int2)
+  = (countrCp +~ n $ newCl, loc)
   where
-    doubleInfo = DoubleInfo { numiD1Cp = int1 
-                            , numiD2Cp = int2 
-                            , desc  = ""
+    loc = (newCl^.arrayCp) ! doubleInfo
+    n = if loc > newCl^.countrCp then 1 else 0
+    doubleInfo = DoubleInfo { _numiD1Cp = int1 
+                            , _numiD2Cp = int2 
+                            , _desc     = ""
                             }
-    newHM = HM.insert doubleInfo (index+1) hm
-    newIndex = max (newHM ! doubleInfo) index
+    newCl = over arrayCp (HM.insert doubleInfo (cl^.countrCp+1)) cl 
 
 -- | insert name and type
-generateNameAndType :: CPInfos -- ^ current constant pool
+generateNameAndType :: ClassFile -- ^ current constant pool
                     -> String -- ^ name to insert in constant pool 
                     -> Type -- ^ type to insert in constant pool 
-                    -> Word8 -- ^ current highest index in constant pool
-                    -> (CPInfos -- ^ new constant pool
-                       ,Word8 -- ^ location of int in constant pool
-                       ,Word8) -- ^ new highest index in constant pool 
-generateNameAndType hm name typ index 
-  = (newHM
-    , newHM ! nameTypeInfo
-    , newIndex
-    )
+                    -> (ClassFile -- ^ new constant pool
+                       ,Word8) -- ^ location of int in constant pool
+generateNameAndType cl name typ = (countrCp +~ n $ newCl, loc)
   where
-    nameTypeInfo = NameAndTypeInfo { indexNameCp = indexName
-                                   , indexTypeCp = indexType
-                                   , desc        = ""
+    loc = (newCl^.arrayCp) ! nameTypeInfo
+    n = if loc > newCl^.countrCp then 1 else 0
+    nameTypeInfo = NameAndTypeInfo { _indexNameCp = indexName
+                                   , _indexTypeCp = indexType
+                                   , _desc        = ""
                                    } 
-    newHM = HM.insert nameTypeInfo (newIndex+1) hm''
-    (hm',indexName,maxIndex') = generateUTF8 hm name index
-    (hm'',indexType,maxIndex'') 
-        = generateUTF8 hm' typ $ index + 1
-    newIndex = maximum [index, newHM ! nameTypeInfo 
-                       , maxIndex', maxIndex''
-                       ]
+    newCl = over arrayCp (HM.insert nameTypeInfo (cl''^.countrCp+1)) cl''
+    (cl',indexName) = generateUTF8 cl name
+    (cl'',indexType) = generateUTF8 cl' typ 
 
 -- | inserts a utf8 in the constant pool
-generateUTF8 :: CPInfos -- ^ current constant pool
+generateUTF8 :: ClassFile -- ^ current constant pool
              -> String -- ^ string to insert in the constant pool
-             -> Word8 -- ^ current highest index in constant pool
-             -> (CPInfos -- ^ new constant pool
-                ,Word8 -- ^ location of String in constant pool
-                ,Word8) -- ^ new highest index in constant pool 
-generateUTF8 hm str index = (newHM , newHM ! utf8info, newIndex)
+             -> (ClassFile -- ^ new constant pool
+                ,Word8) -- ^ location of String in constant pool
+generateUTF8 cl str = (countrCp +~ n $ newCl, loc)
   where
-    utf8info = Utf8Info { tamCp = length str
-                        , cadCp = str
-                        , desc  = ""
+    loc = (newCl^.arrayCp) ! utf8info 
+    n = if loc > newCl^.countrCp then 1 else 0
+    utf8info = Utf8Info { _tamCp = length str
+                        , _cadCp = str
+                        , _desc  = ""
                         }
-    newHM = HM.insert utf8info (index+1) hm
-    newIndex = max (newHM ! utf8info) index
+    newCl = over arrayCp (HM.insert utf8info (cl^.countrCp+1)) cl 
 
 -- helper functions
 
-generateVarMethod hm index name typ refInfo = 
-  (newHM, indexName, indexNameType, newIndex)
-    where
-      newHM = HM.insert refInfo (newIndex+1) hm''
-      -- Use "This" here because there is no information about the class
-      (hm',indexName,maxIndex') = generateClass hm "This" index
-      (hm'',indexNameType,maxIndex'') = generateNameAndType hm name typ index
-      newIndex = maximum [index, newHM ! refInfo 
-                       , maxIndex', maxIndex''
-                       ]
+generateVarMethod cl name typ refInfo = (newCl, indexName, indexNameType)
+  where
+    newCl = over arrayCp (HM.insert refInfo (cl''^.countrCp+1)) cl'' 
+    -- Use "This" here because there is no information about the class
+    (cl',indexName) = generateClass cl "This"
+    (cl'',indexNameType) = generateNameAndType cl name typ 

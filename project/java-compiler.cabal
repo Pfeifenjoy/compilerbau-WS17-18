@@ -17,8 +17,8 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser
-  build-depends:       base <= 4.10.1 , array, unordered-containers, hashable,
-                       bytestring
+  build-depends:       base <= 4.10.1 , array, unordered-containers
+                       , hashable, bytestring, lens
   hs-source-dirs:      src
   build-tools:         alex, happy
   other-modules:       Lexer.Lexer, Parser.Parser
