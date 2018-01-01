@@ -76,7 +76,7 @@ import Data.Int
     ELSE                                { ELSE }
     SWITCH                              { SWITCH }
     CASE                                { CASE }
-    FINALLY                             { FINALLY }
+    DEFAULT                             { DEFAULT }
     QUESTIONMARK                        { QUESTIONMARK }
     -- Class
     CLASS                               { CLASS }
@@ -158,8 +158,8 @@ Block
 SwitchCase
     : CASE Expression COLON Statements      { SwitchCase $2 $4 }
 
-FinallyCase
-    : FINALLY Statements                    { $2 }
+DefaultCase
+    : DEFAULT Statements                    { $2 }
 
 SwitchCases
     : SwitchCase                            { [$1] }
@@ -171,7 +171,7 @@ Switch
     | SWITCH Expression
         LEFT_BRACE
             SwitchCases
-            FinallyCase
+            DefaultCase
         RIGHT_BRACE                         { Switch $2 $4 $ Just $5 }
 
 SingleVariableDecl
