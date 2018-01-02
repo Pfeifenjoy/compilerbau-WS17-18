@@ -207,7 +207,7 @@ SingleVariableDecl
     | Type IDENTIFIER ASSIGN Expression     { VariableDecl $2 $1 False $ Just $4 }
     | FINAL Type IDENTIFIER                 { VariableDecl $3 $2 True Nothing }
     | FINAL Type IDENTIFIER ASSIGN
-        Expression                          { VariableDecl $3 $2 False $ Just $5 }
+        Expression                          { VariableDecl $3 $2 True $ Just $5 }
 
 RestVariableDecl
     : COMMA IDENTIFIER                      { ($2, Nothing) }
