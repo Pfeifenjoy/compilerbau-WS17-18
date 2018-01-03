@@ -27,6 +27,11 @@ data ClassFile = ClassFile { _magic           :: Magic
                            , _arrayMethods    :: MethodInfos
                            , _countAttributes :: AttributesCount
                            , _arrayAttributes :: AttributeInfos
+                           -- InnerClasses(<=1), EnclosingMethod(<=1), signature,
+                           -- SourceFile(<=1), SourceDebugExtension(<=1),
+                           -- synthetic(<=1), deprecated,
+                           -- Runtime(In)Visible(Parameter)Annotations(<=1),
+                           -- BootstrapMethods
                            }
                     deriving Show
 
@@ -183,6 +188,9 @@ data FieldInfo = FieldInfo
                         , _indexDescrFi  :: IndexConstantPool       -- descriptor_index
                         , _tamFi         :: Int                     -- count_attributte
                         , _arrayAttrFi   :: AttributeInfos
+                        -- optional: ConstantValue(<=1), synthetic(<=1), deprecated(<=1),
+                        -- Signature
+                        -- Runtime(In)Visible(Parameter)Annotations(<=1)
                         }
             deriving Show
 
@@ -190,8 +198,12 @@ data MethodInfo = MethodInfo
                         { _afMi          :: AccessFlags
                         , _indexNameMi   :: IndexConstantPool       -- name_index
                         , _indexDescrMi  :: IndexConstantPool       -- descriptor_index
-                        , _tamMi         :: Int                       -- attributes_count
+                        , _tamMi         :: Int                     -- attributes_count
                         , _arrayAttrMi   :: AttributeInfos
+                        -- Exceptions(<=1) code(<=1), synthetic(<=1) deprecated(<=1),
+                        -- Signature
+                        -- Runtime(In)Visible(Parameter)Annotations(<=1),
+                        -- AnnotationsDefault 
                         }
                     deriving Show
 
@@ -218,6 +230,8 @@ data AttributeInfo =
             , _arrayExAttr              :: Tupla4Int                        -- no usamos
             , _tamAtrrAttr              :: Int                              -- attributes_count
             , _arrayAttrAttr            :: AttributeInfos
+            -- LineNumberTable, LocalVariableTable, LocalVariableTypeTable,
+            -- deprecated, StackMapTable(<=1)
             }
       
       | AttributeExceptions
