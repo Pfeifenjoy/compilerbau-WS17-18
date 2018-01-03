@@ -60,10 +60,9 @@ generateString = undefined
 -- | inserts a integer in the constant pool
 generateInteger :: ClassFile -- ^ current constant pool
                 -> Int -- ^ Int to insert in the constant pool
-                -> Word8 -- ^ current highest index in constant pool
                 -> (ClassFile -- ^ new constant pool
                    ,Word8) -- ^ location of int in constant pool
-generateInteger cl int index
+generateInteger cl int 
   = (countrCp +~ n $ newCl, loc)
   where
     loc = (newCl^.arrayCp) ! intInfo

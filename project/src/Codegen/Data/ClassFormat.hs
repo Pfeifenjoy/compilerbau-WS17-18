@@ -40,10 +40,10 @@ data ClassFile = ClassFile { _magic           :: Magic
          
 
 type CPInfos        = HM.HashMap CPInfo Word8
-type Interfaces     = HM.HashMap Interface Word8
-type FieldInfos     = HM.HashMap FieldInfo Word8
-type MethodInfos    = HM.HashMap MethodInfo Word8
-type AttributeInfos = HM.HashMap AttributeInfo Word8
+type Interfaces     = [Interface]
+type FieldInfos     = [FieldInfo]
+type MethodInfos    = [MethodInfo]
+type AttributeInfos = [AttributeInfo]
 
 data Magic = Magic
         deriving Show
