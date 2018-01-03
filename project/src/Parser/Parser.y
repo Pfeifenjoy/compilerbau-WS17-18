@@ -76,7 +76,7 @@ import Data.Int
     ELSE                                { ELSE }
     SWITCH                              { SWITCH }
     CASE                                { CASE }
-    FINALLY                             { FINALLY }
+    DEFAULT                             { DEFAULT }
     QUESTIONMARK                        { QUESTIONMARK }
     -- Class
     CLASS                               { CLASS }
@@ -139,6 +139,34 @@ Statement
         SEMICOLON Expression SEMICOLON
         SingleStatement RIGHT_PARANTHESES Statement
                                             { For $3 $5 $7 $9 }
+    | FOR LEFT_PARANTHESES
+        SEMICOLON SEMICOLON
+        RIGHT_PARANTHESES Statement
+                                            { While (BooleanLiteral True) $6 }
+    | FOR LEFT_PARANTHESES SingleStatement
+        SEMICOLON SEMICOLON
+        RIGHT_PARANTHESES Statement
+                                            { For $3 (BooleanLiteral True) (Block []) $7 }
+    | FOR LEFT_PARANTHESES
+        SEMICOLON Expression SEMICOLON
+        RIGHT_PARANTHESES Statement
+                                            { For (Block []) $4 (Block []) $7 }
+    | FOR LEFT_PARANTHESES
+        SEMICOLON SEMICOLON
+        SingleStatement RIGHT_PARANTHESES Statement
+                                            { For (Block []) (BooleanLiteral True) $5 $7 } 
+    | FOR LEFT_PARANTHESES SingleStatement
+        SEMICOLON Expression SEMICOLON
+        RIGHT_PARANTHESES Statement
+                                            { For $3 $5 (Block []) $8 }
+    | FOR LEFT_PARANTHESES
+        SEMICOLON Expression SEMICOLON
+        SingleStatement RIGHT_PARANTHESES Statement
+                                            { For (Block []) $4 $6 $8 }   
+    | FOR LEFT_PARANTHESES SingleStatement
+        SEMICOLON SEMICOLON
+        SingleStatement RIGHT_PARANTHESES Statement
+                                            { For $3 (BooleanLiteral True) $6 $8 }               
     | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
         Statement ELSE Statement
                                             { If $3 $5 (Just $7) }
@@ -158,8 +186,8 @@ Block
 SwitchCase
     : CASE Expression COLON Statements      { SwitchCase $2 $4 }
 
-FinallyCase
-    : FINALLY Statements                    { $2 }
+DefaultCase
+    : DEFAULT Statements                    { $2 }
 
 SwitchCases
     : SwitchCase                            { [$1] }
@@ -171,7 +199,7 @@ Switch
     | SWITCH Expression
         LEFT_BRACE
             SwitchCases
-            FinallyCase
+            DefaultCase
         RIGHT_BRACE                         { Switch $2 $4 $ Just $5 }
 
 SingleVariableDecl
@@ -179,7 +207,7 @@ SingleVariableDecl
     | Type IDENTIFIER ASSIGN Expression     { VariableDecl $2 $1 False $ Just $4 }
     | FINAL Type IDENTIFIER                 { VariableDecl $3 $2 True Nothing }
     | FINAL Type IDENTIFIER ASSIGN
-        Expression                          { VariableDecl $3 $2 False $ Just $5 }
+        Expression                          { VariableDecl $3 $2 True $ Just $5 }
 
 RestVariableDecl
     : COMMA IDENTIFIER                      { ($2, Nothing) }

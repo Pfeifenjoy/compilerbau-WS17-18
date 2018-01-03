@@ -92,7 +92,7 @@ tokens :-
     else              { \s -> ELSE }
     switch            { \s -> SWITCH }
     case              { \s -> CASE }
-    finally           { \s -> FINALLY }
+    default           { \s -> DEFAULT }
     \?                { \s -> QUESTIONMARK }
 
     -- Class
