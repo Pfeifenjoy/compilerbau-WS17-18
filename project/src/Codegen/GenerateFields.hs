@@ -1,5 +1,5 @@
-module GenerateFields (
-  generate
+module Codegen.GenerateFields (
+  generateFields
 ) where
 
 import ABSTree
@@ -8,8 +8,8 @@ import Codegen.GenerateConstantPool
 import Data.Char(ord)
 import Control.Lens
 
-generate :: ClassFile ->  [FieldDecl] -> ClassFile
-generate = foldl generateFD
+generateFields :: ClassFile ->  [FieldDecl] -> ClassFile
+generateFields = foldl generateFD
 
 generateFD :: ClassFile -> FieldDecl -> ClassFile
 generateFD cf (FieldDecl vds vis static) 
