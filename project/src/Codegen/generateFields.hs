@@ -1,4 +1,4 @@
-module GenerateAttribute (
+module GenerateFields (
   generate
 ) where
 
@@ -6,7 +6,6 @@ import ABSTree
 import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Data.Char(ord)
-import Data.Word(Word8)
 import Control.Lens
 
 generate :: ClassFile ->  [FieldDecl] -> ClassFile
@@ -48,7 +47,7 @@ generateAttrFields cf (Just expr) = ([constant],newCF)
 
 -- helper functions
 
-exprToConstantPool :: ClassFile -> Expr -> (ClassFile,Word8)
+exprToConstantPool :: ClassFile -> Expr -> (ClassFile,Int)
 exprToConstantPool cf (BooleanLiteral True) = generateInteger cf 1
 exprToConstantPool cf (BooleanLiteral False) = generateInteger cf 1
 exprToConstantPool cf (CharLiteral char) = generateInteger cf $ ord char 

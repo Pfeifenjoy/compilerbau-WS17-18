@@ -39,7 +39,7 @@ data ClassFile = ClassFile { _magic           :: Magic
 --          show (ClassFile  magic  minver  maxver  count_cp  array_cp  acfg  this  super  count_interfaces  array_interfaces  count_fields  array_fields  count_methods  array_methods  count_attributes  array_attributes) = "magic = 0x CAFEBABE\n"  ++ (show minver) ++ "\n"  ++ (show maxver) ++ "\n"  ++ "constant_pool_count = " ++ (show count_cp) ++ "\n"  ++ (showCP_Infos array_cp 1) ++ "\n"  ++ (show acfg) ++ "\n"  ++ (show this) ++ "\n"  ++ (show super) ++ "\n\nInterfaces\ncount_interfaces "  ++ (show count_interfaces) ++ "\n"  ++ (show array_interfaces) ++ "\n\nFields\ncount_fields "  ++ (show count_fields) ++ "\n"  ++ (show array_fields) ++ "\n"  ++ (show count_methods) ++ "\n\nMethods\ncount_Methods "  ++ (show array_methods) ++ "\n"  ++ (show count_attributes) ++ "\n"  ++ (show array_attributes)
          
 
-type CPInfos        = HM.HashMap CPInfo Word8
+type CPInfos        = HM.HashMap CPInfo Int 
 type Interfaces     = [Interface]
 type FieldInfos     = [FieldInfo]
 type MethodInfos    = [MethodInfo]
@@ -60,53 +60,64 @@ newtype MajorVersion = MajorVersion {
 
 data CPInfo = 
           ClassInfo
-                { _indexCp              :: IndexConstantPool
+                { _tagCp                :: Tag 
+                , _indexCp              :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
         | FieldRefInfo 
-                { _indexNameCp          :: IndexConstantPool
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
                 , _indexNameandtypeCp   :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
         | MethodRefInfo 
-                { _indexNameCp          :: IndexConstantPool
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
                 , _indexNameandtypeCp   :: IndexConstantPool
                 , _desc                 :: String-- comment in Bytcode
                 }
         | InterfaceMethodRefInfo 
-                { _indexNameCp          :: IndexConstantPool
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
                 , _indexNameandtypeCp   :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
         | StringInfo
-                { _indexCp              :: IndexConstantPool
+                { _tagCp                :: Tag
+                , _indexCp              :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
         | IntegerInfo 
-                { _numiCp               :: Int
+                { _tagCp                :: Tag
+                , _numiCp               :: Int
                 , _desc                 :: String -- comment in Bytcode
                 }
         | FloatInfo 
-                { _numfCp               :: Float
+                { _tagCp                :: Tag
+                , _numfCp               :: Float
                 , _desc                 :: String -- comment in Bytcode
                 }
         | LongInfo 
-                { _numiL1Cp             :: Int
+                { _tagCp                :: Tag
+                , _numiL1Cp             :: Int
                 , _numiL2Cp             :: Int
                 , _desc                 :: String -- comment in Bytcode
                 }
         | DoubleInfo 
-                { _numiD1Cp             :: Int
+                { _tagCp                :: Tag
+                , _numiD1Cp             :: Int
                 , _numiD2Cp             :: Int
                 , _desc                 :: String -- comment in Bytcode
                 }
         | NameAndTypeInfo 
-                { _indexNameCp          :: IndexConstantPool
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
                 , _indexTypeCp          :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
         | Utf8Info 
-                { _tamCp                :: Int    -- length of string
+                { _tagCp                :: Tag
+                , _tamCp                :: Int    -- length of string
                 , _cadCp                :: String -- name of string
                 , _desc                 :: String -- comment in Bytcode
                 }
@@ -118,6 +129,20 @@ showCPInfos :: [CPInfo] -> Int -> String
 showCPInfos [] n = ""
 showCPInfos (x : xss) n = show n ++ "|" ++ show x ++ "\n" ++ showCPInfos xss (n+1)
 
+data Tag = TagClass              
+         | TagFieldRef
+         | TagMethodRef
+         | TagInterfaceMethodRef
+         | TagString
+         | TagInteger
+         | TagFloat
+         | TagLong
+         | TagDouble
+         | TagNameAndType
+         | TagUtf8
+        deriving (Show,Eq,Generic)
+
+instance Hashable Tag
 
 newtype AccessFlags = AccessFlags [Int]
             deriving Show
@@ -281,12 +306,12 @@ type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
 type ListaInt  = [Int]
-type ConstantPoolCount  = Word8 
-type InterfacesCount    = Word8 
-type FieldsCount        = Word8 
-type MethodsCount       = Word8 
-type AttributesCount    = Word8 
-type IndexConstantPool = Word8 
+type ConstantPoolCount  = Int 
+type InterfacesCount    = Int 
+type FieldsCount        = Int 
+type MethodsCount       = Int 
+type AttributesCount    = Int 
+type IndexConstantPool  = Int 
 
 makeLenses ''ClassFile
 makeLenses ''MinorVersion

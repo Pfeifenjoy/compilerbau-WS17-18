@@ -14,54 +14,50 @@ import Data.HashMap.Lazy as HM (fromList, toList)
 import Control.Arrow
 
 instance Binary ClassFile where
-    put (ClassFile mg mnv mjv tamCp mapCp flgs ths spr tamIf mapIf tamFd
-                   mapFd tamMth mapMth tamAttr mapAttr)
+    put (ClassFile mg mnv mjv tamCp mapCp flgs ths spr tamIf lstIf tamFd
+                   lstFd tamMth lstMth tamAttr lstAttr)
         = put mg                        >>
           put mnv                       >>
           put mjv                       >>
           put (fromInt2Word16 tamCp)    >>
-          mapM_ put (getValue  mapCp)   >>
+          mapM_ put (HM.toList mapCp)   >>
           put flgs                      >>
           put ths                       >>
           put spr                       >>
           put (fromInt2Word16 tamIf)    >>
-          mapM_ put (getValue mapIf)    >>
+          mapM_ put lstIf               >>
           put (fromInt2Word16 tamFd)    >>
-          mapM_ put (getValue mapFd)    >>
+          mapM_ put lstFd               >>
           put (fromInt2Word16 tamMth)   >>
-          mapM_ put (getValue mapMth)   >>
+          mapM_ put lstMth              >>
           put (fromInt2Word16 tamAttr)  >>
-          mapM_ put (getValue mapAttr)
-            where
-              getValue = Prelude.map snd . HM.toList
+          mapM_ put lstAttr           
 
     -- el tamanio del constantPool = 1 + length(constantPool)
     get = do mg          <- get :: Get Magic
              mnv         <- get :: Get MinorVersion
              mjv         <- get :: Get MajorVersion
-             wtamCp     <- getWord16
-             let tamCp  =  fromWord162Int wtamCp
-             mapCp      <- genMap "Constant" $ tamCp-1
+             wtamCp      <- getWord16
+             let tamCp   =  fromWord162Int wtamCp
+             mapCp       <- fmap HM.fromList $ getMany $ tamCp-1
              flgs        <- get :: Get AccessFlags
              ths         <- get :: Get ThisClass
              spr         <- get :: Get SuperClass
-             wtamIf     <- getWord16
-             let tamIf  =  fromWord162Int wtamIf
-             mapIf      <- genMap "Interface" tamIf
-             wtamFd     <- getWord16
-             let tamFd  =  fromWord162Int wtamFd
-             mapFd      <- genMap "Field" tamFd
-             wtamMth    <- getWord16
-             let tamMth =  fromWord162Int wtamMth
-             mapMth     <- genMap "Method" tamMth
-             wtamAttr   <- getWord16
-             let tamAttr = fromWord162Int wtamAttr
-             mapAttr    <- genMap "Attribute" tamAttr
+             wtamIf      <- getWord16
+             let tamIf   =  fromWord162Int wtamIf
+             lstIf       <- getMany tamIf
+             wtamFd      <- getWord16
+             let tamFd   =  fromWord162Int wtamFd
+             lstFd       <- getMany tamFd
+             wtamMth     <- getWord16
+             let tamMth  =  fromWord162Int wtamMth
+             lstMth      <- getMany tamMth
+             wtamAttr    <- getWord16
+             let tamAttr =  fromWord162Int wtamAttr
+             lstAttr     <- getMany tamAttr
              return $ ClassFile mg mnv mjv tamCp mapCp flgs ths spr 
-                                tamIf mapIf tamFd mapFd tamMth mapMth 
-                                tamAttr mapAttr
-                 
-genMap str = fmap (HM.fromList . map (first ((str ++) . show)) . zip  [1..]) . getMany
+                                tamIf lstIf tamFd lstFd tamMth lstMth 
+                                tamAttr lstAttr
     
 
 instance Binary Magic where
@@ -240,27 +236,27 @@ getInfo info = do accs  <- get :: Get AccessFlags
                   winam <- getWord16
                   widsr <- getWord16
                   wtam  <- getWord16
-                  let inam     = fromWord162Int winam
-                  let idsr     = fromWord162Int widsr
+                  let inam    = fromWord162Int winam
+                  let idsr    = fromWord162Int widsr
                   let tamAttr = fromWord162Int wtam
-                  mapAttr <- genMap "" tamAttr
-                  return $ info accs inam idsr tamAttr mapAttr
+                  lstAttr <- getMany tamAttr 
+                  return $ info accs inam idsr tamAttr lstAttr
 
 instance Binary FieldInfo where
-    put (FieldInfo accs inam idsr tam mapAttr)
+    put (FieldInfo accs inam idsr tam lstAttr)
         = put accs >> put (fromInt2Word16 inam) 
                    >> put (fromInt2Word16 idsr) 
                    >> put (fromInt2Word16 tam) 
-                   >> mapM_ put mapAttr
+                   >> mapM_ put lstAttr
     get = getInfo FieldInfo
 
 instance Binary MethodInfo where
-    put (MethodInfo accs inam idsr tamAttr mapAttr)
+    put (MethodInfo accs inam idsr tamAttr lstAttr)
         = put accs >> put (fromInt2Word16 inam) 
                    >> put (fromInt2Word16 idsr) 
                    >> put (fromInt2Word16 tamAttr) 
-                   >> mapM_ put mapAttr
-    get = getInfo MethodInfo 
+                   >> mapM_ put lstAttr
+    get = getInfo MethodInfo
 
 instance Binary AttributeInfo where
     put (AttributeGeneric inam tamAll restAttr)
@@ -273,34 +269,34 @@ instance Binary AttributeInfo where
                                     >> put (fromInt2Word16 ival)
     
     put (AttributeCode inam tamAll mlenStack mlenLocal tamCode 
-                       mapCode tamEx mapEx tamAttr mapAttr)
+                       lstCode tamEx lstEx tamAttr lstAttr)
         = put (fromInt2Word16 inam)                        >> 
           put (fromInt2Word32 tamAll)                      >> 
           put (fromInt2Word16 mlenStack)                   >> 
           put (fromInt2Word16 mlenLocal)                   >> 
           put (fromInt2Word32 tamCode)                     >> 
-          mapM_ (putWord8 . fromInt2Word8 ) mapCode        >> 
+          mapM_ (putWord8 . fromInt2Word8 ) lstCode        >> 
           put (fromInt2Word16 tamEx)                       >> 
           mapM_ (\(e1,e2,e3,e4) -> put (fromInt2Word16 e1) 
                  >> put (fromInt2Word16 e2) >> put (fromInt2Word16 e3) 
-                 >> put (fromInt2Word16 e4)) mapEx         >>
+                 >> put (fromInt2Word16 e4)) lstEx         >>
           put (fromInt2Word16 tamAttr)                     >> 
-          mapM_ put mapAttr
+          mapM_ put lstAttr
 
-    put (AttributeExceptions inam tamAll tamNumEx mapEx)
+    put (AttributeExceptions inam tamAll tamNumEx lstEx)
         = put (fromInt2Word16 inam)                        >> 
           put (fromInt2Word32 tamAll)                      >> 
           put (fromInt2Word16 tamNumEx)                    >> 
-          mapM_ (putWord8 . fromInt2Word8) mapEx 
+          mapM_ (putWord8 . fromInt2Word8) lstEx 
      
-    put (AttributeInnerClasses inam tamAll tamClasses mapClasses)
+    put (AttributeInnerClasses inam tamAll tamClasses lstClasses)
         = put (fromInt2Word16 inam)                        >> 
           put (fromInt2Word32 tamAll)                      >> 
           put (fromInt2Word16 tamClasses)                  >> 
           mapM_ (\(incl,outcl,innm,inflg) -> put (fromInt2Word16 incl)  >>
                                              put (fromInt2Word16 outcl) >> 
                                              put (fromInt2Word16 innm)  >> 
-                                             put inflg) mapClasses
+                                             put inflg) lstClasses
  
     put (AttributeSynthetic inam tamAll)
         = put (fromInt2Word16 inam)                        >> 
@@ -310,21 +306,21 @@ instance Binary AttributeInfo where
         = put (fromInt2Word16 inam) >> put (fromInt2Word32 tamAll) 
                                     >> put (fromInt2Word16 indSrc)
 
-    put (AttributeLineNumberTable inam tamAll tamTable mapLine)
+    put (AttributeLineNumberTable inam tamAll tamTable lstLine)
         = put (fromInt2Word16 inam)                  >> 
           put (fromInt2Word32 tamAll)               >> 
           put (fromInt2Word16 tamTable)             >> 
           mapM_ (\(e1,e2) -> put (fromInt2Word16 e1) 
-                          >> put (fromInt2Word16 e2)) mapLine
+                          >> put (fromInt2Word16 e2)) lstLine
 
-    put (AttributeLocalVariableTable inam tamAll tamVar mapVar)
+    put (AttributeLocalVariableTable inam tamAll tamVar lstVar)
         = put (fromInt2Word16 inam) >>
           put (fromInt2Word32 tamAll) >>
           put (fromInt2Word16 tamVar) >>
           mapM_ (\(e1,e2,e3,e4,e5) -> put (fromInt2Word16 e1) 
                   >> put (fromInt2Word16 e2) >> put (fromInt2Word16 e3) 
                   >> put (fromInt2Word16 e4) >> put (fromInt2Word16 e5)) 
-                    mapVar
+                    lstVar
     
     put (AttributeDeprecated inam tamAll)
         = put (fromInt2Word16 inam)                        >> 
@@ -396,6 +392,7 @@ getMany = go []
                  -- we must seq x to avoid stack overflows 
                  -- due to laziness in (>>=) 
                  x `seq` go (x:xs) (i-1) 
+
 
 -- functions to modify attributes
 -- getListAttr cpInfos 0 str = return ([],str)
@@ -477,27 +474,27 @@ getMany = go []
 -- --                   let local = fromWord162Int wlocal
 -- --                   (rs3,_,wtamCode) <- runGetOrFail (get :: Get Word32) rs2 
 -- --                   let tamCode = fromWord322Int wtamCode
--- --                   (mapCode,rs4) <- getListCode tamCode rs3
+-- --                   (lstCode,rs4) <- getListCode tamCode rs3
 -- --                   (rs5,_,wtamEx) <- runGetOrFail (get :: Get Word16) rs4 
 -- --                   let tamEx = fromWord162Int wtamEx
--- --                   (mapEx,rs6) <- getListExCod tamEx rs5
+-- --                   (lstEx,rs6) <- getListExCod tamEx rs5
 -- --                   (rs7,_,wtamAttr) <- runGetOrFail (get :: Get Word16) rs6 
 -- --                   let tamAttr = fromWord162Int wtamAttr
--- --                   (mapAttr,_) <- getListAttr cpInfos tamAttr rs7
+-- --                   (lstAttr,_) <- getListAttr cpInfos tamAttr rs7
 -- --                   --fix, because there is no support for exceptions,
 -- --                   --nor the second list of attributes? 
--- --                   return $ AttributeCode inam tam stack local tamCode mapCode
--- --                                         tamEx mapEx tamAttr mapAttr
+-- --                   return $ AttributeCode inam tam stack local tamCode lstCode
+-- --                                         tamEx lstEx tamAttr lstAttr
 -- --         "LineNumberTable"
 -- --             -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
 -- --                   let ntable = fromWord162Int wntable
--- --                   (mapLine,_) <- getListLineNumber ntable rs0
--- --                   return $ AttributeLineNumberTable inam tam ntable mapLine
+-- --                   (lstLine,_) <- getListLineNumber ntable rs0
+-- --                   return $ AttributeLineNumberTable inam tam ntable lstLine
 -- --         "Exceptions"
 -- --             -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
 -- --                   let ntable = fromWord162Int wntable
--- --                   (mapEx,_) <- getListEx ntable rs0
--- --                   return $ AttributeExceptions inam tam ntable mapEx
+-- --                   (lstEx,_) <- getListEx ntable rs0
+-- --                   return $ AttributeExceptions inam tam ntable lstEx
 -- -- 
 -- --         "Synthetic"
 -- --             -> return $ AttributeSynthetic inam tam
@@ -505,8 +502,8 @@ getMany = go []
 -- --         "InnerClasses"
 -- --             -> do (rs0,_,wntable) <- runGetOrFail (get :: Get Word16) rbs 
 -- --                   let ntable = fromWord162Int wntable
--- --                   (mapClasses,_) <- getListTuplaInner ntable rs0
--- --                   return $ AttributeInnerClasses inam tam ntable mapClasses
+-- --                   (lstClasses,_) <- getListTuplaInner ntable rs0
+-- --                   return $ AttributeInnerClasses inam tam ntable lstClasses
 -- --         
 -- --         "Deprecated" -> return $ AttributeDeprecated inam tam
 -- -- 

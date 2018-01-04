@@ -89,6 +89,7 @@ data Assembler = Aload0
 
 type Code = [Assembler]
 
+-- TODO check if it should be [int] instead of ByteString
 code2BS :: Code -> BS.ByteString
 code2BS (Aload0:xs)                   = 0x2a `BS.cons` code2BS xs
 code2BS (Aload1:xs)                   = 0x2b `BS.cons` code2BS xs
