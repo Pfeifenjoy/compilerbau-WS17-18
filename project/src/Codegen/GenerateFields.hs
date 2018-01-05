@@ -23,13 +23,13 @@ generateVD :: Visibility
 generateVD vis static cf (VariableDecl name typ final mayExpr)
   = countFields +~ 1 $ over arrayFields (fieldInfo:) newCF
     where
-      fieldInfo = FieldInfo { _afFi = AccessFlags accesFlags
+      fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
                             , _indexNameFi = indexName
                             , _indexDescrFi = indexType
                             , _tamFi = length attrFields
                             , _arrayAttrFi = attrFields 
                             }
-      accesFlags = visToFlag vis : [8 | static] ++ [4 | final]
+      accessFlags = visToFlag vis : [8 | static] ++ [4 | final]
       (newCF'',indexName) = generateUTF8 cf name 
       (newCF',indexType) = generateUTF8 newCF'' (typeToDescriptor typ) 
       (attrFields,newCF) = generateAttrFields newCF' mayExpr 
