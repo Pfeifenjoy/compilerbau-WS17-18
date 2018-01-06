@@ -7,6 +7,7 @@ import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Data.Char(ord)
 import Control.Lens
+import Control.Monad.Trans.State.Lazy
 
 generateFields :: ClassFile ->  [FieldDecl] -> ClassFile
 generateFields = foldl generateFD
@@ -21,37 +22,39 @@ generateVD :: Visibility
            -> VariableDecl 
            -> ClassFile
 generateVD vis static cf (VariableDecl name typ final mayExpr)
-  = countFields +~ 1 $ over arrayFields (fieldInfo:) newCF
-    where
-      fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
-                            , _indexNameFi = indexName
-                            , _indexDescrFi = indexType
-                            , _tamFi = length attrFields
-                            , _arrayAttrFi = attrFields 
-                            }
-      accessFlags = visToFlag vis : [8 | static] ++ [4 | final]
-      (newCF'',indexName) = generateUTF8 cf name 
-      (newCF',indexType) = generateUTF8 newCF'' (typeToDescriptor typ) 
-      (attrFields,newCF) = generateAttrFields newCF' mayExpr 
+  = execState 
+     (do indexName <- generateUTF8 name 
+         indexType <- generateUTF8 $ typeToDescriptor typ 
+         attrFields <- generateAttrFields mayExpr 
+         let accessFlags = visToFlag vis : [8 | static] ++ [4 | final]
+             fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
+                                   , _indexNameFi = indexName
+                                   , _indexDescrFi = indexType
+                                   , _tamFi = length attrFields
+                                   , _arrayAttrFi = attrFields 
+                                   } 
+         modify $ (countFields +~ 1) . over arrayFields (fieldInfo:))
+     cf
+           
 
-generateAttrFields :: ClassFile -> Maybe Expr -> (AttributeInfos,ClassFile)
-generateAttrFields cf Nothing  = ([],cf)
-generateAttrFields cf (Just expr) = ([constant],newCF)
-  where
-    constant = AttributeConstantValue { _indexNameAttr = index
-                                      , _tamAttr = 2
-                                      , _indexValueAttr = value
-                                      }
-    (newCF',index) = generateUTF8 cf "constant"
-    (newCF,value) = exprToConstantPool newCF' expr 
+generateAttrFields :: Maybe Expr 
+                   -> State ClassFile AttributeInfos
+generateAttrFields Nothing  = return [] 
+generateAttrFields (Just expr) = 
+  do indexName <- generateUTF8 "constant"
+     indexValue <- exprToConstantPool expr 
+     return [AttributeConstantValue { _indexNameAttr = indexName
+                                    , _tamAttr = 2
+                                    , _indexValueAttr = indexValue
+                                    }]
 
 -- helper functions
 
-exprToConstantPool :: ClassFile -> Expr -> (ClassFile,Int)
-exprToConstantPool cf (BooleanLiteral True) = generateInteger cf 1
-exprToConstantPool cf (BooleanLiteral False) = generateInteger cf 1
-exprToConstantPool cf (CharLiteral char) = generateInteger cf $ ord char 
-exprToConstantPool cf (IntegerLiteral int) = generateInteger cf $ fromIntegral int 
+exprToConstantPool ::  Expr -> State ClassFile Int
+exprToConstantPool (BooleanLiteral True)  = generateInteger 1
+exprToConstantPool (BooleanLiteral False) = generateInteger 1
+exprToConstantPool (CharLiteral char)     = generateInteger $ ord char 
+exprToConstantPool (IntegerLiteral int)   = generateInteger $ fromIntegral int 
 
 visToFlag :: Visibility -> Int
 visToFlag Public = 1
