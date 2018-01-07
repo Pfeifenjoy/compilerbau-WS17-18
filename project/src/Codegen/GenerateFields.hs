@@ -9,32 +9,29 @@ import Data.Char(ord)
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
 
-generateFields :: ClassFile ->  [FieldDecl] -> ClassFile
-generateFields = foldl generateFD
+generateFields :: [FieldDecl] -> State ClassFile ()
+generateFields = mapM_ generateFD
 
-generateFD :: ClassFile -> FieldDecl -> ClassFile
-generateFD cf (FieldDecl vds vis static) 
-  = foldl (generateVD vis static) cf vds
+generateFD ::  FieldDecl -> State ClassFile ()
+generateFD (FieldDecl vds vis static) 
+  = mapM_ (generateVD vis static) vds
 
 generateVD :: Visibility 
            -> Bool 
-           -> ClassFile 
            -> VariableDecl 
-           -> ClassFile
-generateVD vis static cf (VariableDecl name typ final mayExpr)
-  = execState 
-     (do indexName <- generateUTF8 name 
-         indexType <- generateUTF8 $ typeToDescriptor typ 
-         attrFields <- generateAttrFields mayExpr 
-         let accessFlags = visToFlag vis : [8 | static] ++ [4 | final]
-             fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
-                                   , _indexNameFi = indexName
-                                   , _indexDescrFi = indexType
-                                   , _tamFi = length attrFields
-                                   , _arrayAttrFi = attrFields 
-                                   } 
-         modify $ (countFields +~ 1) . over arrayFields (fieldInfo:))
-     cf
+           -> State ClassFile ()
+generateVD vis static (VariableDecl name typ final mayExpr) = 
+  do indexName <- generateUTF8 name 
+     indexType <- generateUTF8 $ typeToDescriptor typ 
+     attrFields <- generateAttrFields mayExpr 
+     let accessFlags = visToFlag vis : [8 | static] ++ [4 | final]
+         fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
+                               , _indexNameFi = indexName
+                               , _indexDescrFi = indexType
+                               , _tamFi = length attrFields
+                               , _arrayAttrFi = attrFields 
+                               } 
+     modify $ (countFields +~ 1) . over arrayFields (fieldInfo:)
            
 
 generateAttrFields :: Maybe Expr 
