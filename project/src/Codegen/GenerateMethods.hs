@@ -1,8 +1,11 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Codegen.GenerateMethods (
   generateMethods
 ) where
 import ABSTree
 import qualified Codegen.Data.MethodFormat as MF 
+import qualified Data.HashMap.Lazy as HM
 import Codegen.Data.MethodFormat hiding (Return)
 import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
@@ -10,6 +13,11 @@ import Control.Lens
 import Control.Arrow
 import Control.Monad
 import Control.Monad.Trans.State.Lazy
+
+data Vars = Vars { _localVar :: HM.HashMap Int String
+                 , _classFile :: ClassFile
+                 }
+makeLenses ''Vars
 
 generateMethods :: [MethodDecl] -> State ClassFile () 
 generateMethods mds 
@@ -23,14 +31,19 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
                      ++ typeToDescriptor typ
      indexType <- generateUTF8 descr 
      indexCode <- generateUTF8 "Code" 
-     code <- codeToInt <$> generateMethodsStmt stmt
+     cf <- get 
+     let (code,vars) = runState (codeToInt <$> generateMethodsStmt stmt) 
+                                 Vars { _localVar = HM.fromList [] 
+                                      , _classFile = cf
+                                      }
+     put $ vars^.classFile 
      let accessFlags = visToFlag vis : [8 | static] 
          codeAttr = AttributeCode { _indexNameAttr = indexCode
                                   , _tamLenAttr = undefined
                                   , _lenStackAttr = undefined
                                   , _lenLocalAttr = undefined
-                                  , _tamCodeAttr = undefined
-                                  , _arrayCodeAttr = undefined
+                                  , _tamCodeAttr = length code 
+                                  , _arrayCodeAttr = code 
                                   , _tamExAttr = 0 
                                   , _arrayExAttr = [] 
                                   , _tamAtrrAttr = 0 
@@ -44,7 +57,7 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
                                  }
      modify $ over arrayMethods (methodInfo:) 
 
-generateMethodsStmt :: Stmt -> State ClassFile MF.Code
+generateMethodsStmt :: Stmt -> State Vars MF.Code
 generateMethodsStmt (Block stmts) 
   = foldr ((-++-) . generateMethodsStmt) (return []) stmts
 generateMethodsStmt (Return expr) = undefined
@@ -61,7 +74,7 @@ generateMethodsStmt (LocalVarDecls variableDecls) = undefined
 generateMethodsStmt (StmtExprStmt stmtExpr) = undefined
 generateMethodsStmt (TypedStmt stmt _) = generateMethodsStmt stmt 
 
-generateMethodsExpr :: Expr -> State ClassFile MF.Code
+generateMethodsExpr :: Expr -> State Vars MF.Code
 generateMethodsExpr This = undefined
 generateMethodsExpr (LocalOrFieldVar str) = undefined
 generateMethodsExpr (InstVar expr str) = undefined
