@@ -1,5 +1,7 @@
 module Codegen.Data.MethodFormat where
 
+-- TODO Add complete assembler from 
+-- https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.astore
 data Assembler = Aload0
                | Aload1
                | Aload2

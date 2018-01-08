@@ -16,6 +16,8 @@ import Control.Monad.Trans.State.Lazy
 
 data Vars = Vars { _localVar :: HM.HashMap Int String
                  , _classFile :: ClassFile
+                 , _deepness :: Int -- ^ deepness of nested block
+                 , _line :: Int -- ^ line number
                  }
 makeLenses ''Vars
 
@@ -35,6 +37,8 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
      let (code,vars) = runState (codeToInt <$> generateMethodsStmt stmt) 
                                  Vars { _localVar = HM.fromList [] 
                                       , _classFile = cf
+                                      , _deepness = 0
+                                      , _line = 0
                                       }
      put $ vars^.classFile 
      let accessFlags = visToFlag vis : [8 | static] 
@@ -42,7 +46,7 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
                                   , _tamLenAttr = undefined
                                   , _lenStackAttr = undefined
                                   , _lenLocalAttr = undefined
-                                  , _tamCodeAttr = length code 
+                                  , _tamCodeAttr = vars^.line 
                                   , _arrayCodeAttr = code 
                                   , _tamExAttr = 0 
                                   , _arrayExAttr = [] 
@@ -58,8 +62,11 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
      modify $ over arrayMethods (methodInfo:) 
 
 generateMethodsStmt :: Stmt -> State Vars MF.Code
-generateMethodsStmt (Block stmts) 
-  = foldr ((-++-) . generateMethodsStmt) (return []) stmts
+generateMethodsStmt (Block stmts) =
+  do modify $ over deepness (+1) 
+     code <- foldr ((-++-) . generateMethodsStmt) (return []) stmts
+     modify $ over deepness (\x -> x-1) 
+     return code
 generateMethodsStmt (Return expr) = undefined
 generateMethodsStmt (While cond stmt) = undefined
 generateMethodsStmt (DoWhile cond stmt) = undefined
@@ -82,7 +89,7 @@ generateMethodsExpr (Unary str expr) = undefined
 generateMethodsExpr (Binary "+" expr1 expr2)
   = generateMethodsExpr expr1
     -++- generateMethodsExpr expr2
-    -++- return [Iadd]
+    -++- (modify (over line (+1)) >> return [Iadd]) 
 generateMethodsExpr (Binary "-" expr1 expr2) = undefined
 -- TODO add Isub to assembler
 --  = msum [generateMethodsExpr expr1
