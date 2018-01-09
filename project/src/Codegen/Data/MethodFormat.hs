@@ -85,6 +85,18 @@ data Assembler = Aload0
                    { branchbyte1 :: Int
                    , branchbyte2 :: Int
                    }
+               | Ifeq
+                   { branchbyte1 :: Int
+                   , branchbyte2 :: Int
+                   }
+               | Ifne
+                   { branchbyte1 :: Int
+                   , branchbyte2 :: Int
+                   }
+               | Goto 
+                   { branchbyte1 :: Int
+                   , branchbyte2 :: Int
+                   }
 
 type Code = [Assembler]
 
@@ -133,3 +145,6 @@ codeToInt (IfIcmpLt b1 b2:xs)           = 0xa1 : b1 : b2 : codeToInt xs
 codeToInt (IfIcmpGe b1 b2:xs)           = 0xa2 : b1 : b2 : codeToInt xs
 codeToInt (IfIcmpGt b1 b2:xs)           = 0xa3 : b1 : b2 : codeToInt xs
 codeToInt (IfIcmpLe b1 b2:xs)           = 0xa4 : b1 : b2 : codeToInt xs
+codeToInt (Ifeq b1 b2:xs)               = 0x99 : b1 : b2 : codeToInt xs
+codeToInt (Ifne b1 b2:xs)               = 0x9a : b1 : b2 : codeToInt xs
+codeToInt (Goto b1 b2:xs)               = 0xa7 : b1 : b2 : codeToInt xs
