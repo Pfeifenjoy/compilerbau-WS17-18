@@ -6,8 +6,37 @@ import ABSTree
 type LocVarTable = [(String, Type)] 
 
 -- MAIN TYPECHECK FUNCTION
-checkTypes :: [Class] -> [Class]
-checkTypes abs = []
+checkTypes :: Program -> Program
+checkTypes classList = map checkClass classList
+   where 
+      checkClass (Class classType fieldDecs methodDecs) =
+          let (locVarTable, typeCheckedFieldDecs) = typeCheckFieldDecs fieldDecs classType classList
+              typeCheckedMethodDecs = typeCheckMethodDecs methodDecs locVarTable classList
+          in Class classType
+                   typeCheckedFieldDecs
+                   typeCheckedMethodDecs
+                   
+-- TYPECHECK FIELD DECLARATIONS (and create a LocVarTable in the process)
+typeCheckFieldDecs :: [FieldDecl] -> Type -> [Class] -> (LocVarTable, [FieldDecl])
+typeCheckFieldDecs fieldDecs classType cls = iterateOverFieldDecs ([],[]) fieldDecs
+    where
+        iterateOverFieldDecs res [] = res
+        iterateOverFieldDecs (ctbl, cfs) ((FieldDecl varDecs vis stat):fs) =
+            let (ntbl, tVarDecs) = iterateOverVarDecs (ctbl, []) varDecs
+            in iterateOverFieldDecs (ntbl, cfs ++ [(FieldDecl tVarDecs vis stat)]) fs
+            
+        iterateOverVarDecs res [] = res
+        iterateOverVarDecs (ctbl, cVarDecs) (var@(VariableDecl vName vType vFinal vExpr):vs) =
+            let typedVar = case vExpr of
+                    Nothing -> var
+                    (Just expr) -> VariableDecl vName vType vFinal (Just (typeCheckExpr expr ctbl cls))
+            in iterateOverVarDecs ((vName, vType):ctbl, cVarDecs ++ [typedVar]) vs               
+                   
+    
+-- TYPECHECK METHOD DECLARATIONS
+-- TODO: standard of method declarations 
+typeCheckMethodDecs :: [MethodDecl] -> LocVarTable -> [Class] -> [MethodDecl]
+typeCheckMethodDecs = undefined 
 
 -- TYPECHECK EXPRESSIONS:
 -------------------------
@@ -101,11 +130,57 @@ typeCheckExpr (TypedExpr _ _) _ _ =
 
 -- TYPECHECKER EXPRESSION STATEMENTS
 typeCheckStmtExpr :: StmtExpr -> LocVarTable -> [Class] -> StmtExpr
-typeCheckStmtExpr = undefined
-
+typeCheckStmtExpr (Assign leftValExpr rightValExpr) tbl cls = 
+    let typedLeftValExpr = typeCheckExpr leftValExpr tbl cls 
+        typedRightValExpr = typeCheckExpr rightValExpr tbl cls
+        leftValType  = getTypeFromTypedExpr typedLeftValExpr
+        rightValType = getTypeFromTypedExpr typedRightValExpr
+    in if   (leftValType == rightValType)
+       then TypedStmtExpr (Assign typedLeftValExpr
+                                  typedRightValExpr)
+                          rightValType
+       else error "Assign error"
+typeCheckStmtExpr (New newType arguments) tbl cls =
+    -- TODO: is 'argument influencing' important for typechecker ?
+    TypedStmtExpr (New newType (map (\expr -> typeCheckExpr expr tbl cls)
+                                    arguments))
+                  newType
+typeCheckStmtExpr (LazyAssign exprA exprB) tbl cls =
+    case typeCheckStmtExpr (Assign exprA exprB) tbl cls of
+        TypedStmtExpr (Assign typedExprA typedExprB) t ->
+            TypedStmtExpr (LazyAssign typedExprA typedExprB) t
+        _   -> error " "
+       
 -- TYPECHECK STATEMENTS
-checkStmt :: Stmt -> LocVarTable -> [Class] -> Stmt
-checkStmt = undefined
+typeCheckStmt :: Stmt -> LocVarTable -> [Class] -> Stmt
+typeCheckStmt (Block stmts) tbl cls = Block (iterateOverBlock stmts tbl cls)
+    where
+    iterateOverBlock [] _ _ = []
+typeCheckStmt (Return returnExpr) tbl cls =
+    let typedReturnExpr = typeCheckExpr returnExpr tbl cls
+        returnExprType = getTypeFromTypedExpr typedReturnExpr
+    in TypedStmt (Return typedReturnExpr) returnExprType
+typeCheckStmt (While whileExpr whileStmt) tbl cls =
+    let typedWhileExpr = typeCheckExpr whileExpr tbl cls
+        whileExprType = getTypeFromTypedExpr typedWhileExpr
+    in case whileExprType of
+        "boolean" -> let typedWhileStmt = typeCheckStmt whileStmt tbl cls
+                         whileStmtType = getTypeFromTypedStmt typedWhileStmt
+                     in TypedStmt (While typedWhileExpr whileStmt) whileStmtType                     
+        _         -> error "While expression must be of boolean type"
+typeCheckStmt (DoWhile doWhileExpr doWhileStmt) tbl cls =
+    let (TypedStmt (While a b) t) = typeCheckStmt (While doWhileExpr doWhileStmt) tbl cls 
+    in TypedStmt (DoWhile a b) t
+typeCheckStmt (For _ _ _ _) tbl cls = undefined
+typeCheckStmt Break _ _ = TypedStmt Break "void"
+typeCheckStmt Continue _ _ = TypedStmt Continue "void"
+typeCheckStmt (If ifExpr thenStmt elseStmt) tbl cls = undefined
+
+-- TYPECHECK STATEMENTS AND (POSSIBLY) TRANSFORM LOCAL VARIABLE TABLE
+typeCheckStmtLocVar :: Stmt -> LocVarTable -> [Class] -> (Stmt, LocVarTable)
+-- statments that don't transfrom the current LocVarTable
+-- Block, While, DoWhile, For, If, Switch 
+typeCheckStmtLocVar stmt tbl cls = (typeCheckStmt stmt tbl cls, tbl) 
 
 -- HELPER FUNCTIONS:
 -- lookup a certain type in a list of classes
@@ -114,6 +189,9 @@ classLookup _         []     = Nothing
 classLookup t (cl@(Class s _ _):cls) | t == s = Just cl
                                      | otherwise = classLookup t cls
 
+-- extracts a LocVarTable from a list of field declarations
+extractLocVarTable :: [FieldDecl] -> LocVarTable
+extractLocVarTable = undefined 
 -- lookup the type of a fieldname in a class
 classFieldTypeLookup :: String -> Class -> Maybe Type
 classFieldTypeLookup varName (Class _ fieldDecList _) =
@@ -137,3 +215,7 @@ getTypeFromTypedExpr (TypedExpr _ exprType) = exprType
 -- extract type from type statement expression
 getTypeFromTypedStmtExpr :: StmtExpr -> Type
 getTypeFromTypedStmtExpr (TypedStmtExpr _ stmtExprType) = stmtExprType
+
+-- extract type from typed statement
+getTypeFromTypedStmt :: Stmt -> Type
+getTypeFromTypedStmt (TypedStmt _ stmtType) = stmtType
