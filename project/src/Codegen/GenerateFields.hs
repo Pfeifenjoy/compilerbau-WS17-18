@@ -1,3 +1,7 @@
+{-| 
+This module generates the fields. Additional it generates the init 
+method, which is used to assign non final values to the fields.
+-} 
 module Codegen.GenerateFields (
   generateFields
 ) where
@@ -17,7 +21,7 @@ generateFD (FieldDecl vds vis static)
   = mapM_ (generateVD vis static) vds
 
 generateVD :: Visibility 
-           -> Bool 
+           -> Bool -- ^ is the field static? 
            -> VariableDecl 
            -> State ClassFile ()
 generateVD vis static (VariableDecl name typ final mayExpr) = 
@@ -44,6 +48,7 @@ generateAttrFields (Just expr) =
                                     , _tamAttr = 2
                                     , _indexValueAttr = indexValue
                                     }]
+-- TODO function to generate init method
 
 -- helper functions
 
@@ -58,7 +63,7 @@ visToFlag Public = 1
 visToFlag Private = 2
 -- visToFlag Protected = 4
 
-typeToDescriptor :: String -> String
+typeToDescriptor :: Type -> String
 typeToDescriptor "boolean" = "Z"
 typeToDescriptor "char" = "C"
 typeToDescriptor "int" = "I"

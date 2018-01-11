@@ -1,3 +1,7 @@
+{-| 
+This module contains a abstract assembler and function to convert it to
+int, which is later translated in to byte code
+-}
 module Codegen.Data.MethodFormat where
 
 -- TODO Add complete assembler from 
