@@ -53,13 +53,18 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
      indexType <- generateUTF8 descr 
      indexCode <- generateUTF8 "Code" 
      cf <- get 
-     let (code,vars) = runState (codeToInt <$> generateMethodsStmt stmt) 
-                                 Vars { _localVar = HM.fromList [] 
-                                      , _classFile = cf
-                                      , _deepness = 0
-                                      , _line = 0
-                                      , _continueLine = [] 
-                                      }
+     let (code,vars) 
+           = runState (codeToInt <$> generateMethodsStmt stmt) 
+                      Vars { _localVar = HM.fromList $ (0, "This") 
+                                          : zip [1..]  
+                                            (map 
+                                              (\(ArgumentDecl n _ _) -> n)
+                                              argDecls)
+                           , _classFile = cf
+                           , _deepness = 0
+                           , _line = 0
+                           , _continueLine = [] 
+                           }
      put $ vars^.classFile 
      let accessFlags = visToFlag vis : [8 | static] 
          codeAttr = AttributeCode { _indexNameAttr = indexCode
@@ -81,7 +86,7 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
                                  }
      modify $ over arrayMethods (methodInfo:) 
 
-generateMethodsStmt :: Stmt -> State Vars MF.Code
+generateMethodsStmt :: Stmt -> State Vars Code
 -- Block
 generateMethodsStmt (Block stmts) =
   do modify $ over deepness (+1) 
@@ -90,46 +95,71 @@ generateMethodsStmt (Block stmts) =
      return code
 
 -- Return 
-generateMethodsStmt (Return expr) = undefined
+generateMethodsStmt (TypedStmt (Return expr) typ) =
+  do exprCode <- generateMethodsExpr expr
+     modify $ over line (+1) -- length of Ireturn 
+     return $ exprCode ++ (case typ of
+                             -- TODO check types
+                             "objectref" -> [Areturn]
+                             "double" -> [Dreturn]
+                             "float" -> [Freturn]
+                             "int" -> [Ireturn]
+                             "bool" -> [Ireturn]
+                             "char" -> [Ireturn]
+                             "long" -> [Lreturn]
+                             "void" -> [MF.Return])
+     
 
 -- While
 generateMethodsStmt (While cond body) =
-  do modify $ \vars -> over continueLine (vars^.line+1:) vars
-     refLine <- (+1) . view line <$> get
-     (condCode,bodyCode) <- getCondBodyCode cond body 
-     getForWhileCode refLine condCode bodyCode
+  do (refLine,condCode,bodyCode) <- getForWhileCode cond body
+     modify $ over line (+3) -- length of Goto 
+     breakLine <- (+1) . view line <$> get
+     let (b1,b2) = split16Byte $ breakLine - refLine
+         (b3,b4) = split16Byte $ refLine - breakLine - 1
+         code = condCode ++ [Ifeq b1 b2] 
+                         ++ adBreaks refLine breakLine bodyCode 
+                         ++ [Goto b3 b4]
+     modify $ over continueLine tail 
+     return code
 
 -- DoWhile
 generateMethodsStmt (DoWhile cond body) = 
-  do modify $ \vars -> over continueLine (vars^.line+1:) vars
-     refLine <- (+1) . view line <$> get
+  do refLine <- (+1) . view line <$> get 
+     modify $ over continueLine (refLine:)
      bodyCode <- generateMethodsStmt body
      condCode <- generateMethodsExpr cond
-     modify $ over line (+1) 
-     breakLine <- view line <$> get
+     modify $ over line (+3) -- length of Ifne
+     breakLine <- (+1) . view line <$> get
      let (b1,b2) = split16Byte $ breakLine - refLine
          code = adBreaks refLine breakLine bodyCode ++ condCode 
-                                            ++ [Ifne b1 b2] 
+                                                    ++ [Ifne b1 b2]
      modify $ over continueLine tail 
      return code
 
 -- For
-generateMethodsStmt (For stmt1 expr stmt2 body) = 
-  do modify $ \vars -> over continueLine (vars^.line+1:) vars
-     refLine <- (+1) . view line <$> get
-     condCode <- generateMethodsStmt stmt1
-              -++- generateMethodsExpr expr
-              -++- generateMethodsStmt stmt2
-     modify (over line (+1)) 
-     bodyCode <- generateMethodsStmt body
-     getForWhileCode refLine condCode bodyCode
+generateMethodsStmt (For init cond iter body) = 
+  do initialCode <- generateMethodsStmt init -- i.e. i = 1
+     (refLine,condCode,bodyCode) <- getForWhileCode cond body
+     iterateCode <- generateMethodsStmt iter -- i.e. i++
+     modify (over line (+3)) -- Goto b1 b2
+     breakLine <- view line <$> get
+     let (b1,b2) = split16Byte $ breakLine - refLine
+         (b3,b4) = split16Byte $ refLine - breakLine - 1
+         code = initialCode ++ condCode 
+                            ++ [Ifeq b1 b2] 
+                            ++ adBreaks refLine breakLine bodyCode 
+                            ++ iterateCode 
+                            ++ [Goto b3 b4]
+     modify $ over continueLine tail 
+     return code
 
 generateMethodsStmt Break =
-  do modify $ over line (+1) 
+  do modify $ over line (+3) 
      return [Goto 0 0]
   
 generateMethodsStmt Continue =
-  do modify $ over line (+1) 
+  do modify $ over line (+3) 
      refLine <- (+1) . view line <$> get
      conLine <- head . view continueLine <$> get     
      let (b1,b2) = split16Byte $ conLine - refLine
@@ -138,13 +168,13 @@ generateMethodsStmt Continue =
 generateMethodsStmt (If cond bodyIf (Just bodyElse)) = 
   do condCode <- generateMethodsExpr cond 
      ref <- (+1) . view line <$> get
-     modify $ over line (+1)
+     modify $ over line (+3) -- length of Ifeq
      bodyIfCode <- generateMethodsStmt bodyIf 
      endIf <- view line <$> get
      modify $ over line (+1)
      bodyElseCode <- generateMethodsStmt bodyElse 
      endElse <- view line <$> get
-     let (b1,b2) = split16Byte $ endIf + 1 - ref
+     let (b1,b2) = split16Byte $ endIf + 4 - ref
          (b3,b4) = split16Byte $ endElse - endIf
      return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode 
@@ -198,18 +228,17 @@ generateMethodsExpr (TypedExpr expr _) = generateMethodsExpr expr
 
 -- helper functions
 
-getForWhileCode :: LineNumber -> Code -> Code -> State Vars Code
-getForWhileCode refLine condCode bodyCode =
-  do breakLine <- view line <$> get
-     let (b1,b2) = split16Byte $ breakLine - refLine
-         code = condCode ++ [Ifeq b1 b2] ++ adBreaks refLine breakLine bodyCode 
-     modify $ over continueLine tail 
-     return code
+getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Code,Code) 
+getForWhileCode cond body =
+  do refLine <- (+1) . view line <$> get
+     modify $ over continueLine (refLine:)
+     (condCode,bodyCode) <- getCondBodyCode cond body
+     return (refLine,condCode,bodyCode)
 
 getCondBodyCode :: Expr -> Stmt -> State Vars (Code,Code)
 getCondBodyCode cond body =
   do condCode <- generateMethodsExpr cond
-     modify (over line (+1)) 
+     modify (over line (+3)) -- jump + 2 branch bytes
      bodyCode <- generateMethodsStmt body
      return (condCode,bodyCode)
 

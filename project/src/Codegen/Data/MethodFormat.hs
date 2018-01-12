@@ -64,7 +64,10 @@ data Assembler = Aload0
                    , indexbyte2 :: Int
                    }
                | Areturn
+               | Dreturn
+               | Freturn
                | Ireturn
+               | Lreturn
                | IfIcmpEq
                    { branchbyte1 :: Int
                    , branchbyte2 :: Int
@@ -142,7 +145,10 @@ codeToInt (Iload3:xs)                   = 0x1d : codeToInt xs
 codeToInt (Iload ind :xs)               = 0x15 : ind : codeToInt xs
 codeToInt (Invokevirtual ind1 ind2:xs)  = 0xb6 : ind1 : ind2 : codeToInt xs
 codeToInt (Areturn:xs)                  = 0xb0 : codeToInt xs
+codeToInt (Dreturn:xs)                  = 0xaf : codeToInt xs
+codeToInt (Freturn:xs)                  = 0xae : codeToInt xs
 codeToInt (Ireturn:xs)                  = 0xac : codeToInt xs
+codeToInt (Lreturn:xs)                  = 0xad : codeToInt xs
 codeToInt (IfIcmpEq b1 b2:xs)           = 0x9f : b1 : b2 : codeToInt xs
 codeToInt (IfIcmpNe b1 b2:xs)           = 0xa0 : b1 : b2 : codeToInt xs
 codeToInt (IfIcmpLt b1 b2:xs)           = 0xa1 : b1 : b2 : codeToInt xs
