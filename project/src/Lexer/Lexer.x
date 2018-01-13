@@ -92,7 +92,7 @@ tokens :-
     else              { \s -> ELSE }
     switch            { \s -> SWITCH }
     case              { \s -> CASE }
-    finally           { \s -> FINALLY }
+    default           { \s -> DEFAULT }
     \?                { \s -> QUESTIONMARK }
 
     -- Class
@@ -107,6 +107,9 @@ tokens :-
     -- Method
     return            { \s -> RETURN }
 
+    -- Other
+    final             { \s -> FINAL }
+
     -- Literals
     true              { \s -> BOOLEAN_LITERAL(True) }
     false             { \s -> BOOLEAN_LITERAL(False) }
@@ -114,8 +117,6 @@ tokens :-
     $digit+           { \s -> INTEGER_LITERAL (fromIntegral (read s)) }
     $alpha [$alpha $digit \_ \']*   { \s -> IDENTIFIER s }
     \'$alpha\'        { \s ->  CHARACTER_LITERAL ((\(_:snd:_) -> snd) s) }
-
-    -- Other
-    final             { \s -> FINAL }
+    
 {
 }
