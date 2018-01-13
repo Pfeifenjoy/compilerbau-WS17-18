@@ -37,9 +37,9 @@ data ClassFile = ClassFile { _magic           :: Magic
 
 -- instance Show ClassFile where
 --          show (ClassFile  magic  minver  maxver  count_cp  array_cp  acfg  this  super  count_interfaces  array_interfaces  count_fields  array_fields  count_methods  array_methods  count_attributes  array_attributes) = "magic = 0x CAFEBABE\n"  ++ (show minver) ++ "\n"  ++ (show maxver) ++ "\n"  ++ "constant_pool_count = " ++ (show count_cp) ++ "\n"  ++ (showCP_Infos array_cp 1) ++ "\n"  ++ (show acfg) ++ "\n"  ++ (show this) ++ "\n"  ++ (show super) ++ "\n\nInterfaces\ncount_interfaces "  ++ (show count_interfaces) ++ "\n"  ++ (show array_interfaces) ++ "\n\nFields\ncount_fields "  ++ (show count_fields) ++ "\n"  ++ (show array_fields) ++ "\n"  ++ (show count_methods) ++ "\n\nMethods\ncount_Methods "  ++ (show array_methods) ++ "\n"  ++ (show count_attributes) ++ "\n"  ++ (show array_attributes)
-         
 
-type CPInfos        = HM.HashMap CPInfo Int 
+
+type CPInfos        = HM.HashMap CPInfo Int
 type Interfaces     = [Interface]
 type FieldInfos     = [FieldInfo]
 type MethodInfos    = [MethodInfo]
@@ -58,25 +58,25 @@ newtype MajorVersion = MajorVersion {
                     }
         deriving Show
 
-data CPInfo = 
+data CPInfo =
           ClassInfo
-                { _tagCp                :: Tag 
+                { _tagCp                :: Tag
                 , _indexCp              :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | FieldRefInfo 
+        | FieldRefInfo
                 { _tagCp                :: Tag
                 , _indexNameCp          :: IndexConstantPool
                 , _indexNameandtypeCp   :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | MethodRefInfo 
+        | MethodRefInfo
                 { _tagCp                :: Tag
                 , _indexNameCp          :: IndexConstantPool
                 , _indexNameandtypeCp   :: IndexConstantPool
                 , _desc                 :: String-- comment in Bytcode
                 }
-        | InterfaceMethodRefInfo 
+        | InterfaceMethodRefInfo
                 { _tagCp                :: Tag
                 , _indexNameCp          :: IndexConstantPool
                 , _indexNameandtypeCp   :: IndexConstantPool
@@ -87,35 +87,35 @@ data CPInfo =
                 , _indexCp              :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | IntegerInfo 
+        | IntegerInfo
                 { _tagCp                :: Tag
                 , _numiCp               :: Int
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | FloatInfo 
+        | FloatInfo
                 { _tagCp                :: Tag
                 , _numfCp               :: Float
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | LongInfo 
+        | LongInfo
                 { _tagCp                :: Tag
                 , _numiL1Cp             :: Int
                 , _numiL2Cp             :: Int
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | DoubleInfo 
+        | DoubleInfo
                 { _tagCp                :: Tag
                 , _numiD1Cp             :: Int
                 , _numiD2Cp             :: Int
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | NameAndTypeInfo 
+        | NameAndTypeInfo
                 { _tagCp                :: Tag
                 , _indexNameCp          :: IndexConstantPool
                 , _indexTypeCp          :: IndexConstantPool
                 , _desc                 :: String -- comment in Bytcode
                 }
-        | Utf8Info 
+        | Utf8Info
                 { _tagCp                :: Tag
                 , _tamCp                :: Int    -- length of string
                 , _cadCp                :: String -- name of string
@@ -123,13 +123,13 @@ data CPInfo =
                 }
             deriving (Show,Eq,Generic)
 
-instance Hashable CPInfo 
+instance Hashable CPInfo
 
 showCPInfos :: [CPInfo] -> Int -> String
 showCPInfos [] n = ""
 showCPInfos (x : xss) n = show n ++ "|" ++ show x ++ "\n" ++ showCPInfos xss (n+1)
 
-data Tag = TagClass              
+data Tag = TagClass
          | TagFieldRef
          | TagMethodRef
          | TagInterfaceMethodRef
@@ -207,7 +207,7 @@ newtype Interface = Interface {
                   }
         deriving Show
 
-data FieldInfo = FieldInfo 
+data FieldInfo = FieldInfo
                         { _afFi          :: AccessFlags
                         , _indexNameFi   :: IndexConstantPool       -- name_index
                         , _indexDescrFi  :: IndexConstantPool       -- descriptor_index
@@ -219,7 +219,7 @@ data FieldInfo = FieldInfo
                         }
             deriving Show
 
-data MethodInfo = MethodInfo 
+data MethodInfo = MethodInfo
                         { _afMi          :: AccessFlags
                         , _indexNameMi   :: IndexConstantPool       -- name_index
                         , _indexDescrMi  :: IndexConstantPool       -- descriptor_index
@@ -228,23 +228,23 @@ data MethodInfo = MethodInfo
                         -- Exceptions(<=1) code(<=1), synthetic(<=1) deprecated(<=1),
                         -- Signature
                         -- Runtime(In)Visible(Parameter)Annotations(<=1),
-                        -- AnnotationsDefault 
+                        -- AnnotationsDefault
                         }
                     deriving Show
 
 data AttributeInfo =
-        AttributeGeneric 
+        AttributeGeneric
             { _indexNameAttr            :: IndexConstantPool
             , _tamLenAttr               :: Int
             , _restAttr                 :: BS.ByteString
             }
 
-      | AttributeConstantValue 
+      | AttributeConstantValue
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamAttr                  :: Int                              -- attribute_length
             , _indexValueAttr           :: IndexConstantPool              -- constantvalue_index
             }
-      | AttributeCode 
+      | AttributeCode
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             , _lenStackAttr             :: Int                              -- max_stack
@@ -258,39 +258,39 @@ data AttributeInfo =
             -- LineNumberTable, LocalVariableTable, LocalVariableTypeTable,
             -- deprecated, StackMapTable(<=1)
             }
-      
+
       | AttributeExceptions
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             , _tamNumExAttr             :: Int                              -- number of exceptions
-            , _exceptionIndexTable      :: [Int]                            -- exception_index_table 
+            , _exceptionIndexTable      :: [Int]                            -- exception_index_table
             }
-      
+
       | AttributeInnerClasses
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             , _tamClasses               :: Int                              -- number_classes
             , _arrayClasses             :: [(Int,Int,Int,AccessFlags)]       -- classes
             }
-      
+
       | AttributeSynthetic
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             }
-      
-      | AttributeSourceFile 
+
+      | AttributeSourceFile
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             , _indexSrcAttr             :: IndexConstantPool              -- sourcefile_index
             }
-            
-      | AttributeLineNumberTable 
+
+      | AttributeLineNumberTable
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             , _tamTableAttr             :: Int                              -- lineNumberTable_length
             , _arrayLineAttr            :: Tupla2Int                        -- (start_pc, line_number)
             }
-      | AttributeLocalVariableTable 
+      | AttributeLocalVariableTable
             { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
             , _tamLenAttr               :: Int                              -- attribute_length
             , _tamTableAttr             :: Int                              -- local_varible_table_length
@@ -306,12 +306,12 @@ type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
 type ListaInt  = [Int]
-type ConstantPoolCount  = Int 
-type InterfacesCount    = Int 
-type FieldsCount        = Int 
-type MethodsCount       = Int 
-type AttributesCount    = Int 
-type IndexConstantPool  = Int 
+type ConstantPoolCount  = Int
+type InterfacesCount    = Int
+type FieldsCount        = Int
+type MethodsCount       = Int
+type AttributesCount    = Int
+type IndexConstantPool  = Int
 
 makeLenses ''ClassFile
 makeLenses ''MinorVersion

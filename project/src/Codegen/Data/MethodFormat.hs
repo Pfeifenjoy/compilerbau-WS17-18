@@ -1,18 +1,18 @@
-{-| 
+{-|
 This module contains a abstract assembler and function to convert it to
 int, which is later translated in to byte code
 -}
 module Codegen.Data.MethodFormat where
 
--- TODO Add complete assembler from 
+-- TODO Add complete assembler from
 -- https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.astore
 data Assembler = Aload0
                | Aload1
                | Aload2
                | Aload3
-               | Aload 
-                   { index :: Int } 
-               | Invokespecial 
+               | Aload
+                   { index :: Int }
+               | Invokespecial
                    { indexbyte1 :: Int
                    , indexbyte2 :: Int
                    }
@@ -23,26 +23,26 @@ data Assembler = Aload0
                | Iconst3
                | Iconst4
                | Iconst5
-               | Bipush Int 
-               | Putfield 
+               | Bipush Int
+               | Putfield
                    { indexbyte1 :: Int
                    , indexbyte2 :: Int
                    }
-               | Getfield 
+               | Getfield
                    { indexbyte1 :: Int
                    , indexbyte2 :: Int
                    }
                | Iadd
                | IStore0
-               | IStore1 
-               | IStore2 
-               | IStore3 
+               | IStore1
+               | IStore2
+               | IStore3
                | IStore Int
                | Iinc
                    { index :: Int
                    , const :: Int
                    }
-               | New 
+               | New
                    { indexbyte1 :: Int
                    , indexbyte2 :: Int
                    }
@@ -51,13 +51,13 @@ data Assembler = Aload0
                | Astore1
                | Astore2
                | Astore3
-               | Astore 
+               | Astore
                    { index :: Int }
                | Iload0
                | Iload1
                | Iload2
                | Iload3
-               | Iload 
+               | Iload
                    { index :: Int }
                | Invokevirtual
                    { indexbyte1 :: Int
@@ -100,14 +100,14 @@ data Assembler = Aload0
                    { branchbyte1 :: Int
                    , branchbyte2 :: Int
                    }
-               | Goto 
+               | Goto
                    { branchbyte1 :: Int
                    , branchbyte2 :: Int
                    }
 
 type Code = [Assembler]
 
-codeToInt :: Code                       -> [Int] 
+codeToInt :: Code                       -> [Int]
 codeToInt (Aload0:xs)                   = 0x2a : codeToInt xs
 codeToInt (Aload1:xs)                   = 0x2b : codeToInt xs
 codeToInt (Aload2:xs)                   = 0x2c : codeToInt xs

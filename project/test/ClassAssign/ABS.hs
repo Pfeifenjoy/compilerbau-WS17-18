@@ -4,9 +4,9 @@ import Lexer.Token
 test = Class("ClassAssign",
 	 [FieldDecl("int", "a")],
 	 [MethodDecl("int", "doStuff", [("int", "b")],
-	 	Block([
+	 	Block[
 	 		LocalVarDecl("int", "c"),
-	 		StmtExprStmt(Assign(LocalOrFieldVar("c"), LocalOrFieldVar("b"))),
-	 		Return(LocalOrFieldVar("b"))]
-	 		))
+	 		StmtExprStmt(Assign(LocalOrFieldVar "c" , LocalOrFieldVar "b" )),
+	 		Return(LocalOrFieldVar "b" )]
+	 		)
 	 ])
