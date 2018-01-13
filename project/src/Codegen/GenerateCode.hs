@@ -10,16 +10,16 @@ import Data.HashMap.Lazy (fromList)
 import Control.Monad.Trans.State.Lazy
 import Control.Lens
 
-generateClass :: Class -> ClassFile 
-generateClass (Class typ fds mds) 
+genClass :: Class -> ClassFile 
+genClass (Class typ fds mds) 
   = execState  
       -- TODO get name Super
-     (do thisIndex <- generateUTF8 typ 
-         superIndex <- generateUTF8 "Super"
+     (do thisIndex <- genUTF8 typ 
+         superIndex <- genUTF8 "Super"
          modify $ set this (ThisClass thisIndex) 
          modify $ set super (SuperClass superIndex) 
-         generateFields fds 
-         generateMethods mds) 
+         genFields fds 
+         genMethods mds) 
       ClassFile { _magic           = Magic
                 -- TODO which version?
                 , _minver          = MinorVersion 0

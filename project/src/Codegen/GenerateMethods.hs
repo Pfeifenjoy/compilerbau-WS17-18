@@ -5,7 +5,7 @@ This module generates the code for all methods except the <init> method
 of a class file
 -}
 module Codegen.GenerateMethods (
-  generateMethods,
+  genMethods,
   visToFlag,
   typeToDescriptor,
   iconst,
@@ -15,7 +15,7 @@ import ABSTree
 import qualified Codegen.Data.MethodFormat as MF 
 import qualified Data.HashMap.Lazy as HM
 import Data.Bits
-import Codegen.Data.MethodFormat hiding (Return)
+import Codegen.Data.MethodFormat hiding (Return, New)
 import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Control.Lens
@@ -23,6 +23,7 @@ import Control.Arrow
 import Control.Monad
 import Control.Monad.Trans.State.Lazy
 
+-- TODO combine user defined init method with default init method 
 
 -- | The name of a local variable.  It is the name in the source code
 --   followed by the deepness in a nested block
@@ -46,21 +47,21 @@ data Vars = Vars { -- | maps the index of a local Variable to its name.
                  }
 makeLenses ''Vars
 
-generateMethods :: [MethodDecl] -> State ClassFile () 
-generateMethods mds 
-  = modify (set countMethods (length mds)) >> mapM_ generateMethod mds 
+genMethods :: [MethodDecl] -> State ClassFile () 
+genMethods mds 
+  = modify (set countMethods (length mds)) >> mapM_ genMethod mds 
 
-generateMethod ::  MethodDecl -> State ClassFile ()
-generateMethod (MethodDecl name typ argDecls stmt vis static) = 
-  do indexName <- generateUTF8 name 
+genMethod ::  MethodDecl -> State ClassFile ()
+genMethod (MethodDecl name typ argDecls stmt vis static) = 
+  do indexName <- genUTF8 name 
      let getArgDesr (ArgumentDecl _ typ _) = typeToDescriptor typ
          descr = "(" ++ concatMap getArgDesr argDecls ++ ")"
                      ++ typeToDescriptor typ
-     indexType <- generateUTF8 descr 
-     indexCode <- generateUTF8 "Code" 
+     indexType <- genUTF8 descr 
+     indexCode <- genUTF8 "Code" 
      cf <- get 
      let (code,vars) 
-           = runState (codeToInt <$> generateMethodsStmt stmt) 
+           = runState (codeToInt <$> genCodeStmt stmt) 
                       Vars { _localVar = HM.fromList $ (0, "This") 
                                           : zip [1..]  
                                             (map 
@@ -94,17 +95,17 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
                                  }
      modify $ over arrayMethods (methodInfo:) 
 
-generateMethodsStmt :: Stmt -> State Vars Code
+genCodeStmt :: Stmt -> State Vars Code
 -- Block
-generateMethodsStmt (Block stmts) =
+genCodeStmt (Block stmts) =
   do modify $ over deepness (+1) 
-     code <- foldr ((-++-) . generateMethodsStmt) (return []) stmts
+     code <- foldr ((-++-) . genCodeStmt) (return []) stmts
      modify $ over deepness (\x -> x-1) 
      return code
 
 -- Return 
-generateMethodsStmt (TypedStmt (Return expr) typ) =
-  do exprCode <- generateMethodsExpr expr
+genCodeStmt (TypedStmt (Return expr) typ) =
+  do exprCode <- genCodeExpr expr
      modify $ over line (+1) -- length of Ireturn 
      return $ exprCode ++ (case typ of
                              -- TODO check types
@@ -119,7 +120,7 @@ generateMethodsStmt (TypedStmt (Return expr) typ) =
      
 
 -- While
-generateMethodsStmt (While cond body) =
+genCodeStmt (While cond body) =
   do (refLine,condCode,bodyCode) <- getForWhileCode cond body
      modify $ over line (+3) -- length of Goto 
      breakLine <- (+1) . view line <$> get
@@ -132,11 +133,11 @@ generateMethodsStmt (While cond body) =
      return code
 
 -- DoWhile
-generateMethodsStmt (DoWhile cond body) = 
+genCodeStmt (DoWhile cond body) = 
   do refLine <- (+1) . view line <$> get 
      modify $ over continueLine (refLine:)
-     bodyCode <- generateMethodsStmt body
-     condCode <- generateMethodsExpr cond
+     bodyCode <- genCodeStmt body
+     condCode <- genCodeExpr cond
      modify $ over line (+3) -- length of Ifne
      breakLine <- (+1) . view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
@@ -146,10 +147,10 @@ generateMethodsStmt (DoWhile cond body) =
      return code
 
 -- For
-generateMethodsStmt (For init cond iter body) = 
-  do initialCode <- generateMethodsStmt init -- i.e. i = 1
+genCodeStmt (For init cond iter body) = 
+  do initialCode <- genCodeStmt init -- i.e. i = 1
      (refLine,condCode,bodyCode) <- getForWhileCode cond body
-     iterateCode <- generateMethodsStmt iter -- i.e. i++
+     iterateCode <- genCodeStmt iter -- i.e. i++
      modify (over line (+3)) -- Goto b1 b2
      breakLine <- view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
@@ -162,76 +163,91 @@ generateMethodsStmt (For init cond iter body) =
      modify $ over continueLine tail 
      return code
 
-generateMethodsStmt Break =
+genCodeStmt Break =
   do modify $ over line (+3) 
      return [Goto 0 0]
   
-generateMethodsStmt Continue =
+genCodeStmt Continue =
   do modify $ over line (+3) 
      refLine <- (+1) . view line <$> get
      conLine <- head . view continueLine <$> get     
      let (b1,b2) = split16Byte . twoCompliment16  $ conLine - refLine
      return [Goto b1 b2]
 
-generateMethodsStmt (If cond bodyIf (Just bodyElse)) = 
-  do condCode <- generateMethodsExpr cond 
+genCodeStmt (If cond bodyIf (Just bodyElse)) = 
+  do condCode <- genCodeExpr cond 
      ref <- (+1) . view line <$> get
      modify $ over line (+3) -- length of Ifeq
-     bodyIfCode <- generateMethodsStmt bodyIf 
+     bodyIfCode <- genCodeStmt bodyIf 
      endIf <- view line <$> get
      modify $ over line (+1)
-     bodyElseCode <- generateMethodsStmt bodyElse 
+     bodyElseCode <- genCodeStmt bodyElse 
      endElse <- view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
          (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
      return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode 
 
-generateMethodsStmt (If cond body Nothing) = 
+genCodeStmt (If cond body Nothing) = 
   do ref <- (+1) . view line <$> get
      (condCode,bodyCode) <- getCondBodyCode cond body 
      endIf <- view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
      return $ condCode ++ [Ifeq b1 b2] ++ bodyCode 
 
-generateMethodsStmt (Switch expr switchCases (Just stmts)) = undefined
-generateMethodsStmt (Switch expr switchCases Nothing) = undefined
-generateMethodsStmt (LocalVarDecls variableDecls) = undefined
-generateMethodsStmt (StmtExprStmt stmtExpr) = undefined
-generateMethodsStmt (TypedStmt stmt _) = generateMethodsStmt stmt 
+genCodeStmt (Switch expr switchCases (Just stmts)) = undefined
+genCodeStmt (Switch expr switchCases Nothing) = undefined
+genCodeStmt (LocalVarDecls vds) 
+  = foldr ((-++-) . genCodeVarDecl) (return []) vds
+genCodeStmt (StmtExprStmt stmtExpr) = undefined
+genCodeStmt (TypedStmt stmt _) = genCodeStmt stmt 
 
-generateMethodsExpr :: Expr -> State Vars MF.Code
-generateMethodsExpr This = undefined
-generateMethodsExpr (LocalOrFieldVar str) = undefined
-generateMethodsExpr (InstVar expr str) = undefined
-generateMethodsExpr (Unary str expr) = undefined
-generateMethodsExpr (Binary "+" expr1 expr2)
-  = generateMethodsExpr expr1
-    -++- generateMethodsExpr expr2
+genCodeExpr :: Expr -> State Vars Code
+genCodeExpr This = undefined
+genCodeExpr (LocalOrFieldVar str) = undefined
+genCodeExpr (InstVar expr str) = undefined
+genCodeExpr (Unary str expr) = undefined
+genCodeExpr (Binary "+" expr1 expr2)
+  = genCodeExpr expr1
+    -++- genCodeExpr expr2
     -++- (modify (over line (+1)) >> modifyStack (-1) >> return [Iadd])
-generateMethodsExpr (Binary "-" expr1 expr2) = undefined
+genCodeExpr (Binary "-" expr1 expr2) = undefined
 -- TODO add Isub to assembler
---  = generateMethodsExpr expr1
---    -++- generateMethodsExpr expr2
+--  = genCodeExpr expr1
+--    -++- genCodeExpr expr2
 --    -++- (modify (over line (+1)) >> modiyStack (-1) >> return [Isub])
-generateMethodsExpr (InstanceOf expr typ) = undefined
+genCodeExpr (InstanceOf expr typ) = undefined
     -- TODO extra instanceOf
 -- expr1 ? expr2 : expr3 cf = undefined
-generateMethodsExpr (Ternary expr1 expr2 expr3) = undefined
-generateMethodsExpr (BooleanLiteral True)
+genCodeExpr (Ternary expr1 expr2 expr3) = undefined
+genCodeExpr (BooleanLiteral True)
   = modify (over line (+1)) >> return [Iconst1]
-generateMethodsExpr (BooleanLiteral False)
+genCodeExpr (BooleanLiteral False)
   = modify (over line (+1)) >> return [Iconst0] 
-generateMethodsExpr (CharLiteral char) = undefined
-generateMethodsExpr (IntegerLiteral int) 
+genCodeExpr (CharLiteral char) = undefined
+genCodeExpr (IntegerLiteral int) 
   = modify (over line (+1)) >> return [iconst $ fromIntegral int]
     --  LongLiteral Int64
     --  FloatLiteral Float
     --  DoubleLiteral Double
     --  StringLiteral String
-generateMethodsExpr JNull = undefined
-generateMethodsExpr (StmtExprExpr stmtExpr) = undefined
-generateMethodsExpr (TypedExpr expr _) = generateMethodsExpr expr
+genCodeExpr JNull = undefined
+genCodeExpr (StmtExprExpr sE) = genCodeStmtExpr sE 
+genCodeExpr (TypedExpr expr _) = genCodeExpr expr
+
+genCodeVarDecl :: VariableDecl -> State Vars Code 
+genCodeVarDecl (VariableDecl _ _ _ Nothing) = return [] 
+genCodeVarDecl (VariableDecl name typ _ (Just value)) = undefined
+
+genCodeStmtExpr :: StmtExpr -> State Vars Code
+genCodeStmtExpr (Assign (LocalOrFieldVar name) expr) = undefined
+genCodeStmtExpr (New typ  arguments) = undefined
+genCodeStmtExpr (MethodCall expr name arguments) = undefined
+genCodeStmtExpr (LazyAssign (LocalOrFieldVar name) expr) = undefined 
+genCodeStmtExpr (TypedStmtExpr se _) = genCodeStmtExpr se 
+
+genCodeSwitchCase :: SwitchCase -> State Vars Code 
+genCodeSwitchCase (SwitchCase expr cases) = undefined
 
 
 -- helper functions
@@ -246,9 +262,9 @@ getForWhileCode cond body =
 
 getCondBodyCode :: Expr -> Stmt -> State Vars (Code,Code)
 getCondBodyCode cond body =
-  do condCode <- generateMethodsExpr cond
+  do condCode <- genCodeExpr cond
      modify (over line (+3)) -- jump + 2 branch bytes
-     bodyCode <- generateMethodsStmt body
+     bodyCode <- genCodeStmt body
      return (condCode,bodyCode)
 
 -- | put n items on the opstack.  calculates new max stack depth
