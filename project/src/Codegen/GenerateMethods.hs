@@ -5,16 +5,12 @@ This module generates the code for all methods except the <init> method
 of a class file
 -}
 module Codegen.GenerateMethods (
-  genMethods,
-  visToFlag,
-  typeToDescriptor,
-  iconst,
-  split16Byte
+  genMethods
 ) where
 import ABSTree
 import qualified Codegen.Data.MethodFormat as MF
+import Codegen.GenerateFields(genCode)
 import qualified Data.HashMap.Lazy as HM
-import Data.Bits
 import Codegen.Data.MethodFormat hiding (Return, New)
 import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
@@ -47,21 +43,35 @@ data Vars = Vars { -- | maps the index of a local Variable to its name.
                  }
 makeLenses ''Vars
 
-genMethods :: [MethodDecl] -> State ClassFile ()
-genMethods mds
-  = modify (set countMethods (length mds)) >> mapM_ genMethod mds
+genMethods :: [FieldDecl] -> [MethodDecl] -> State ClassFile ()
+genMethods vds mds
+  = modify (set countMethods (length mds)) >> mapM_ (genMethod vds) mds
 
-genMethod ::  MethodDecl -> State ClassFile ()
-genMethod (MethodDecl name typ argDecls stmt vis static) =
+genMethod :: [FieldDecl] -- ^ initial code of constructor
+          -> MethodDecl -> State ClassFile ()
+genMethod fds (MethodDecl name typ argDecls stmt vis static) =
   do indexName <- genUTF8 name
+     -- generate initial code for constructors
+     let lengthInit = 0
+         codeInit = []
+         genInitCode = mapM genFD 
+         genFD (FieldDecl vds _ _) = mapM genCode vds
+     when (typ == "") -- constructors have no type
+       $ do (lengthInit,codeInit) 
+                <- (\p -> ((+5) .sum $ map fst p
+                          , [Aload0, Invokespecial 0 1] ++ concatMap snd p))
+                    . concat <$> genInitCode fds 
+            return ()
+     -- generate descriptor
      let getArgDesr (ArgumentDecl _ typ _) = typeToDescriptor typ
          descr = "(" ++ concatMap getArgDesr argDecls ++ ")"
                      ++ typeToDescriptor typ
      indexType <- genUTF8 descr
      indexCode <- genUTF8 "Code"
      cf <- get
+     -- generate code
      let (code,vars)
-           = runState (codeToInt <$> genCodeStmt stmt)
+           = runState (codeToInt . (codeInit++) <$> genCodeStmt stmt)
                       Vars { _localVar = HM.fromList $ (0, "This")
                                           : zip [1..]
                                             (map
@@ -77,10 +87,10 @@ genMethod (MethodDecl name typ argDecls stmt vis static) =
      put $ vars^.classFile
      let accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = 16 + vars^.line
+                                  , _tamLenAttr = 16 + vars^.line + lengthInit
                                   , _lenStackAttr = vars^.maxStack
                                   , _lenLocalAttr = length $ vars^.localVar
-                                  , _tamCodeAttr = vars^.line
+                                  , _tamCodeAttr = vars^.line + lengthInit
                                   , _arrayCodeAttr = code
                                   , _tamExAttr = 0
                                   , _arrayExAttr = []
@@ -270,23 +280,11 @@ getCondBodyCode cond body =
 -- | put n items on the opstack.  calculates new max stack depth
 modifyStack :: Int -> State Vars ()
 modifyStack n = do modify $ over curStack (+n)
-                   cur <- (view curStack) <$> get
-                   curMax <- (view maxStack) <$> get
+                   cur <- view curStack <$> get
+                   curMax <- view maxStack <$> get
                    modify $ set maxStack $ max cur curMax
 
 
--- | split a unsigned 16 bits int in two signed 8 bits int
-split16Byte :: (Bits n,Integral n) => n -- ^ 16 Byte
-                                   -> (n -- ^ upper 8 byte
-                                      ,n) -- ^ lower 8 byte
-split16Byte i = (div i (2^8),mod i (2^8))
-
-
--- TODO make sure that's correct
--- | makes the two complement of a 16 bits int
-twoCompliment16 :: (Bits n,Num n) => n -> n
-twoCompliment16 i = -(i .&. mask) + (i .&. complement mask)
-  where mask = 2^(16-1)
 
 -- | ads the lines to jump to the Goto
 adBreaks :: LineNumber -- ^ current line in code
@@ -299,27 +297,6 @@ adBreaks refIndex index (Goto 0 0:as)
       where (b1,b2) = split16Byte . twoCompliment16 $ index - refIndex
 adBreaks refIndex index (a:as) = a : adBreaks (refIndex + 1) index as
 
-
-visToFlag :: Visibility -> Int
-visToFlag Public = 1
-visToFlag Private = 2
--- visToFlag Protected = 4
-
-typeToDescriptor :: Type -> String
-typeToDescriptor "boolean" = "Z"
-typeToDescriptor "char" = "C"
-typeToDescriptor "int" = "I"
-typeToDescriptor "void" = "V"
-typeToDescriptor object = "L" ++ object ++ ";"
-
-iconst :: Int -> Assembler
-iconst 0 = Iconst0
-iconst 1 = Iconst1
-iconst 2 = Iconst2
-iconst 3 = Iconst3
-iconst 4 = Iconst4
-iconst 5 = Iconst5
-iconst n = Bipush n
 
 -- | concatenates to lists in applicatives
 (-++-) :: Applicative m => m [a] -> m [a] -> m [a]

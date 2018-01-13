@@ -18,8 +18,8 @@ genClass (Class typ fds mds)
          superIndex <- genUTF8 "Super"
          modify $ set this (ThisClass thisIndex)
          modify $ set super (SuperClass superIndex)
-         genFields fds
-         genMethods mds)
+         genFields (existsConstructor mds) fds
+         genMethods fds mds)
       ClassFile { _magic           = Magic
                 -- TODO which version?
                 , _minver          = MinorVersion 0
@@ -38,3 +38,10 @@ genClass (Class typ fds mds)
                 , _countAttributes = 0
                 , _arrayAttributes = []
                 }
+
+-- | checks if a constructor exists, that has no arguments
+existsConstructor :: [MethodDecl] -> Bool
+existsConstructor [] = False
+existsConstructor (MethodDecl _ "" [] _ _ _:_) = True
+existsConstructor (_:mds) = existsConstructor mds 
+ 

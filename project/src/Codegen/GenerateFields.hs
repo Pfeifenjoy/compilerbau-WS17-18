@@ -3,7 +3,8 @@ This module generates the fields. Additional it gens the init
 method, which is used to assign non final values to the fields.
 -}
 module Codegen.GenerateFields (
-  genFields
+  genFields,
+  genCode
 ) where
 
 import ABSTree hiding (Return)
@@ -14,19 +15,24 @@ import Data.Char(ord)
 import Data.Bits
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
-import Codegen.GenerateMethods(visToFlag,typeToDescriptor,iconst,split16Byte)
 
-genFields :: [FieldDecl] -> State ClassFile ()
-genFields = mapM_ genFD
+genFields :: Bool -- ^ exists constructor with no arguments
+          -> [FieldDecl] 
+          -> State ClassFile ()
+genFields constructor = mapM_ (genFD constructor)
 
-genFD ::  FieldDecl -> State ClassFile ()
-genFD (FieldDecl vds vis static)
-  = mapM_ (genVD vis static) vds >> genInit vds
+genFD :: Bool -- ^ exists constructor with no arguments
+      -> FieldDecl 
+      -> State ClassFile ()
+genFD constructor (FieldDecl vds vis static) 
+  = mapM_ (genVD vis static) vds >> if constructor 
+                                    then return ()
+                                    else genInit vds
 
 genVD :: Visibility
-           -> Bool -- ^ is the field static?
-           -> VariableDecl
-           -> State ClassFile ()
+      -> Bool -- ^ is the field static?
+      -> VariableDecl
+      -> State ClassFile ()
 genVD vis static (VariableDecl name typ final mayExpr) =
   do indexName <- genUTF8 name
      indexType <- genUTF8 $ typeToDescriptor typ
@@ -56,7 +62,7 @@ genInit :: [VariableDecl] -> State ClassFile ()
 genInit vds =
   do indexType <- genUTF8 "()V"
      indexCode <- genUTF8 "Code"
-     indexName <- (view $ this . indexTh) <$> get
+     indexName <- view (this . indexTh) <$> get
      codeVars <- mapM genCode vds
      let code = codeToInt $ [Aload0,Invokespecial 0 1]
                             ++ concatMap snd codeVars

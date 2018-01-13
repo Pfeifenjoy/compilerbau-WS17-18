@@ -4,6 +4,9 @@ int, which is later translated in to byte code
 -}
 module Codegen.Data.MethodFormat where
 
+import ABSTree(Visibility(..),Type) 
+import Data.Bits
+
 -- TODO Add complete assembler from
 -- https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.astore
 data Assembler = Aload0
@@ -158,3 +161,43 @@ codeToInt (IfIcmpLe b1 b2:xs)           = 0xa4 : b1 : b2 : codeToInt xs
 codeToInt (Ifeq b1 b2:xs)               = 0x99 : b1 : b2 : codeToInt xs
 codeToInt (Ifne b1 b2:xs)               = 0x9a : b1 : b2 : codeToInt xs
 codeToInt (Goto b1 b2:xs)               = 0xa7 : b1 : b2 : codeToInt xs
+
+
+-- helper
+
+
+-- | split a unsigned 16 bits int in two signed 8 bits int
+split16Byte :: (Bits n,Integral n) => n -- ^ 16 Byte
+                                   -> (n -- ^ upper 8 byte
+                                      ,n) -- ^ lower 8 byte
+split16Byte i = (div i (2^8),mod i (2^8))
+
+
+-- TODO make sure that's correct
+-- | makes the two complement of a 16 bits int
+twoCompliment16 :: (Bits n,Num n) => n -> n
+twoCompliment16 i = -(i .&. mask) + (i .&. complement mask)
+  where mask = 2^(16-1)
+
+
+visToFlag :: Visibility -> Int
+visToFlag Public = 1
+visToFlag Private = 2
+-- visToFlag Protected = 4
+
+typeToDescriptor :: Type -> String
+typeToDescriptor "boolean" = "Z"
+typeToDescriptor "char" = "C"
+typeToDescriptor "int" = "I"
+typeToDescriptor "" = "V" -- constructors have type void in class files
+typeToDescriptor "void" = "V"
+typeToDescriptor object = "L" ++ object ++ ";"
+
+iconst :: Int -> Assembler
+iconst 0 = Iconst0
+iconst 1 = Iconst1
+iconst 2 = Iconst2
+iconst 3 = Iconst3
+iconst 4 = Iconst4
+iconst 5 = Iconst5
+iconst n = Bipush n
