@@ -1,9 +1,7 @@
 class ClassAssign {
-	int a = 5;
-        final int b = 6;
-        int c;
+	int a;
 
-	final protected int doStuff(int b) {
+	int doStuff(int b) {
 		int c;
 		c = b;
 		return b;
