@@ -5,7 +5,11 @@ This module generates the code for all methods except the <init> method
 of a class file
 -}
 module Codegen.GenerateMethods (
-  generateMethods
+  generateMethods,
+  visToFlag,
+  typeToDescriptor,
+  iconst,
+  split16Byte
 ) where
 import ABSTree
 import qualified Codegen.Data.MethodFormat as MF 
@@ -34,6 +38,8 @@ data Vars = Vars { -- | maps the index of a local Variable to its name.
                    _localVar :: HM.HashMap LocVarIndex LocVarName 
                  , _classFile :: ClassFile
                  , _deepness :: Int -- ^ deepness of nested block
+                 , _curStack :: Int
+                 , _maxStack :: Int
                  , _line :: LineNumber 
                  -- | Stack of lines to which break should jump
                  , _continueLine :: [LineNumber] 
@@ -62,15 +68,17 @@ generateMethod (MethodDecl name typ argDecls stmt vis static) =
                                               argDecls)
                            , _classFile = cf
                            , _deepness = 0
+                           , _curStack = 0
+                           , _maxStack = 0
                            , _line = 0
                            , _continueLine = [] 
                            }
      put $ vars^.classFile 
      let accessFlags = visToFlag vis : [8 | static] 
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = undefined
-                                  , _lenStackAttr = undefined
-                                  , _lenLocalAttr = undefined
+                                  , _tamLenAttr = 16 + vars^.line 
+                                  , _lenStackAttr = vars^.maxStack 
+                                  , _lenLocalAttr = length $ vars^.localVar 
                                   , _tamCodeAttr = vars^.line 
                                   , _arrayCodeAttr = code 
                                   , _tamExAttr = 0 
@@ -115,8 +123,8 @@ generateMethodsStmt (While cond body) =
   do (refLine,condCode,bodyCode) <- getForWhileCode cond body
      modify $ over line (+3) -- length of Goto 
      breakLine <- (+1) . view line <$> get
-     let (b1,b2) = split16Byte $ breakLine - refLine
-         (b3,b4) = split16Byte $ refLine - breakLine - 1
+     let (b1,b2) = split16Byte . twoCompliment16 $ breakLine - refLine
+         (b3,b4) = split16Byte . twoCompliment16 $ refLine - breakLine - 1
          code = condCode ++ [Ifeq b1 b2] 
                          ++ adBreaks refLine breakLine bodyCode 
                          ++ [Goto b3 b4]
@@ -131,7 +139,7 @@ generateMethodsStmt (DoWhile cond body) =
      condCode <- generateMethodsExpr cond
      modify $ over line (+3) -- length of Ifne
      breakLine <- (+1) . view line <$> get
-     let (b1,b2) = split16Byte $ breakLine - refLine
+     let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
          code = adBreaks refLine breakLine bodyCode ++ condCode 
                                                     ++ [Ifne b1 b2]
      modify $ over continueLine tail 
@@ -144,8 +152,8 @@ generateMethodsStmt (For init cond iter body) =
      iterateCode <- generateMethodsStmt iter -- i.e. i++
      modify (over line (+3)) -- Goto b1 b2
      breakLine <- view line <$> get
-     let (b1,b2) = split16Byte $ breakLine - refLine
-         (b3,b4) = split16Byte $ refLine - breakLine - 1
+     let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
+         (b3,b4) = split16Byte . twoCompliment16  $ refLine - breakLine - 1
          code = initialCode ++ condCode 
                             ++ [Ifeq b1 b2] 
                             ++ adBreaks refLine breakLine bodyCode 
@@ -162,7 +170,7 @@ generateMethodsStmt Continue =
   do modify $ over line (+3) 
      refLine <- (+1) . view line <$> get
      conLine <- head . view continueLine <$> get     
-     let (b1,b2) = split16Byte $ conLine - refLine
+     let (b1,b2) = split16Byte . twoCompliment16  $ conLine - refLine
      return [Goto b1 b2]
 
 generateMethodsStmt (If cond bodyIf (Just bodyElse)) = 
@@ -174,8 +182,8 @@ generateMethodsStmt (If cond bodyIf (Just bodyElse)) =
      modify $ over line (+1)
      bodyElseCode <- generateMethodsStmt bodyElse 
      endElse <- view line <$> get
-     let (b1,b2) = split16Byte $ endIf + 4 - ref
-         (b3,b4) = split16Byte $ endElse - endIf
+     let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
+         (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
      return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode 
 
@@ -183,7 +191,7 @@ generateMethodsStmt (If cond body Nothing) =
   do ref <- (+1) . view line <$> get
      (condCode,bodyCode) <- getCondBodyCode cond body 
      endIf <- view line <$> get
-     let (b1,b2) = split16Byte $ endIf - ref
+     let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
      return $ condCode ++ [Ifeq b1 b2] ++ bodyCode 
 
 generateMethodsStmt (Switch expr switchCases (Just stmts)) = undefined
@@ -200,12 +208,12 @@ generateMethodsExpr (Unary str expr) = undefined
 generateMethodsExpr (Binary "+" expr1 expr2)
   = generateMethodsExpr expr1
     -++- generateMethodsExpr expr2
-    -++- (modify (over line (+1)) >> return [Iadd])
+    -++- (modify (over line (+1)) >> modifyStack (-1) >> return [Iadd])
 generateMethodsExpr (Binary "-" expr1 expr2) = undefined
 -- TODO add Isub to assembler
 --  = generateMethodsExpr expr1
 --    -++- generateMethodsExpr expr2
---    -++- (modify (over line (+1)) >> return [Isub])
+--    -++- (modify (over line (+1)) >> modiyStack (-1) >> return [Isub])
 generateMethodsExpr (InstanceOf expr typ) = undefined
     -- TODO extra instanceOf
 -- expr1 ? expr2 : expr3 cf = undefined
@@ -229,6 +237,7 @@ generateMethodsExpr (TypedExpr expr _) = generateMethodsExpr expr
 -- helper functions
 
 getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Code,Code) 
+
 getForWhileCode cond body =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
@@ -242,12 +251,19 @@ getCondBodyCode cond body =
      bodyCode <- generateMethodsStmt body
      return (condCode,bodyCode)
 
+-- | put n items on the opstack.  calculates new max stack depth
+modifyStack :: Int -> State Vars ()
+modifyStack n = do modify $ over curStack (+n)
+                   cur <- (view curStack) <$> get 
+                   curMax <- (view maxStack) <$> get 
+                   modify $ set maxStack $ max cur curMax 
+                  
+
 -- | split a unsigned 16 bits int in two signed 8 bits int
 split16Byte :: (Bits n,Integral n) => n -- ^ 16 Byte
                                    -> (n -- ^ upper 8 byte
                                       ,n) -- ^ lower 8 byte
-split16Byte i = (div n (2^8),mod n (2^8))
-  where n = twoCompliment16 i
+split16Byte i = (div i (2^8),mod i (2^8))
 
 
 -- TODO make sure that's correct
@@ -264,8 +280,9 @@ adBreaks :: LineNumber -- ^ current line in code
 adBreaks refIndex index [] = []
 adBreaks refIndex index (Goto 0 0:as) 
   = Goto b1 b2: adBreaks (refIndex + 1) index as 
-      where (b1,b2) = split16Byte $ index - refIndex
+      where (b1,b2) = split16Byte . twoCompliment16 $ index - refIndex
 adBreaks refIndex index (a:as) = a : adBreaks (refIndex + 1) index as
+
 
 visToFlag :: Visibility -> Int
 visToFlag Public = 1
@@ -283,6 +300,10 @@ iconst :: Int -> Assembler
 iconst 0 = Iconst0
 iconst 1 = Iconst1
 iconst 2 = Iconst2
+iconst 3 = Iconst3
+iconst 4 = Iconst4
+iconst 5 = Iconst5
+iconst n = Bipush n
 
 -- | concatenates to lists in applicatives
 (-++-) :: Applicative m => m [a] -> m [a] -> m [a]

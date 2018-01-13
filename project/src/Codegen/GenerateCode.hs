@@ -13,8 +13,8 @@ import Control.Lens
 generateClass :: Class -> ClassFile 
 generateClass (Class typ fds mds) 
   = execState  
-      -- TODO get names
-     (do thisIndex <- generateUTF8 "This" 
+      -- TODO get name Super
+     (do thisIndex <- generateUTF8 typ 
          superIndex <- generateUTF8 "Super"
          modify $ set this (ThisClass thisIndex) 
          modify $ set super (SuperClass superIndex) 
