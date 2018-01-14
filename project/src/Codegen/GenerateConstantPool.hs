@@ -7,6 +7,7 @@ pool, they only give back the index, without inserting a new constant.
 module Codegen.GenerateConstantPool(
   genClass,
   genFieldRef,
+  genFieldRefThis,
   genMethodRef,
   genInterfaceRef,
   genString,
@@ -25,7 +26,6 @@ import Control.Arrow
 import Prelude hiding ((!))
 import qualified Data.HashMap.Lazy as HM
 import Data.HashMap.Lazy ((!))
-
 
 
 -- | insert a class in the constant pool
@@ -51,10 +51,25 @@ genFieldRef name className typ =
   do indexClassName <- genClass className 
      indexNameType <- genNameAndType name typ 
      genInfo FieldRefInfo { _tagCp              = TagFieldRef
-                               , _indexNameCp        = indexClassName
-                               , _indexNameandtypeCp = indexNameType
-                               , _desc               = ""
-                               } 
+                          , _indexNameCp        = indexClassName
+                          , _indexNameandtypeCp = indexNameType
+                          , _desc               = ""
+                          } 
+
+-- | insert a field variable of this class in the constant pool
+genFieldRefThis :: String -- ^ field to insert in constant pool
+                -> Type -- ^ type of this Field
+                -> State ClassFile -- ^ new constant pool
+                         -- | location of field in constant pool
+                         IndexConstantPool
+genFieldRefThis name typ =
+  do indexClassName <- view (this . indexTh) <$> get
+     indexNameType <- genNameAndType name typ
+     genInfo FieldRefInfo { _tagCp              = TagFieldRef
+                          , _indexNameCp        = indexClassName
+                          , _indexNameandtypeCp = indexNameType
+                          , _desc               = ""
+                          }
 
 -- | insert a method in the constant pool
 genMethodRef :: String-- ^ name of method to insert in constant pool

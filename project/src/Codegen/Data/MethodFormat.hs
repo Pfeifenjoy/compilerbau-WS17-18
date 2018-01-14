@@ -8,7 +8,7 @@ import ABSTree(Visibility(..),Type)
 import Data.Bits
 
 -- TODO Add complete assembler from
--- https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.astore
+-- https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html
 data Assembler = Aload0
                | Aload1
                | Aload2
@@ -61,6 +61,18 @@ data Assembler = Aload0
                | Iload2
                | Iload3
                | Iload
+                   { index :: Int }
+               | Fload0
+               | Fload1
+               | Fload2
+               | Fload3
+               | Fload
+                   { index :: Int }
+               | Dload0
+               | Dload1
+               | Dload2
+               | Dload3
+               | Dload
                    { index :: Int }
                | Invokevirtual
                    { indexbyte1 :: Int
@@ -146,6 +158,16 @@ codeToInt (Iload1:xs)                   = 0x1b : codeToInt xs
 codeToInt (Iload2:xs)                   = 0x1c : codeToInt xs
 codeToInt (Iload3:xs)                   = 0x1d : codeToInt xs
 codeToInt (Iload ind :xs)               = 0x15 : ind : codeToInt xs
+codeToInt (Fload0:xs)                   = 0x34 : codeToInt xs
+codeToInt (Fload1:xs)                   = 0x35 : codeToInt xs
+codeToInt (Fload2:xs)                   = 0x36 : codeToInt xs
+codeToInt (Fload3:xs)                   = 0x37 : codeToInt xs
+codeToInt (Fload ind :xs)               = 0x15 : ind : codeToInt xs
+codeToInt (Dload0:xs)                   = 0x26 : codeToInt xs
+codeToInt (Dload1:xs)                   = 0x27 : codeToInt xs
+codeToInt (Dload2:xs)                   = 0x28 : codeToInt xs
+codeToInt (Dload3:xs)                   = 0x29 : codeToInt xs
+codeToInt (Dload ind :xs)               = 0x18 : ind : codeToInt xs
 codeToInt (Invokevirtual ind1 ind2:xs)  = 0xb6 : ind1 : ind2 : codeToInt xs
 codeToInt (Areturn:xs)                  = 0xb0 : codeToInt xs
 codeToInt (Dreturn:xs)                  = 0xaf : codeToInt xs
@@ -201,3 +223,31 @@ iconst 3 = Iconst3
 iconst 4 = Iconst4
 iconst 5 = Iconst5
 iconst n = Bipush n
+
+aload :: Int -> Assembler
+aload 0 = Aload0
+aload 1 = Aload1
+aload 2 = Aload2
+aload 3 = Aload3
+aload n = Aload n
+
+dload :: Int -> Assembler
+dload 0 = Dload0
+dload 1 = Dload1
+dload 2 = Dload2
+dload 3 = Dload3
+dload n = Dload n
+
+fload :: Int -> Assembler
+fload 0 = Fload0
+fload 1 = Fload1
+fload 2 = Fload2
+fload 3 = Fload3
+fload n = Fload n
+
+iload :: Int -> Assembler
+iload 0 = Iload0
+iload 1 = Iload1
+iload 2 = Iload2
+iload 3 = Iload3
+iload n = Iload n

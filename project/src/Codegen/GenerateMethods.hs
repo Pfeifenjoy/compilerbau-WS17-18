@@ -19,7 +19,6 @@ import Control.Arrow
 import Control.Monad
 import Control.Monad.Trans.State.Lazy
 
--- TODO combine user defined init method with default init method
 
 -- | The name of a local variable.  It is the name in the source code
 --   followed by the deepness in a nested block
@@ -32,7 +31,7 @@ type LocVarIndex = Int
 type LineNumber = Int
 
 data Vars = Vars { -- | maps the index of a local Variable to its name.
-                   _localVar :: HM.HashMap LocVarIndex LocVarName
+                   _localVar :: [HM.HashMap LocVarName LocVarIndex ]
                  , _classFile :: ClassFile
                  , _deepness :: Int -- ^ deepness of nested block
                  , _curStack :: Int
@@ -47,7 +46,7 @@ genMethods :: [FieldDecl] -> [MethodDecl] -> State ClassFile ()
 genMethods vds mds
   = modify (set countMethods (length mds)) >> mapM_ (genMethod vds) mds
 
-genMethod :: [FieldDecl] -- ^ initial code of constructor
+genMethod :: [FieldDecl] -- ^ fields for initial code of constructor
           -> MethodDecl -> State ClassFile ()
 genMethod fds (MethodDecl name typ argDecls stmt vis static) =
   do indexName <- genUTF8 name
@@ -72,11 +71,11 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
      -- generate code
      let (code,vars)
            = runState (codeToInt . (codeInit++) <$> genCodeStmt stmt)
-                      Vars { _localVar = HM.fromList $ (0, "This")
-                                          : zip [1..]
+                      Vars { _localVar = [HM.fromList $ ("This", 0)
+                                          : zip
                                             (map
                                               (\(ArgumentDecl n _ _) -> n)
-                                              argDecls)
+                                              argDecls) [1..]]
                            , _classFile = cf
                            , _deepness = 0
                            , _curStack = 0
@@ -108,9 +107,9 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
 genCodeStmt :: Stmt -> State Vars Code
 -- Block
 genCodeStmt (Block stmts) =
-  do modify $ over deepness (+1)
+  do deepnessPlus
      code <- foldr ((-++-) . genCodeStmt) (return []) stmts
-     modify $ over deepness (\x -> x-1)
+     deepnessMinus
      return code
 
 -- Return
@@ -209,13 +208,45 @@ genCodeStmt (Switch expr switchCases (Just stmts)) = undefined
 genCodeStmt (Switch expr switchCases Nothing) = undefined
 genCodeStmt (LocalVarDecls vds)
   = foldr ((-++-) . genCodeVarDecl) (return []) vds
-genCodeStmt (StmtExprStmt stmtExpr) = undefined
+genCodeStmt (StmtExprStmt stmtExpr) = genCodeStmtExpr stmtExpr
 genCodeStmt (TypedStmt stmt _) = genCodeStmt stmt
 
 genCodeExpr :: Expr -> State Vars Code
-genCodeExpr This = undefined
-genCodeExpr (LocalOrFieldVar str) = undefined
-genCodeExpr (InstVar expr str) = undefined
+genCodeExpr This =  modify (over line (+1)) >> return [Aload0]
+
+--Vars
+genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
+  do locVar <- getLocIdx var . view localVar <$> get
+     modify $ over line (+2)
+     case locVar of
+       (Just idx)
+         -> return $ case typ of
+                       -- TODO check types
+                       "objectref" -> [aload idx]
+                       "double"    -> [dload idx]
+                       "float"     -> [fload idx]
+                       _           -> [iload idx]
+       Nothing
+         -> do idx <- zoom classFile $ genFieldRefThis var typ
+               return $ case typ of
+                         -- TODO check types
+                         "objectref" -> [aload idx]
+                         "double"    -> [dload idx]
+                         "float"     -> [fload idx]
+                         _           -> [iload idx]
+
+genCodeExpr (TypedExpr (InstVar obj varName) typ) =
+  do code <- genCodeExpr obj
+     indexVar
+       <- case obj of
+            (LocalOrFieldVar cN) -> zoom classFile
+                                         $ genFieldRef varName cN typ
+            _                    -> zoom classFile
+                                         $ genFieldRefThis varName typ
+     modify $ over line (+3)
+     let (b1,b2) = split16Byte indexVar
+     return $ code ++ [Getfield b1 b2] -- variable of a object
+
 genCodeExpr (Unary str expr) = undefined
 genCodeExpr (Binary "+" expr1 expr2)
   = genCodeExpr expr1
@@ -263,7 +294,6 @@ genCodeSwitchCase (SwitchCase expr cases) = undefined
 -- helper functions
 
 getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Code,Code)
-
 getForWhileCode cond body =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
@@ -284,7 +314,18 @@ modifyStack n = do modify $ over curStack (+n)
                    curMax <- view maxStack <$> get
                    modify $ set maxStack $ max cur curMax
 
+deepnessPlus,deepnessMinus ::  State Vars ()
+deepnessPlus = modify $ over localVar (HM.fromList []:)
+                      . over deepness (+1)
+deepnessMinus = modify $ over localVar tail . over deepness (\x -> x-1)
 
+getLocIdx :: LocVarName
+          -> [HM.HashMap LocVarName LocVarIndex]
+          -> Maybe LocVarIndex
+getLocIdx _   []            = Nothing
+getLocIdx var (vars:blocks) = case HM.lookup var vars of
+                                idx@(Just _) -> idx
+                                _            -> getLocIdx var blocks
 
 -- | ads the lines to jump to the Goto
 adBreaks :: LineNumber -- ^ current line in code
