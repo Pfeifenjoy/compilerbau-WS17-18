@@ -6,6 +6,7 @@ class ForLoop {
 
 		for(int i = 0; i < 3; i++) {
 			a = a + i;
+			continue;
 		}
 	}
 }

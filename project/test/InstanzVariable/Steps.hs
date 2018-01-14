@@ -12,6 +12,7 @@ instanzVariableTokens = [Lexer.Token.CLASS,
                         Lexer.Token.BOOLEAN,
                         Lexer.Token.IDENTIFIER "b",
                         Lexer.Token.SEMICOLON,
+                        Lexer.Token.FINAL,
                         Lexer.Token.CHARACTER,
                         Lexer.Token.IDENTIFIER "c",
                         Lexer.Token.ASSIGN,
@@ -19,9 +20,10 @@ instanzVariableTokens = [Lexer.Token.CLASS,
                         Lexer.Token.SEMICOLON,
                         Lexer.Token.RIGHT_BRACE]
 
+instanzVariableABS :: [Class]
 instanzVariableABS = [Class "InstanzVariable"
                       [FieldDecl [VariableDecl "i" "int" False Nothing] Public False,
                        FieldDecl [VariableDecl "b" "boolean" False Nothing] Public False,
-                       FieldDecl [VariableDecl "c" "char" False (Just (CharLiteral 'a'))] Public False
+                       FieldDecl [VariableDecl "c" "char" True (Just (CharLiteral 'a'))] Public False
                       ]
                       []]

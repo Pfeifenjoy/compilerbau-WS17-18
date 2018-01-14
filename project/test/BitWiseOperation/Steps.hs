@@ -77,6 +77,10 @@ bitWiseOperationTokens = [Lexer.Token.CLASS,
                         Lexer.Token.SHIFTRIGHT_ASSIGN,
                         Lexer.Token.IDENTIFIER "a",
                         Lexer.Token.SEMICOLON,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.UNSIGNED_SHIFTRIGHT_ASSIGN,
+                        Lexer.Token.IDENTIFIER "a",
+                        Lexer.Token.SEMICOLON,
                         Lexer.Token.RIGHT_BRACE,
                         Lexer.Token.RIGHT_BRACE
                        ]
@@ -95,7 +99,8 @@ bitWiseOperationABS = [Class "BitWiseOperation" []
                                    StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "&" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
                                    StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "|" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
                                    StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary "<<" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
-                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>" (LocalOrFieldVar "a") (LocalOrFieldVar "a")))
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>" (LocalOrFieldVar "a") (LocalOrFieldVar "a"))),
+                                   StmtExprStmt (Assign (LocalOrFieldVar "a") (Binary ">>>" (LocalOrFieldVar "a") (LocalOrFieldVar "a")))
                            ]) Public False
                         ]
                       ]
