@@ -19,7 +19,6 @@ import Control.Arrow
 import Control.Monad
 import Control.Monad.Trans.State.Lazy
 
-
 -- | The name of a local variable.  It is the name in the source code
 --   followed by the deepness in a nested block
 type LocVarName = String
@@ -53,13 +52,13 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
      -- generate initial code for constructors
      let lengthInit = 0
          codeInit = []
-         genInitCode = mapM genFD 
+         genInitCode = mapM genFD
          genFD (FieldDecl vds _ _) = mapM genCode vds
      when (typ == "") -- constructors have no type
-       $ do (lengthInit,codeInit) 
+       $ do (lengthInit,codeInit)
                 <- (\p -> ((+5) .sum $ map fst p
                           , [Aload0, Invokespecial 0 1] ++ concatMap snd p))
-                    . concat <$> genInitCode fds 
+                    . concat <$> genInitCode fds
             return ()
      -- generate descriptor
      let getArgDesr (ArgumentDecl _ typ _) = typeToDescriptor typ
@@ -183,19 +182,8 @@ genCodeStmt Continue =
      let (b1,b2) = split16Byte . twoCompliment16  $ conLine - refLine
      return [Goto b1 b2]
 
-genCodeStmt (If cond bodyIf (Just bodyElse)) =
-  do condCode <- genCodeExpr cond
-     ref <- (+1) . view line <$> get
-     modify $ over line (+3) -- length of Ifeq
-     bodyIfCode <- genCodeStmt bodyIf
-     endIf <- view line <$> get
-     modify $ over line (+1)
-     bodyElseCode <- genCodeStmt bodyElse
-     endElse <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
-         (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
-     return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
-                       ++ bodyElseCode
+genCodeStmt (If cond bodyIf (Just bodyElse))
+  = genIf genCodeStmt cond bodyIf bodyElse
 
 genCodeStmt (If cond body Nothing) =
   do ref <- (+1) . view line <$> get
@@ -225,14 +213,15 @@ genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
                        "objectref" -> [aload idx]
                        "double"    -> [dload idx]
                        "float"     -> [fload idx]
+                       "long"      -> [lload idx]
                        _           -> [iload idx]
-       Nothing
-         -> do idx <- zoom classFile $ genFieldRefThis var typ
+       _ -> do idx <- zoom classFile $ genFieldRefThis var typ
                return $ case typ of
                          -- TODO check types
                          "objectref" -> [aload idx]
                          "double"    -> [dload idx]
                          "float"     -> [fload idx]
+                         "long"      -> [lload idx]
                          _           -> [iload idx]
 
 genCodeExpr (TypedExpr (InstVar obj varName) typ) =
@@ -247,32 +236,61 @@ genCodeExpr (TypedExpr (InstVar obj varName) typ) =
      let (b1,b2) = split16Byte indexVar
      return $ code ++ [Getfield b1 b2] -- variable of a object
 
-genCodeExpr (Unary str expr) = undefined
-genCodeExpr (Binary "+" expr1 expr2)
+genCodeExpr (TypedExpr (Unary op expr) typ)
+  = genCodeExpr expr
+    -++- (case (op,typ) of
+            ("+",_)        -> return []
+            ("-","double") -> modify (over line (+1))
+                              >> return [Dneg]
+            ("-","float")  -> modify (over line (+1))
+                              >> return [Fneg]
+            ("-","long")   -> modify (over line (+1))
+                              >> return [Lneg]
+            ("-",_)        -> modify (over line (+1))
+                              >> return [Ineg]
+            ("!",_)        -> modify (over line (+3))
+                              >> modifyStack 1 -- could change max
+                              >> modifyStack (-1)
+                              >> return [Ineg, Iconst1, Isub])
+genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
   = genCodeExpr expr1
     -++- genCodeExpr expr2
-    -++- (modify (over line (+1)) >> modifyStack (-1) >> return [Iadd])
-genCodeExpr (Binary "-" expr1 expr2) = undefined
--- TODO add Isub to assembler
---  = genCodeExpr expr1
---    -++- genCodeExpr expr2
---    -++- (modify (over line (+1)) >> modiyStack (-1) >> return [Isub])
+    -++- (modify (over line (+1))
+          >> modifyStack (-1)
+          >> return (case (op,typ) of
+                        ("+" ,"double") -> [Dadd]
+                        ("+" ,"float")  -> [Fadd]
+                        ("+" ,"long")   -> [Ladd]
+                        ("+" ,_)        -> [Iadd]
+                        ("-" ,"double") -> [Dsub]
+                        ("-" ,"float")  -> [Fsub]
+                        ("-" ,"long")   -> [Lsub]
+                        ("-" ,_)        -> [Isub]
+                        ("*" ,"double") -> [Dmul]
+                        ("*" ,"float")  -> [Fmul]
+                        ("*" ,"long")   -> [Lmul]
+                        ("*" ,_)        -> [Imul]
+                        ("&&",_)        -> [Iand]
+                        ("||",_)        -> [Ior]))
 genCodeExpr (InstanceOf expr typ) = undefined
     -- TODO extra instanceOf
--- expr1 ? expr2 : expr3 cf = undefined
-genCodeExpr (Ternary expr1 expr2 expr3) = undefined
+-- expr1 ? expr2 : expr3
+genCodeExpr (Ternary cond expr1 expr2)
+  = genIf genCodeExpr cond expr1 expr2
+
 genCodeExpr (BooleanLiteral True)
   = modify (over line (+1)) >> return [Iconst1]
 genCodeExpr (BooleanLiteral False)
   = modify (over line (+1)) >> return [Iconst0]
 genCodeExpr (CharLiteral char) = undefined
 genCodeExpr (IntegerLiteral int)
-  = modify (over line (+1)) >> return [iconst $ fromIntegral int]
+  = do modify (over line (+(if int > 5 then 2 else 1)))
+       return [iconst $ fromIntegral int]
     --  LongLiteral Int64
     --  FloatLiteral Float
     --  DoubleLiteral Double
     --  StringLiteral String
-genCodeExpr JNull = undefined
+genCodeExpr JNull = return [] -- TODO ?
 genCodeExpr (StmtExprExpr sE) = genCodeStmtExpr sE
 genCodeExpr (TypedExpr expr _) = genCodeExpr expr
 
@@ -306,6 +324,21 @@ getCondBodyCode cond body =
      modify (over line (+3)) -- jump + 2 branch bytes
      bodyCode <- genCodeStmt body
      return (condCode,bodyCode)
+
+-- gen If or cond?e1:e2
+genIf gen cond bodyIf bodyElse =
+  do condCode <- genCodeExpr cond
+     ref <- (+1) . view line <$> get
+     modify $ over line (+3) -- length of Ifeq
+     bodyIfCode <- gen bodyIf
+     endIf <- view line <$> get
+     modify $ over line (+1)
+     bodyElseCode <- gen bodyElse
+     endElse <- view line <$> get
+     let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
+         (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
+     return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
+                       ++ bodyElseCode
 
 -- | put n items on the opstack.  calculates new max stack depth
 modifyStack :: Int -> State Vars ()
