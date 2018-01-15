@@ -8,6 +8,7 @@ class SwitchCase {
 					break;
 			case 2: a = 2;
 					break;
+			default: a = 0;
 		}
 	}
 }

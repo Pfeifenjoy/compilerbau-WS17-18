@@ -41,6 +41,12 @@ switchCaseTokens = [Lexer.Token.CLASS,
                     Lexer.Token.SEMICOLON,
                     Lexer.Token.BREAK,
                     Lexer.Token.SEMICOLON,
+                    Lexer.Token.DEFAULT,
+                    Lexer.Token.COLON,
+                    Lexer.Token.IDENTIFIER "a",
+                    Lexer.Token.ASSIGN,
+                    Lexer.Token.INTEGER_LITERAL 0,
+                    Lexer.Token.SEMICOLON,
                     Lexer.Token.RIGHT_BRACE,
                     Lexer.Token.RIGHT_BRACE,
                     Lexer.Token.RIGHT_BRACE
@@ -50,7 +56,8 @@ switchCaseABS = [Class "SwitchCase" []
                  [MethodDecl "doStuff" "void" []
                      (Block [LocalVarDecls [VariableDecl "i" "int" False (Just (IntegerLiteral 5)), VariableDecl "a" "int" False Nothing],
                              Switch (LocalOrFieldVar "i") [SwitchCase (IntegerLiteral 1) [StmtExprStmt (Assign (LocalOrFieldVar "a") (IntegerLiteral 3)), Break],
-                                                            SwitchCase (IntegerLiteral 2) [StmtExprStmt (Assign (LocalOrFieldVar "a") (IntegerLiteral 2)), Break]] Nothing
+                                                            SwitchCase (IntegerLiteral 2) [StmtExprStmt (Assign (LocalOrFieldVar "a") (IntegerLiteral 2)), Break]]
+                                                            (Just [StmtExprStmt (Assign (LocalOrFieldVar "a") (IntegerLiteral 0))])
                      ]) Public False
                  ]
                 ]
