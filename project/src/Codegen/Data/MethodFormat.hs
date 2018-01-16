@@ -525,3 +525,38 @@ lload 1 = Lload1
 lload 2 = Lload2
 lload 3 = Lload3
 lload n = Lload n
+
+astore :: Indexbyte -> Assembler
+astore 0 = Astore0
+astore 1 = Astore1
+astore 2 = Astore2
+astore 3 = Astore3
+astore n = Astore n
+
+dstore :: Indexbyte -> Assembler
+dstore 0 = Dstore0
+dstore 1 = Dstore1
+dstore 2 = Dstore2
+dstore 3 = Dstore3
+dstore n = Dstore n
+
+fstore :: Indexbyte -> Assembler
+fstore 0 = Fstore0
+fstore 1 = Fstore1
+fstore 2 = Fstore2
+fstore 3 = Fstore3
+fstore n = Fstore n
+
+istore :: Indexbyte -> Assembler
+istore 0 = Istore0
+istore 1 = Istore1
+istore 2 = Istore2
+istore 3 = Istore3
+istore n = Istore n
+
+lstore :: Indexbyte -> Assembler
+lstore 0 = Lstore0
+lstore 1 = Lstore1
+lstore 2 = Lstore2
+lstore 3 = Lstore3
+lstore n = Lstore n

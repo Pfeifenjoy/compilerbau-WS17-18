@@ -292,13 +292,46 @@ genCodeExpr (TypedExpr expr _) = genCodeExpr expr
 
 genCodeVarDecl :: VariableDecl -> State Vars Code
 genCodeVarDecl (VariableDecl _ _ _ Nothing) = return []
-genCodeVarDecl (VariableDecl name typ _ (Just value)) = undefined
+genCodeVarDecl (VariableDecl name typ _ (Just expr)) = undefined
 
 genCodeStmtExpr :: StmtExpr -> State Vars Code
-genCodeStmtExpr (Assign (LocalOrFieldVar name) expr) = undefined
+genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
+  = genCodeExpr expr 
+    -++- do exprCode <- genCodeExpr expr
+            locVar <- getLocIdx var . view localVar <$> get
+            modifyStack (-1)
+            case locVar of
+              -- local variable
+              (Just idx)
+                -> do modify $ over line (+(if idx > 3 then 2 else 1))
+                      return $ case typ of
+                                 -- TODO check types
+                                 "objectref" -> [astore idx]
+                                 "double"    -> [dstore idx]
+                                 "float"     -> [fstore idx]
+                                 "long"      -> [lstore idx]
+                                 _           -> [istore idx]
+              -- TODO static call in other class
+              -- field variable
+              _ -> do idx <- zoom classFile $ genFieldRefThis var typ
+                      modify $ over line (+3)
+                      let (b1,b2) = split16Byte idx
+                      return [Putstatic b1 b2] -- TODO or putfield(object)
+
+genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name) 
+                                                  typ) expr) className)
+  = genCodeExpr obj 
+    -++- genCodeExpr expr
+    -++- do idx <- zoom classFile $ genFieldRef className name typ
+            modify $ over line (+3)
+            modifyStack (-2)
+            let (b1,b2) = split16Byte idx
+            return [Putfield b1 b2]
+
 genCodeStmtExpr (New typ  arguments) = undefined
 genCodeStmtExpr (MethodCall expr name arguments) = undefined
-genCodeStmtExpr (LazyAssign (LocalOrFieldVar name) expr) = undefined
+-- TODO whats the difference?
+genCodeStmtExpr (LazyAssign var expr) = genCodeStmtExpr (Assign var expr)
 genCodeStmtExpr (TypedStmtExpr se _) = genCodeStmtExpr se
 
 genCodeSwitchCase :: SwitchCase -> State Vars Code
