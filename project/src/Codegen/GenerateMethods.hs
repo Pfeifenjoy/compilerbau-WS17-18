@@ -235,19 +235,52 @@ genCodeExpr (TypedExpr (InstVar obj varName) typ) =
 genCodeExpr (TypedExpr (Unary op expr) typ)
   = genCodeExpr expr
     -++- (case (op,typ) of
-            ("+",_)        -> return []
-            ("-","double") -> modify (over line (+1))
-                              >> return [Dneg]
-            ("-","float")  -> modify (over line (+1))
-                              >> return [Fneg]
-            ("-","long")   -> modify (over line (+1))
-                              >> return [Lneg]
-            ("-",_)        -> modify (over line (+1))
-                              >> return [Ineg]
-            ("!",_)        -> modify (over line (+3))
-                              >> modifyStack 1 -- could change max
-                              >> modifyStack (-1)
-                              >> return [Ineg, Iconst1, Isub])
+            ("+",_)         -> return []
+            ("-","double")  -> modify (over line (+1))
+                               >> return [Dneg]
+            ("-","float")   -> modify (over line (+1))
+                               >> return [Fneg]
+            ("-","long")    -> modify (over line (+1))
+                               >> return [Lneg]
+            ("-",_)         -> modify (over line (+1))
+                               >> return [Ineg]
+            ("++","double") -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Dconst1,Dadd]
+            ("++","float")  -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Fconst1,Fadd]
+            ("++","long")   -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Lconst1,Ladd]
+            ("++",_)        -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Iconst1,Iadd]
+            ("--","double") -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Dconst1,Dneg]
+            ("--","float")  -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Fconst1,Fneg]
+            ("--","long")   -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Lconst1,Lneg]
+            ("--",_)        -> modify (over line (+2))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Iconst1,Ineg]
+            ("!",_)         -> modify (over line (+3))
+                               >> modifyStack 1 -- could change max
+                               >> modifyStack (-1)
+                               >> return [Ineg, Iconst1, Isub])
+
 genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
   = genCodeExpr expr1
     -++- genCodeExpr expr2
