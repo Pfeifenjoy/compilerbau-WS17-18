@@ -158,14 +158,18 @@ genUTF8 str = genInfo Utf8Info { _tagCp = TagUtf8
 -- helper
 
 -- | inserts a info into the constant pool
-genInfo :: CPInfo 
+genInfo :: CPInfo
         -> State ClassFile -- ^ new constant pool
                  IndexConstantPool -- ^ location of info in the constant pool
 genInfo cpInfo =
   do modify $
-       \cf -> over arrayCp (HM.insert cpInfo (cf^.countrCp+1)) cf
+       \cf -> over arrayCp
+                (\hm -> case HM.lookup cpInfo hm of
+                         (Just _) -> hm
+                         _        -> HM.insert cpInfo
+                                               (cf^.countrCp+1) hm) cf
      cf <- get
-     let loc = (cf^.arrayCp) ! cpInfo 
+     let loc = (cf^.arrayCp) ! cpInfo
          n   = if loc > cf^.countrCp then 1 else 0
      put $ countrCp +~ n $ cf
      return loc
