@@ -1,6 +1,6 @@
 {-|
 This module contains functions which insert different constants in the
-constant pool.  The functions give back the index of the inserted 
+constant pool.  The functions give back the index of the inserted
 constant in the constant pool.  If a constant is already in the constant
 pool, they only give back the index, without inserting a new constant.
 -}
@@ -17,7 +17,7 @@ module Codegen.GenerateConstantPool(
   genDouble,
   genNameAndType,
   genUTF8
-) where 
+) where
 import Codegen.Data.ClassFormat
 import ABSTree
 import Control.Lens
@@ -32,19 +32,19 @@ import Data.HashMap.Lazy ((!))
 genClass :: String -- ^ class to insert in constant pool
          -> State ClassFile -- ^ new constant pool
                   IndexConstantPool -- ^ location of field in constant pool
-genClass name = 
-  do index <- genUTF8 name 
+genClass name =
+  do index <- genUTF8 name
      genInfo ClassInfo { _tagCp   = TagClass
                        , _indexCp = index
                        , _desc    = ""
-                       } 
-     
+                       }
+
 
 
 -- | insert a field variable in the constant pool
 genFieldRef :: String -- ^ field to insert in constant pool
-            -> String -- ^ class in which this field is 
-            -> Type -- ^ type of this Field 
+            -> String -- ^ class in which this field is
+            -> Type -- ^ type of this Field
             -> State ClassFile -- ^ new constant pool
                      IndexConstantPool -- ^ location of field in constant pool
 genFieldRef name className typ =
@@ -54,7 +54,7 @@ genFieldRef name className typ =
                           , _indexNameCp        = indexClassName
                           , _indexNameandtypeCp = indexNameType
                           , _desc               = ""
-                          } 
+                          }
 
 -- | insert a field variable of this class in the constant pool
 genFieldRefThis :: String -- ^ field to insert in constant pool
@@ -73,18 +73,18 @@ genFieldRefThis name typ =
 
 -- | insert a method in the constant pool
 genMethodRef :: String-- ^ name of method to insert in constant pool
-             -> String -- ^ class in which this method is 
+             -> String -- ^ class in which this method is
              -> Type -- ^ type of this method
              -> State ClassFile -- ^ new constant pool
                       IndexConstantPool -- ^ location of field in constant pool
 genMethodRef name className typ =
-  do indexClassName <- genClass className 
-     indexNameType <- genNameAndType name typ 
+  do indexClassName <- genClass className
+     indexNameType <- genNameAndType name typ
      genInfo MethodRefInfo { _tagCp              = TagMethodRef
                            , _indexNameCp        = indexClassName
                            , _indexNameandtypeCp = indexNameType
                            , _desc               = ""
-                           } 
+                           }
 
 -- | insert a interface in the constant pool
 genInterfaceRef = undefined
@@ -97,7 +97,7 @@ genInteger :: Int -- ^ Int to insert in the constant pool
            -> State ClassFile -- ^ new constant pool
                     IndexConstantPool -- ^ location of int in constant pool
 genInteger int = genInfo IntegerInfo { _tagCp  = TagInteger
-                                     , _numiCp = int 
+                                     , _numiCp = int
                                      , _desc   = ""
                                      }
 
@@ -106,7 +106,7 @@ genFloat :: Float -- ^ Float to insert in the constant pool
          -> State ClassFile -- ^ new constant pool
                   IndexConstantPool -- ^ location of int in constant pool
 genFloat float = genInfo FloatInfo { _tagCp  = TagFloat
-                                   , _numfCp = float 
+                                   , _numfCp = float
                                    , _desc   = ""
                                    }
 
@@ -115,8 +115,8 @@ genLong :: (Int,Int) -- ^ Long to insert in the constant pool
         -> State ClassFile -- ^ new constant pool
                  IndexConstantPool -- ^ location of int in constant pool
 genLong (int1,int2) = genInfo LongInfo { _tagCp    = TagLong
-                                       , _numiL1Cp = int1 
-                                       , _numiL2Cp = int2 
+                                       , _numiL1Cp = int1
+                                       , _numiL2Cp = int2
                                        , _desc     = ""
                                        }
 
@@ -125,24 +125,24 @@ genDouble :: (Int,Int) -- ^ Double to insert in the constant pool
           -> State ClassFile -- ^ new constant pool
                    IndexConstantPool -- ^ location of int in constant pool
 genDouble (int1,int2) = genInfo DoubleInfo { _tagCp    = TagDouble
-                                           , _numiD1Cp = int1 
-                                           , _numiD2Cp = int2 
+                                           , _numiD1Cp = int1
+                                           , _numiD2Cp = int2
                                            , _desc     = ""
                                            }
 
 -- | insert name and type
-genNameAndType :: String -- ^ name to insert in constant pool 
-               -> Type -- ^ type to insert in constant pool 
+genNameAndType :: String -- ^ name to insert in constant pool
+               -> Type -- ^ type to insert in constant pool
                -> State ClassFile -- ^ new constant pool
                         IndexConstantPool -- ^ location of int in constant pool
-genNameAndType name typ = 
+genNameAndType name typ =
   do indexName <- genUTF8 name
      indexType <- genUTF8 typ
      genInfo NameAndTypeInfo { _tagCp       = TagNameAndType
                              , _indexNameCp = indexName
                              , _indexTypeCp = indexType
                              , _desc        = ""
-                             } 
+                             }
 
 
 -- | inserts a utf8 in the constant pool

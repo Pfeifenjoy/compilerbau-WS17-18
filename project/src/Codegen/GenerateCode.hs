@@ -43,5 +43,4 @@ genClass (Class typ fds mds)
 existsConstructor :: [MethodDecl] -> Bool
 existsConstructor [] = False
 existsConstructor (MethodDecl _ "" [] _ _ _:_) = True
-existsConstructor (_:mds) = existsConstructor mds 
- 
+existsConstructor (_:mds) = existsConstructor mds
