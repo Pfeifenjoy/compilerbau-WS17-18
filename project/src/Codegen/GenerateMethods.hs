@@ -216,13 +216,9 @@ genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
                        "long"      -> [lload idx]
                        _           -> [iload idx]
        _ -> do idx <- zoom classFile $ genFieldRefThis var typ
-               return $ case typ of
-                         -- TODO check types
-                         "objectref" -> [aload idx]
-                         "double"    -> [dload idx]
-                         "float"     -> [fload idx]
-                         "long"      -> [lload idx]
-                         _           -> [iload idx]
+               modify $ over line (+1)
+               let (b1,b2) = split16Byte idx
+               return [Getstatic b1 b2]
 
 genCodeExpr (TypedExpr (InstVar obj varName) typ) =
   do code <- genCodeExpr obj
@@ -340,7 +336,7 @@ genIf gen cond bodyIf bodyElse =
      return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode
 
--- | put n items on the opstack.  calculates new max stack depth
+-- | put n items on the opstack.  Calculates new max stack depth
 modifyStack :: Int -> State Vars ()
 modifyStack n = do modify $ over curStack (+n)
                    cur <- view curStack <$> get
