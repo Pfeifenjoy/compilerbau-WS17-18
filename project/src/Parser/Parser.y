@@ -187,7 +187,7 @@ SwitchCase
     : CASE Expression COLON Statements      { SwitchCase $2 $4 }
 
 DefaultCase
-    : DEFAULT Statements                    { $2 }
+    : DEFAULT COLON Statements                    { $3 }
 
 SwitchCases
     : SwitchCase                            { [$1] }
