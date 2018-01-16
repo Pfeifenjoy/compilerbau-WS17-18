@@ -205,16 +205,16 @@ genCodeExpr This =  modify (over line (+1)) >> return [Aload0]
 --Vars
 genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
   do locVar <- getLocIdx var . view localVar <$> get
-     modify $ over line (+2)
      case locVar of
        (Just idx)
-         -> return $ case typ of
-                       -- TODO check types
-                       "objectref" -> [aload idx]
-                       "double"    -> [dload idx]
-                       "float"     -> [fload idx]
-                       "long"      -> [lload idx]
-                       _           -> [iload idx]
+         -> do modify $ over line (+(if idx > 3 then 2 else 1))
+               return $ case typ of
+                          -- TODO check types
+                          "objectref" -> [aload idx]
+                          "double"    -> [dload idx]
+                          "float"     -> [fload idx]
+                          "long"      -> [lload idx]
+                          _           -> [iload idx]
        _ -> do idx <- zoom classFile $ genFieldRefThis var typ
                modify $ over line (+1)
                let (b1,b2) = split16Byte idx
