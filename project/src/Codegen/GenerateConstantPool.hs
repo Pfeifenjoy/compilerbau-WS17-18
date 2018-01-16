@@ -48,8 +48,8 @@ genFieldRef :: String -- ^ field to insert in constant pool
             -> State ClassFile -- ^ new constant pool
                      IndexConstantPool -- ^ location of field in constant pool
 genFieldRef name className typ =
-  do indexClassName <- genClass className 
-     indexNameType <- genNameAndType name typ 
+  do indexClassName <- genClass className
+     indexNameType <- genNameAndType name typ
      genInfo FieldRefInfo { _tagCp              = TagFieldRef
                           , _indexNameCp        = indexClassName
                           , _indexNameandtypeCp = indexNameType
