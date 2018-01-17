@@ -322,7 +322,9 @@ genCodeExpr (IntegerLiteral int)
     --  FloatLiteral Float
     --  DoubleLiteral Double
     --  StringLiteral String
-genCodeExpr JNull = return [] -- TODO ?
+genCodeExpr JNull = do modify (over line (+1))
+                       modifyStack 1
+                       return [AconstNull]
 genCodeExpr (StmtExprExpr sE) = genCodeStmtExpr sE
 genCodeExpr (TypedExpr expr _) = genCodeExpr expr
 
