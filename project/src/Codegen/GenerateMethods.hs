@@ -107,7 +107,7 @@ genCodeStmt :: Stmt -> State Vars Code
 genCodeStmt (Block stmts) =
   do modify $ over localVar (HM.fromList []:)
      code <- foldr ((-++-) . genCodeStmt) (return []) stmts
-     modify $ over localVar tail 
+     modify $ over localVar tail
      return code
 
 -- Return
@@ -341,7 +341,7 @@ genCodeVarDecl (VariableDecl name typ _ mayExpr) =
 
 genCodeStmtExpr :: StmtExpr -> State Vars Code
 genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
-  = genCodeExpr expr 
+  = genCodeExpr expr
     -++- do exprCode <- genCodeExpr expr
             locVar <- getLocIdx var . view localVar <$> get
             modifyStack (-1)
@@ -363,9 +363,9 @@ genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
                       let (b1,b2) = split16Byte idx
                       return [Putstatic b1 b2] -- TODO or putfield(object)
 
-genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name) 
+genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
                                                   typ) expr) className)
-  = genCodeExpr obj 
+  = genCodeExpr obj
     -++- genCodeExpr expr
     -++- do idx <- zoom classFile $ genFieldRef className name typ
             modify $ over line (+3)
