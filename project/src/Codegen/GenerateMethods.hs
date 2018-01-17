@@ -327,8 +327,17 @@ genCodeExpr (StmtExprExpr sE) = genCodeStmtExpr sE
 genCodeExpr (TypedExpr expr _) = genCodeExpr expr
 
 genCodeVarDecl :: VariableDecl -> State Vars Code
-genCodeVarDecl (VariableDecl _ _ _ Nothing) = return []
-genCodeVarDecl (VariableDecl name typ _ (Just expr)) = undefined
+genCodeVarDecl (VariableDecl name typ _ mayExpr) =
+  do modify
+       $ over localVar
+          $ \(h:hs) -> (HM.insert
+                         name (maximum . map snd $ HM.toList h) h
+                         : hs)
+     case mayExpr of
+       (Just expr) -> genCodeStmtExpr
+                        (Assign
+                           (TypedExpr (LocalOrFieldVar name) typ) expr)
+       _           -> return []
 
 genCodeStmtExpr :: StmtExpr -> State Vars Code
 genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
