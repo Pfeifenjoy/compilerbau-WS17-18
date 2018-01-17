@@ -373,10 +373,16 @@ genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
             let (b1,b2) = split16Byte idx
             return [Putfield b1 b2]
 
-genCodeStmtExpr (New typ  arguments) = undefined
-genCodeStmtExpr (MethodCall expr name arguments) = undefined
+genCodeStmtExpr (New typ args) =
+  do obj <- zoom classFile $ genClass typ
+     let (b1,b2) = split16Byte obj
+     (MF.New b1 b2:) <$> genMethConst Nothing typ args
+
+genCodeStmtExpr (MethodCall expr name args)
+  = genMethConst (Just expr) name args
 -- TODO whats the difference?
-genCodeStmtExpr (LazyAssign var expr) = genCodeStmtExpr (Assign var expr)
+genCodeStmtExpr (LazyAssign var expr)
+  = genCodeStmtExpr (Assign var expr)
 genCodeStmtExpr (TypedStmtExpr se _) = genCodeStmtExpr se
 
 genCodeSwitchCase :: SwitchCase -> State Vars Code
@@ -413,6 +419,10 @@ genIf gen cond bodyIf bodyElse =
          (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
      return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode
+
+-- generate a method or a constructor
+genMethConst :: Maybe Expr -> String -> [Expr] -> State Vars Code
+genMethConst = undefined
 
 -- | put n items on the opstack.  Calculates new max stack depth
 modifyStack :: Int -> State Vars ()
