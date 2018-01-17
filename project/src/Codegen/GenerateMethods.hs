@@ -33,7 +33,6 @@ type LineNumber = Int
 data Vars = Vars { -- | maps the index of a local Variable to its name.
                    _localVar :: [HM.HashMap LocVarName LocVarIndex ]
                  , _classFile :: ClassFile
-                 , _deepness :: Int -- ^ deepness of nested block
                  , _curStack :: Int
                  , _maxStack :: Int
                  , _line :: LineNumber
@@ -77,7 +76,6 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                                               (\(ArgumentDecl n _ _) -> n)
                                               argDecls) [1..]]
                            , _classFile = cf
-                           , _deepness = 0
                            , _curStack = 0
                            , _maxStack = 0
                            , _line = 0
@@ -107,9 +105,9 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
 genCodeStmt :: Stmt -> State Vars Code
 -- Block
 genCodeStmt (Block stmts) =
-  do deepnessPlus
+  do modify $ over localVar (HM.fromList []:)
      code <- foldr ((-++-) . genCodeStmt) (return []) stmts
-     deepnessMinus
+     modify $ over localVar tail 
      return code
 
 -- Return
@@ -413,11 +411,6 @@ modifyStack n = do modify $ over curStack (+n)
                    cur <- view curStack <$> get
                    curMax <- view maxStack <$> get
                    modify $ set maxStack $ max cur curMax
-
-deepnessPlus,deepnessMinus ::  State Vars ()
-deepnessPlus = modify $ over localVar (HM.fromList []:)
-                      . over deepness (+1)
-deepnessMinus = modify $ over localVar tail . over deepness (\x -> x-1)
 
 getLocIdx :: LocVarName
           -> [HM.HashMap LocVarName LocVarIndex]
