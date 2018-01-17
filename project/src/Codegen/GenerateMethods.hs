@@ -10,6 +10,7 @@ module Codegen.GenerateMethods (
 import ABSTree
 import qualified Codegen.Data.MethodFormat as MF
 import Codegen.GenerateFields(genCode)
+import Data.Char(ord)
 import qualified Data.HashMap.Lazy as HM
 import Codegen.Data.MethodFormat hiding (Return, New)
 import Codegen.Data.ClassFormat
@@ -311,7 +312,9 @@ genCodeExpr (BooleanLiteral True)
   = modify (over line (+1)) >> return [Iconst1]
 genCodeExpr (BooleanLiteral False)
   = modify (over line (+1)) >> return [Iconst0]
-genCodeExpr (CharLiteral char) = undefined
+genCodeExpr (CharLiteral char)
+  = do modify (over line (+(if ord char> 5 then 2 else 1)))
+       return [iconst $ ord char]
 genCodeExpr (IntegerLiteral int)
   = do modify (over line (+(if int > 5 then 2 else 1)))
        return [iconst $ fromIntegral int]
