@@ -59,3 +59,14 @@ classMethodsABS = [Class "ClassMethod"
                         (Block [Return (InstVar This "i")]) Private False
                    ]
                   ]
+
+classMethodsTypedABS = [Class "ClassMethod"
+                   [FieldDecl [VariableDecl "i" "int" False (Just (TypedExpr (IntegerLiteral 0) "int"))] Public False]
+                   [MethodDecl "getInt" "int" []
+                       (TypedStmt (Block [TypedStmt (Return (TypedExpr (IntegerLiteral 1) "int")) "int"]) "int") Public False,
+                    MethodDecl "returnInt" "int" [ArgumentDecl "x" "int" False]
+                        (TypedStmt (Block [TypedStmt (Return (TypedExpr (LocalOrFieldVar "x") "int")) "int"]) "int") Public True,
+                    MethodDecl "doStuff" "int" []
+                        (TypedStmt (Block [TypedStmt (Return (TypedExpr (InstVar (TypedExpr This "ClassMethod") "i") "int")) "int"]) "int") Private False
+                   ]
+                  ]

@@ -15,9 +15,9 @@ import           Correct.NewClass.Steps
 import           Correct.ShortIf.Steps
 import           Correct.SimpleIf.Steps
 import           Correct.SwitchCase.Steps
-import           Utils.SUnit
 import           Correct.WhileLoop.Steps
 import           Correct.WhileLoopCondition.Steps
+import           Utils.SUnit
 
 parserTests :: [TestUnit]
 parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,

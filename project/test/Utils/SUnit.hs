@@ -45,6 +45,9 @@ getLexerRealToken _                  = []
 readTokens :: String -> [Token]
 readTokens s = Lexer.lex (unsafePerformIO . readFile $ ("./test/" ++ s ++ "/Class.java"))
 
+typeABS :: String -> [Class]
+typeABS s = TypeChecker.checkTypes (Parser.parse (readTokens s))
+
 runTest :: TestUnit -> IO Bool
 runTest (LexerUnit name expectedTokens) = do
                                               result <- try (evaluate (readTokens name)) :: IO (Either SomeException [Token])
@@ -101,10 +104,10 @@ evalTest (ParserException name _) = do
 
 
 evalTest (TypeUnit name expectedClass) = do
-                                               result <- try (evaluate (TypeChecker.checkTypes (Parser.parse (readTokens name)))) :: IO (Either SomeException [Class])
+                                               result <- try (evaluate (typeABS name)) :: IO (Either SomeException [Class])
                                                case result of
                                                 Left ex ->  return (color Red ("TypeChecker: [" ++ name ++ "] failed with exception: ")  ++ show ex)
-                                                Right typedClass -> return (testOutput "TypeChecker" name expectedClass typedClass)
+                                                Right typedClass -> return (testOutput "Parser" name expectedClass typedClass)
 
 
 runTests :: [TestUnit] -> [IO Bool]
