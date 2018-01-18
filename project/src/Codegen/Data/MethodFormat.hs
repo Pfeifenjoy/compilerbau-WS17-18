@@ -479,6 +479,7 @@ typeToDescriptor "boolean" = "Z"
 typeToDescriptor "char" = "C"
 typeToDescriptor "int" = "I"
 typeToDescriptor "" = "V" -- constructors have type void in class files
+-- TODO method with arguments
 typeToDescriptor "void" = "V"
 typeToDescriptor object = "L" ++ object ++ ";"
 

@@ -376,10 +376,10 @@ genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
 genCodeStmtExpr (New typ args) =
   do obj <- zoom classFile $ genClass typ
      let (b1,b2) = split16Byte obj
-     (MF.New b1 b2:) <$> genMethConst Nothing typ args
+     (MF.New b1 b2:) <$> genMethConst Nothing typ typ args
 
-genCodeStmtExpr (MethodCall expr name args)
-  = genMethConst (Just expr) name args
+genCodeStmtExpr (TypedStmtExpr (MethodCall expr name args) typ)
+  = genMethConst (Just expr) typ name args
 -- TODO whats the difference?
 genCodeStmtExpr (LazyAssign var expr)
   = genCodeStmtExpr (Assign var expr)
@@ -421,8 +421,22 @@ genIf gen cond bodyIf bodyElse =
                        ++ bodyElseCode
 
 -- generate a method or a constructor
-genMethConst :: Maybe Expr -> String -> [Expr] -> State Vars Code
-genMethConst = undefined
+genMethConst :: Maybe Expr -- ^ expression which gives the object
+             -> String -- ^ class name
+             -> String -- ^ method name
+             -> [Expr] -- ^ arguments for mehtod
+             -> State Vars Code
+genMethConst mayExpr cl name args =
+  do objCode <- case mayExpr of
+                  Nothing -> return []
+                  (Just expr ) -> genCodeExpr expr
+     let typ = undefined
+     idx <- zoom classFile $ genMethodRef name cl typ
+     let (b1,b2) = split16Byte idx
+     -- remove args and methodref from operand stack
+     modifyStack (-(length args + 1))
+     modify $ over line (+3) -- length of Invokespecial
+     return $ objCode ++ [Invokespecial b1 b2]
 
 -- | put n items on the opstack.  Calculates new max stack depth
 modifyStack :: Int -> State Vars ()
