@@ -16,8 +16,8 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser
-  build-depends:       base <= 4.10.1 , array, unordered-containers, hashable,
+  exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser, TypeChecker
+  build-depends:       base <= 4.10.1 , array, unordered-containers, hashable, containers,
                        bytestring
   hs-source-dirs:      src
   build-tools:         alex, happy

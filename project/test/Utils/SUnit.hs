@@ -94,7 +94,7 @@ evalTest (ParserUnit name expectedClass) = do
                                                 Right parserClass -> return (testOutput "Parser" name expectedClass parserClass)
 
 evalTest (ParserException name _) = do
-                                        result <- try ((evaluate (Parser.parse (readTokens name))) `deepseq` (evaluate (Parser.parse (readTokens name)))) :: IO (Either SomeException [Class])
+                                        result <- try (evaluate (Parser.parse (readTokens name))) :: IO (Either SomeException [Class])
                                         case result of
                                           Left _ -> return (color Blue ("Parser: [" ++ name ++ "] passed with expected exception"))
                                           Right _ -> return (color Red ("Parser [" ++ name ++ "] passed without exception, exception expected"))
