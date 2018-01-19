@@ -4,6 +4,7 @@
 module Codegen.Data.ClassFormat where
 
 import GHC.Generics (Generic)
+import Codegen.Data.Assembler(Code)
 import Data.Hashable
 import Data.Word
 import Control.Lens
@@ -250,7 +251,7 @@ data AttributeInfo =
             , _lenStackAttr             :: Int                              -- max_stack
             , _lenLocalAttr             :: Int                              -- max_local
             , _tamCodeAttr              :: Int                              -- code_length
-            , _arrayCodeAttr            :: ListaInt                         -- code como array de bytes
+            , _arrayCodeAttr            :: Code               -- code como array de bytes
             , _tamExAttr                :: Int                              -- exceptions_length
             , _arrayExAttr              :: Tupla4Int                        -- no usamos
             , _tamAtrrAttr              :: Int                              -- attributes_count

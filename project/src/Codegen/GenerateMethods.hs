@@ -69,7 +69,7 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
      cf <- get
      -- generate code
      let (code,vars)
-           = runState (codeToInt . (codeInit++) <$> genCodeStmt stmt)
+           = runState ((codeInit++) <$> genCodeStmt stmt)
                       Vars { _localVar = [HM.fromList $ ("This", 0)
                                           : zip
                                             (map

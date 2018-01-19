@@ -65,9 +65,9 @@ genInit vds =
      indexCode <- genUTF8 "Code"
      indexName <- view (this . indexTh) <$> get
      codeVars <- mapM genCode vds
-     let code = codeToInt $ [Aload0,Invokespecial 0 1]
-                            ++ concatMap snd codeVars
-                            ++ [Return]
+     let code =  [Aload0,Invokespecial 0 1]
+                    ++ concatMap snd codeVars
+                    ++ [Return]
          lengthCode = 5 + sum (map fst codeVars)
          codeAttr = AttributeCode { _indexNameAttr = indexCode
                                   , _tamLenAttr = 14+lengthCode
