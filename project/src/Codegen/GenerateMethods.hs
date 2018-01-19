@@ -8,11 +8,11 @@ module Codegen.GenerateMethods (
   genMethods
 ) where
 import ABSTree
-import qualified Codegen.Data.MethodFormat as MF
+import qualified Codegen.Data.Assembler as A
 import Codegen.GenerateFields(genCode)
 import Data.Char(ord)
 import qualified Data.HashMap.Lazy as HM
-import Codegen.Data.MethodFormat hiding (Return, New)
+import Codegen.Data.Assembler hiding (Return, New)
 import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Control.Lens
@@ -123,7 +123,7 @@ genCodeStmt (TypedStmt (Return expr) typ) =
                              "bool" -> [Ireturn]
                              "char" -> [Ireturn]
                              "long" -> [Lreturn]
-                             "void" -> [MF.Return])
+                             "void" -> [A.Return])
 
 
 -- While
@@ -376,7 +376,7 @@ genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
 genCodeStmtExpr (New typ args) =
   do obj <- zoom classFile $ genClass typ
      let (b1,b2) = split16Byte obj
-     (MF.New b1 b2:) <$> genMethConst Nothing typ typ args
+     (A.New b1 b2:) <$> genMethConst Nothing typ typ args
 
 genCodeStmtExpr (TypedStmtExpr (MethodCall expr name args) typ)
   = genMethConst (Just expr) typ name args

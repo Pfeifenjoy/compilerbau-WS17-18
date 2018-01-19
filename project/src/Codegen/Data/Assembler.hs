@@ -2,7 +2,7 @@
 This module contains a abstract assembler and function to convert it to
 int, which is later translated in to byte code
 -}
-module Codegen.Data.MethodFormat where
+module Codegen.Data.Assembler where
 
 import ABSTree(Visibility(..),Type) 
 import Data.Bits
@@ -234,6 +234,7 @@ data Assembler
   | Breakpoint
   | Impdep1
   | Impdep2
+  deriving(Show)
 
 type Code = [Assembler]
 

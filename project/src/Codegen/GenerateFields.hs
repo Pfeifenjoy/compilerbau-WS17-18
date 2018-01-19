@@ -9,7 +9,7 @@ module Codegen.GenerateFields (
 
 import ABSTree hiding (Return)
 import Codegen.Data.ClassFormat
-import Codegen.Data.MethodFormat
+import Codegen.Data.Assembler
 import Codegen.GenerateConstantPool
 import Data.Char(ord)
 import Data.Bits
@@ -17,16 +17,16 @@ import Control.Lens
 import Control.Monad.Trans.State.Lazy
 
 genFields :: Bool -- ^ exists constructor with no arguments
-          -> [FieldDecl] 
+          -> [FieldDecl]
           -> State ClassFile ()
 genFields False [] = genInit []
 genFields constructor fds = mapM_ (genFD constructor) fds
 
 genFD :: Bool -- ^ exists constructor with no arguments
-      -> FieldDecl 
+      -> FieldDecl
       -> State ClassFile ()
-genFD constructor (FieldDecl vds vis static) 
-  = mapM_ (genVD vis static) vds >> if constructor 
+genFD constructor (FieldDecl vds vis static)
+  = mapM_ (genVD vis static) vds >> if constructor
                                     then return ()
                                     else genInit vds
 
@@ -92,7 +92,7 @@ genCode :: VariableDecl -> State ClassFile (Int,Code)
 genCode (VariableDecl _ _  _ Nothing) = return (0,[])
 genCode (VariableDecl name "float" _ (Just expr)) = undefined
 genCode (VariableDecl name typ  _ (Just expr)) =
-  do index <- genFieldRefThis name $ typeToDescriptor typ 
+  do index <- genFieldRefThis name $ typeToDescriptor typ
      let val = evalInt expr
          (b1,b2) = split16Byte index
      return (if val > 5 then 6 else 5

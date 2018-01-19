@@ -1,10 +1,10 @@
-module Codegen.GenerateCode (
+module Codegen.GenerateClassFile (
+  genClass
 ) where
-import ABSTree
-import Codegen.BinaryClass
+import ABSTree(Class(..),MethodDecl(..))
 import Codegen.Data.ClassFormat
-import Codegen.GenerateConstantPool
-import Codegen.GenerateFields
+import Codegen.GenerateConstantPool(genUTF8)
+import Codegen.GenerateFields(genFields)
 import Codegen.GenerateMethods
 import Data.HashMap.Lazy (fromList)
 import Control.Monad.Trans.State.Lazy
