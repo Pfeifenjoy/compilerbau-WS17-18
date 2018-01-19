@@ -330,9 +330,14 @@ genCodeVarDecl :: VariableDecl -> State Vars Code
 genCodeVarDecl (VariableDecl name typ _ mayExpr) =
   do modify
        $ over localVar
-          $ \(h:hs) -> (HM.insert
-                         name (maximum . map snd $ HM.toList h) h
-                         : hs)
+          $ \(h:hs)
+              -> case HM.lookup name h of
+                  (Just _) -> h:hs -- override variable
+                  _       -- add new variable with new max index
+                    -> HM.insert
+                         name
+                         (maximum (map (HM.foldr max 0) (h:hs))+1)
+                         h : hs
      case mayExpr of
        (Just expr) -> genCodeStmtExpr
                         (Assign
