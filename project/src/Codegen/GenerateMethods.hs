@@ -115,16 +115,16 @@ genCodeStmt (TypedStmt (Return expr) typ) =
   do exprCode <- genCodeExpr expr
      modify $ over line (+1) -- length of Ireturn
      return $ exprCode ++ (case typ of
-                             -- TODO check types
-                             "objectref" -> [Areturn]
-                             "double" -> [Dreturn]
-                             "float" -> [Freturn]
-                             "int" -> [Ireturn]
-                             "bool" -> [Ireturn]
-                             "char" -> [Ireturn]
-                             "long" -> [Lreturn]
-                             "void" -> [A.Return])
-
+                             "double"  -> [Dreturn]
+                             "float"   -> [Freturn]
+                             "byte"    -> [Ireturn]
+                             "short"   -> [Ireturn]
+                             "int"     -> [Ireturn]
+                             "boolean" -> [Ireturn]
+                             "char"    -> [Ireturn]
+                             "long"    -> [Lreturn]
+                             "void"    -> [A.Return]
+                             _         -> [Areturn])
 
 -- While
 genCodeStmt (While cond body) =
@@ -208,12 +208,15 @@ genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
        (Just idx)
          -> do modify $ over line (+(if idx > 3 then 2 else 1))
                return $ case typ of
-                          -- TODO check types
-                          "objectref" -> [aload idx]
                           "double"    -> [dload idx]
                           "float"     -> [fload idx]
                           "long"      -> [lload idx]
-                          _           -> [iload idx]
+                          "byte"      -> [iload idx]
+                          "short"     -> [iload idx]
+                          "int"       -> [iload idx]
+                          "boolean"   -> [iload idx]
+                          "char"      -> [iload idx]
+                          _           -> [aload idx]
        _ -> do idx <- zoom classFile $ genFieldRefThis var typ
                modify $ over line (+1)
                let (b1,b2) = split16Byte idx
@@ -360,18 +363,21 @@ genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
               (Just idx)
                 -> do modify $ over line (+(if idx > 3 then 2 else 1))
                       return $ case typ of
-                                 -- TODO check types
-                                 "objectref" -> [astore idx]
-                                 "double"    -> [dstore idx]
-                                 "float"     -> [fstore idx]
-                                 "long"      -> [lstore idx]
-                                 _           -> [istore idx]
+                                 "double"  -> [dstore idx]
+                                 "float"   -> [fstore idx]
+                                 "long"    -> [lstore idx]
+                                 "byte"    -> [istore idx]
+                                 "short"   -> [istore idx]
+                                 "int"     -> [istore idx]
+                                 "boolean" -> [istore idx]
+                                 "char"    -> [istore idx]
+                                 _         -> [astore idx]
               -- TODO static call in other class
               -- field variable
               _ -> do idx <- zoom classFile $ genFieldRefThis var typ
                       modify $ over line (+3)
                       let (b1,b2) = split16Byte idx
-                      return [Putstatic b1 b2] -- TODO or putfield(object)
+                      return [Putfield b1 b2] -- TODO or putstatic
 
 genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
                                                   typ) expr) className)
