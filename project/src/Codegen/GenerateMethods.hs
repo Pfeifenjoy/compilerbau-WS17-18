@@ -300,8 +300,13 @@ genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
                         ("*" ,_)        -> [Imul]
                         ("&&",_)        -> [Iand]
                         ("||",_)        -> [Ior]))
-genCodeExpr (InstanceOf expr typ) = undefined
-    -- TODO extra instanceOf
+
+genCodeExpr (InstanceOf expr typ) =
+  do modify $ over line (+3)
+     idx <- zoom classFile $ genClass typ
+     let (b1,b2) = split16Byte idx
+     return [Instanceof b1 b2]
+
 -- expr1 ? expr2 : expr3
 genCodeExpr (Ternary cond expr1 expr2)
   = genIf genCodeExpr cond expr1 expr2
