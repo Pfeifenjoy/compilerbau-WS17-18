@@ -7,6 +7,7 @@ import qualified Data.Map as Map
 -- local variable table
 type VarName = String
 type MethodName = String
+type FieldName = String
 type Operator = String
 type VisibleClassList = [Class]
 type LocVarTable = Map.Map VarName Type
@@ -64,8 +65,16 @@ typeCheckFieldDecs fieldDecs thisType visibleClassList =
                                                    typedMaybeInitExpr
                     updatedTypedVarDecs =
                         currentTypedVarDecs ++ [nextTypedVarDec]
-                in (updatedTypedVarDecs, updatedLocVarTable)
-
+                in case typedMaybeInitExpr of
+                            Nothing -> 
+                                (updatedTypedVarDecs, updatedLocVarTable)
+                            Just (TypedExpr _ initExprType) ->
+                                if initExprType == varType
+                                then (updatedTypedVarDecs, updatedLocVarTable)
+                                else error $ "Initialization of "
+                                           ++ varType ++ " variable "
+                                           ++ varName ++ " with type "
+                                           ++ initExprType
                      
 -- typecheck class method declarations
 typeCheckMethodDecs :: MethodDecs 
@@ -93,7 +102,9 @@ typeCheckMethod (MethodDecl name returnType argDecs body visibility isStatic)
             typeCheckStmt body shadowedLocVarTable visibleClassList
     in if bodyType == returnType
        then MethodDecl name returnType argDecs typedBody visibility isStatic
-       else error $ "..."
+       else error $ "Bodytype " ++ bodyType ++ " and returnType "
+                  ++ returnType ++ " of Function " ++ name 
+                  ++ " do not match"
             
 
 -- typecheck expressions
@@ -122,8 +133,8 @@ typeCheckExpr (InstVar instExpr instVarName) locVarTable visibleClassList =
 typeCheckExpr (Unary operator operandExpr) locVarTable visibleClassList =
     let typedOperandExpr@(TypedExpr _ operandExprType) =
             typeCheckExpr operandExpr locVarTable visibleClassList
-        possibleCombinations = [("!","boolean"),("+","integer"),("-","integer")
-                               ,("++","integer"),("--","integer")]
+        possibleCombinations = [("!","boolean"),("+","int"),("-","int")
+                               ,("++","int"),("--","int")]
     in if (operator, operandExprType) `elem` possibleCombinations
        then TypedExpr (Unary operator typedOperandExpr) operandExprType
        else error $ "Unary operator " ++ operator ++ " is not compatible with "
@@ -170,7 +181,7 @@ typeCheckExpr (Ternary operandExprA operandExprB operandExprC)
        else error "First expression of ternary operator must be a boolean"
 typeCheckExpr expr@(BooleanLiteral _) _ _ = TypedExpr expr "boolean"
 typeCheckExpr expr@(CharLiteral _)    _ _ = TypedExpr expr "char"
-typeCheckExpr expr@(IntegerLiteral _) _ _ = TypedExpr expr "integer"
+typeCheckExpr expr@(IntegerLiteral _) _ _ = TypedExpr expr "int"
 typeCheckExpr JNull _ _ = TypedExpr JNull "void"
 typeCheckExpr (StmtExprExpr stmtExpr) locVarTable visibleClassList = 
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
@@ -201,8 +212,22 @@ typeCheckStmtExpr (New newClassName argExprs) locVarTable visibleClassList =
                 argExprs
         argExprsTypes =
             map (\(TypedExpr _ argExprType) -> argExprType) typedArgExprs
-    -- TODO: is this the correct constructor lookup
-    in undefined          
+    in case classLookup newClassName visibleClassList of
+                Just newClass ->
+                    case methodLookup newClassName newClass of
+                             Just (MethodDecl _ retType argDecs _ Public _) ->
+                                 if (==) argExprsTypes
+                                         (map (\(ArgumentDecl _ argType _) ->
+                                                   argType)
+                                              argDecs)
+                                 then TypedStmtExpr (New newClassName
+                                                         typedArgExprs)
+                                                    newClassName
+                                 else error $ "Constructor arguments not "
+                                            ++ " matching"
+                             Nothing -> error "Constructor not found"
+                Nothing -> error $ "Specified Class "
+                                 ++ newClassName ++ " not found"                
 typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
                   locVarTable
                   visibleClassList =
@@ -215,9 +240,21 @@ typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
         argExprsTypes =
             map (\(TypedExpr _ argExprType) -> argExprType) typedArgExprs
     in case classLookup instExprType visibleClassList of
-                Just instClass -> case methodLookup methodName instClass of
-                                           Just method -> undefined
-                                           Nothing -> undefined
+                Just instClass -> 
+                    case methodLookup methodName instClass of
+                             Just (MethodDecl _ retType argDecs _ Public _) ->
+                                 if (==) argExprsTypes
+                                         (map (\(ArgumentDecl _ argType _) ->
+                                                   argType)
+                                              argDecs)
+                                 then TypedStmtExpr (MethodCall typedInstExpr
+                                                                methodName
+                                                                typedArgExprs)
+                                                    retType
+                                 else error "Function arguments don't match" 
+                                             
+                             _ -> error $ "Method " ++ methodName
+                                        ++ " not found or not visible"
                 Nothing -> error $ "Class " ++ instExprType
                                  ++ " could not be found"
 typeCheckStmtExpr (LazyAssign leftValExpr rightValExpr)
@@ -378,7 +415,23 @@ typeCheckVarDecs varDecs locVarTable visibleClassList =
                         currentTypedVarDecs ++ [nextTypedVarDec]
                 in (updatedTypedVarDecs, updatedLocVarTable)
 typeCheckSwitchCases = undefined
-classFieldLookup = undefined
+
+-- looks up a filed in a class
+classFieldLookup :: FieldName -> Class -> Maybe Type
+classFieldLookup searchedfieldName (Class _ fieldDecs _) =
+   fieldDecsLookup fieldDecs
+       where
+           fieldDecsLookup [] = Nothing
+           fieldDecsLookup ((FieldDecl varDecs Public _):fs) =
+               case varDecsLookup varDecs of
+                        Nothing -> fieldDecsLookup fs
+                        res -> res
+           fieldDecsLookup (f:fs) = fieldDecsLookup fs
+           
+           varDecsLookup [] = Nothing
+           varDecsLookup ((VariableDecl varName varType _ _):vs)
+               | varName == searchedfieldName = Just varType
+               | otherwise = varDecsLookup vs               
 
 -- looks up a class in a currently visible class list
 classLookup :: Type -> VisibleClassList -> Maybe Class
@@ -399,16 +452,16 @@ methodLookup searchedMethodName (Class classType _ methodDecs) =
 isValidTypedBinaryOperator :: Operator -> Type -> Type -> Bool
 isValidTypedBinaryOperator operator typeA typeB =
    elem (operator, typeA, typeB)
-        [("+","integer","integer"),("-","integer","integer")
-        ,("*","integer","integer"),("/","integer","integer")
-        ,("%","integer","integer"),("==","boolean","boolean")
-        ,("==","integer","integer"),("!=","boolean","boolean")
-        ,("!=","integer","integer"),("<=","integer","integer")
-        ,(">=","integer","integer"),(">","integer","integer")
-        ,("<","integer","integer"),("&&","boolean","boolean")
-        ,("||","boolean","boolean"),("&","integer","integer")
-        ,("|","integer","integer"),("^","integer","integer")
-        ,("<<","integer","integer"),(">>","integer","integer")]
+        [("+","int","int"),("-","int","int")
+        ,("*","int","int"),("/","int","int")
+        ,("%","int","int"),("==","boolean","boolean")
+        ,("==","int","int"),("!=","boolean","boolean")
+        ,("!=","int","int"),("<=","int","int")
+        ,(">=","int","int"),(">","int","int")
+        ,("<","int","int"),("&&","boolean","boolean")
+        ,("||","boolean","boolean"),("&","int","int")
+        ,("|","int","int"),("^","int","int")
+        ,("<<","int","int"),(">>","int","int")]
 
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
