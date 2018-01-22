@@ -382,7 +382,7 @@ typeCheckStmtLocVarTransform (LocalVarDecls varDecs)
                              visibleClassList =
     let (typedVarDecs, updatedLocVarTable) =
             typeCheckVarDecs varDecs locVarTable visibleClassList
-    in (LocalVarDecls typedVarDecs, updatedLocVarTable)
+    in (TypedStmt (LocalVarDecls typedVarDecs) "void", updatedLocVarTable)
 typeCheckStmtLocVarTransform stmt locVarTable visibleClassList =
     (typeCheckStmt stmt locVarTable visibleClassList, locVarTable) 
 
@@ -413,6 +413,7 @@ typeCheckVarDecs varDecs locVarTable visibleClassList =
                                                    typedMaybeInitExpr
                     updatedTypedVarDecs =
                         currentTypedVarDecs ++ [nextTypedVarDec]
+                    
                 in (updatedTypedVarDecs, updatedLocVarTable)
 typeCheckSwitchCases = undefined
 
