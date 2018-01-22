@@ -37,5 +37,8 @@ parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
                ParserUnit "Correct/NewClass" newClassABS,
                ParserUnit "Correct/InstanceOf" instanceOfABS,
                ParserUnit "Correct/MethodCall" methodCallABS,
-               ParserException "Wrong/Arithmetic" emptyABS
+               ParserException "Wrong/Arithmetic" emptyABS,
+               ParserException "Wrong/BraceError" emptyABS,
+               ParserException "Wrong/SemicolonMissing" emptyABS,
+               ParserException "Wrong/TypeMissing" emptyABS
                ]
