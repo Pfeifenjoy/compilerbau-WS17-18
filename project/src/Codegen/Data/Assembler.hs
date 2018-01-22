@@ -20,6 +20,7 @@ type Npairs = Byte
 type MatchOffsetparisbyte = Byte 
 type AtypeByte = Byte 
 type Dimensionbyte = Byte 
+type Pairbyte = (Byte,Byte,Byte,Byte,Byte,Byte,Byte,Byte)
 
 data Assembler 
   = Nop
@@ -200,7 +201,7 @@ data Assembler
   | Lookupswitch [Padbyte] 
                  Defaultbyte Defaultbyte Defaultbyte Defaultbyte
                  Npairs Npairs Npairs Npairs
-                 [MatchOffsetparisbyte]
+                 [Pairbyte]
   | Ireturn
   | Lreturn
   | Freturn
@@ -413,7 +414,9 @@ codeToInt (Ret byte:xs) = 0xa9 : byte : codeToInt xs
 codeToInt (Tableswitch bs1 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 bs2:xs) 
   = bs1 ++ (0xaa:b1:b2:b3:b4:b5:b6:b7:b8:b9:b10:b11:b12: bs2 ++ codeToInt xs)
 codeToInt (Lookupswitch bs1 b1 b2 b3 b4 b5 b6 b7 b8 bs2:xs) 
-  = bs1 ++ (0xab:b1:b2:b3:b4:b5:b6:b7:b8:bs2 ++ codeToInt xs)
+  = bs1 ++ (0xab:b1:b2:b3:b4:b5:b6:b7:b8:concatMap pair8ToList bs2 ++ codeToInt xs)
+     where
+       pair8ToList (a,b,c,d,e,f,g,h) = [a,b,c,d,e,f,g,h]
 codeToInt (Ireturn:xs) = 0xac : codeToInt xs
 codeToInt (Lreturn:xs) = 0xad : codeToInt xs
 codeToInt (Freturn:xs) = 0xae : codeToInt xs
