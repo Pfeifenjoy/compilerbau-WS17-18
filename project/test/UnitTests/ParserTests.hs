@@ -1,41 +1,41 @@
 module UnitTests.ParserTests (module UnitTests.ParserTests) where
 
-import           BitWiseOperation.Steps
-import           ClassAssign.Steps
-import           ClassMethods.Steps
-import           DoWhile.Steps
-import           EmptyClass.Steps
-import           ForLoop.Steps
-import           InstanceOf.Steps
-import           InstanzVariable.Steps
-import           LocalVariable.Steps
-import           LogicOperations.Steps
-import           MethodCall.Steps
-import           NewClass.Steps
-import           ShortIf.Steps
-import           SimpleIf.Steps
-import           SwitchCase.Steps
+import           Correct.BitWiseOperation.Steps
+import           Correct.ClassAssign.Steps
+import           Correct.ClassMethods.Steps
+import           Correct.DoWhile.Steps
+import           Correct.EmptyClass.Steps
+import           Correct.ForLoop.Steps
+import           Correct.InstanceOf.Steps
+import           Correct.InstanzVariable.Steps
+import           Correct.LocalVariable.Steps
+import           Correct.LogicOperations.Steps
+import           Correct.MethodCall.Steps
+import           Correct.NewClass.Steps
+import           Correct.ShortIf.Steps
+import           Correct.SimpleIf.Steps
+import           Correct.SwitchCase.Steps
+import           Correct.WhileLoop.Steps
+import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
-import           WhileLoop.Steps
-import           WhileLoopCondition.Steps
 
 parserTests :: [TestUnit]
-parserTests = [ParserUnit "EmptyClass" emptyABS,
-               ParserUnit "InstanzVariable" instanzVariableABS,
-               ParserUnit "ClassAssign" classAssignABS,
-               ParserUnit "ClassMethods" classMethodsABS,
-               ParserUnit "ForLoop" forLoopABS,
-               ParserUnit "LocalVariable" localVariableABS,
-               ParserUnit "SimpleIf" simpleIfABS,
-               ParserUnit "ShortIf" shortIfABS,
-               ParserUnit "SwitchCase" switchCaseABS,
-               ParserUnit "WhileLoop" whileLoopABS,
-               ParserUnit "WhileLoopCondition" whileLoopConditionABS,
-               ParserUnit "DoWhile" doWhileABS,
-               ParserException "Arithmetic" emptyABS,
-               ParserUnit "LogicOperations" logicOperationsABS,
-               ParserUnit "BitWiseOperation" bitWiseOperationABS,
-               ParserUnit "NewClass" newClassABS,
-               ParserUnit "InstanceOf" instanceOfABS,
-               ParserUnit "MethodCall" methodCallABS
+parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
+               ParserUnit "Correct/InstanzVariable" instanzVariableABS,
+               ParserUnit "Correct/ClassAssign" classAssignABS,
+               ParserUnit "Correct/ClassMethods" classMethodsABS,
+               ParserUnit "Correct/ForLoop" forLoopABS,
+               ParserUnit "Correct/LocalVariable" localVariableABS,
+               ParserUnit "Correct/SimpleIf" simpleIfABS,
+               ParserUnit "Correct/ShortIf" shortIfABS,
+               ParserUnit "Correct/SwitchCase" switchCaseABS,
+               ParserUnit "Correct/WhileLoop" whileLoopABS,
+               ParserUnit "Correct/WhileLoopCondition" whileLoopConditionABS,
+               ParserUnit "Correct/DoWhile" doWhileABS,
+               ParserUnit "Correct/LogicOperations" logicOperationsABS,
+               ParserUnit "Correct/BitWiseOperation" bitWiseOperationABS,
+               ParserUnit "Correct/NewClass" newClassABS,
+               ParserUnit "Correct/InstanceOf" instanceOfABS,
+               ParserUnit "Correct/MethodCall" methodCallABS,
+               ParserException "Wrong/Arithmetic" emptyABS
                ]
