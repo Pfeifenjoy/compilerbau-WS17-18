@@ -191,7 +191,12 @@ genCodeStmt (If cond body Nothing) =
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
      return $ condCode ++ [Ifeq b1 b2] ++ bodyCode
 
-genCodeStmt (Switch expr switchCases (Just stmts)) = undefined
+genCodeStmt (Switch expr switchCases (Just stmts)) =
+  do exprCode <- genCodeExpr expr -- code to compare
+     modify (over line undefined) -- length of tableswitch assembler
+     caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
+     return $ exprCode ++ undefined ++ concat caseCodes
+
 genCodeStmt (Switch expr switchCases Nothing) = undefined
 genCodeStmt (LocalVarDecls vds)
   = foldr ((-++-) . genCodeVarDecl) (return []) vds
