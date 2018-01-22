@@ -466,11 +466,28 @@ split16Byte :: (Bits n,Integral n) => n -- ^ 16 Byte
 split16Byte i = (div i (2^8),mod i (2^8))
 
 
+-- | split a unsigned 32 bits int in 4 signed 8 bits int
+split32Byte :: (Bits n,Integral n) => n -- ^ 32 Byte
+                                   -> (n -- ^ upper 8 byte
+                                      ,n -- ^ middle 8 byte
+                                      ,n -- ^ middle 8 byte
+                                      ,n) -- ^ lower 8 byte
+split32Byte i = (div i (2^24)
+                ,div (mod i (2^24)) (2^16)
+                ,div (mod (mod i (2^24)) (2^16)) (2^8)
+                ,mod (mod (mod i (2^24)) (2^16)) (2^8))
+
 -- TODO make sure that's correct
 -- | makes the two complement of a 16 bits int
 twoCompliment16 :: (Bits n,Num n) => n -> n
 twoCompliment16 i = -(i .&. mask) + (i .&. complement mask)
   where mask = 2^(16-1)
+
+-- TODO make sure that's correct
+-- | makes the two complement of a 32 bits int
+twoCompliment32 :: (Bits n,Num n) => n -> n
+twoCompliment32 i = -(i .&. mask) + (i .&. complement mask)
+  where mask = 2^(32-1)
 
 
 visToFlag :: Visibility -> Int
