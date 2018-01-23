@@ -146,17 +146,26 @@ typeCheckExpr (Binary operator operandExprA operandExprB)
             typeCheckExpr operandExprA locVarTable visibleClassList
         typedOperandExprB@(TypedExpr _ operandExprBType) =
             typeCheckExpr operandExprB locVarTable visibleClassList
-    in if isValidTypedBinaryOperator operator
-                                     operandExprAType
-                                     operandExprBType
-       then TypedExpr (Binary operator 
-                              typedOperandExprA
-                              typedOperandExprB)
-                      (propagateSuperType operandExprAType
-                                          operandExprBType)
-       else error $ "Binary operator " ++ operator ++ " is not compatible with"
-                    ++ " types (" ++ operandExprAType ++ ","
-                    ++ operandExprBType ++ ")"
+        operandError = error $ "Operator " ++ operator ++ " can not be "
+                               ++ "applied to types " ++ operandExprAType
+                               ++ " and " ++ operandExprBType                               
+        resultType = 
+            case (operator, operandExprAType, operandExprBType) of
+                     (op, "int", "int")
+                         | op `elem` ["+","-","*","/","%"
+                                     ,"&","|","^","<<",">>",">>>"] -> "int"
+                         | op `elem` ["<=",">=","<",">"] -> "boolean"
+                         | otherwise -> operandError 
+                     (op, "boolean", "boolean")
+                         | op `elem` ["||","&&"] -> "boolean"
+                         | otherwise -> operandError
+                     (op, operA, operB) 
+                         | op `elem` ["==","!="] && operA == operB -> operA
+                         | otherwise -> operandError
+    in TypedExpr (Binary operator
+                         typedOperandExprA
+                         typedOperandExprB)
+                 resultType                         
 typeCheckExpr (InstanceOf instExpr proposedType)
               locVarTable
               visibleClassList =
@@ -449,21 +458,6 @@ methodLookup searchedMethodName (Class classType _ methodDecs) =
             | searchedMethodName == methodName = Just m
             | otherwise = methodDecLookup ms
         methodDecLookup [] = Nothing
-
-isValidTypedBinaryOperator :: Operator -> Type -> Type -> Bool
-isValidTypedBinaryOperator operator typeA typeB =
-   elem (operator, typeA, typeB)
-        [("+","int","int"),("-","int","int")
-        ,("*","int","int"),("/","int","int")
-        ,("%","int","int"),("==","boolean","boolean")
-        ,("==","int","int"),("!=","boolean","boolean")
-        ,("!=","int","int"),("<=","int","int")
-        ,(">=","int","int"),(">","int","int")
-        ,("<","int","int"),("&&","boolean","boolean")
-        ,("||","boolean","boolean"),("&","int","int")
-        ,("|","int","int"),("^","int","int")
-        ,("<<","int","int"),(">>","int","int")
-        ,(">>>","int","int")]
 
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
