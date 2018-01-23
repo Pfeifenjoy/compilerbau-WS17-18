@@ -185,8 +185,8 @@ typeCheckExpr (Ternary operandExprA operandExprB operandExprC)
        then TypedExpr (Ternary typedOperandExprA
                                typedOperandExprB
                                typedOperandExprC)
-                      (propagateSuperType operandExprAType
-                                          operandExprBType)
+                      (propagateSuperType operandExprBType
+                                          operandExprCType)
        else error "First expression of ternary operator must be a boolean"
 typeCheckExpr expr@(BooleanLiteral _) _ _ = TypedExpr expr "boolean"
 typeCheckExpr expr@(CharLiteral _)    _ _ = TypedExpr expr "char"
