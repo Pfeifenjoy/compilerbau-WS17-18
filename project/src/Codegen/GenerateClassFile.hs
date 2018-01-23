@@ -3,7 +3,7 @@ module Codegen.GenerateClassFile (
 ) where
 import ABSTree(Class(..),MethodDecl(..))
 import Codegen.Data.ClassFormat
-import Codegen.GenerateConstantPool(genUTF8)
+import qualified Codegen.GenerateConstantPool as CP
 import Codegen.GenerateFields(genFields)
 import Codegen.GenerateMethods
 import Data.HashMap.Lazy (fromList)
@@ -14,8 +14,8 @@ genClass :: Class -> ClassFile
 genClass (Class typ fds mds)
   = execState
       -- TODO get name Super
-     (do thisIndex <- genUTF8 typ
-         superIndex <- genUTF8 "Super"
+     (do thisIndex <- CP.genClass typ
+         superIndex <- CP.genClass "object"
          modify $ set this (ThisClass thisIndex)
          modify $ set super (SuperClass superIndex)
          genFields (existsConstructor mds) fds
