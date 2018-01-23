@@ -62,9 +62,11 @@ genInit :: [VariableDecl] -> State ClassFile ()
 genInit vds =
   do indexType <- genUTF8 "()V"
      indexCode <- genUTF8 "Code"
+     indexThis <- genMethodRefThis "<init>" "void"
      indexName <- view (this . indexTh) <$> get
      codeVars <- mapM genCode vds
-     let code =  [Aload0,Invokespecial 0 1]
+     let (b1,b2) = split16Byte indexThis
+         code =  [Aload0,Invokespecial b1 b2]
                     ++ concatMap snd codeVars
                     ++ [Return]
          lengthCode = 5 + sum (map fst codeVars)
