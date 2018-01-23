@@ -24,7 +24,7 @@ genClass (Class typ fds mds)
                 -- TODO which version?
                 , _minver          = MinorVersion 0
                 , _maxver          = MajorVersion 0
-                , _countrCp        = 0
+                , _countrCp        = 1
                 , _arrayCp         = fromList []
                 , _acfg            = AccessFlags []
                 , _this            = ThisClass 0
