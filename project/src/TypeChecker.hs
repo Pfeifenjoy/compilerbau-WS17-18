@@ -331,7 +331,7 @@ typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
             typeCheckExpr condExpr updatedLocVarTable visibleClassList
         (typedIterStmt, updatedUpdatedLocVarTable) =
             typeCheckStmtLocVarTransform iterStmt
-                                         locVarTable
+                                         updatedLocVarTable
                                          visibleClassList
         typedBodyStmt@(TypedStmt _ bodyStmtType) =
             typeCheckStmt bodyStmt updatedUpdatedLocVarTable visibleClassList
