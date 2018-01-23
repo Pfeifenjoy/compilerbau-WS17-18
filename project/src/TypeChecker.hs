@@ -367,7 +367,7 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
 typeCheckStmt (StmtExprStmt stmtExpr) locVarTable visibleClassList =
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
             typeCheckStmtExpr stmtExpr locVarTable visibleClassList
-    in TypedStmt (StmtExprStmt typedStmtExpr) stmtExprType
+    in TypedStmt (StmtExprStmt typedStmtExpr) "void"
 typeCheckStmt (TypedStmt _ _) _ _ =
     error "Trying to typecheck an already typechecked statement"
 
@@ -382,7 +382,7 @@ typeCheckStmtLocVarTransform (LocalVarDecls varDecs)
                              visibleClassList =
     let (typedVarDecs, updatedLocVarTable) =
             typeCheckVarDecs varDecs locVarTable visibleClassList
-    in (LocalVarDecls typedVarDecs, updatedLocVarTable)
+    in (TypedStmt (LocalVarDecls typedVarDecs) "void", updatedLocVarTable)
 typeCheckStmtLocVarTransform stmt locVarTable visibleClassList =
     (typeCheckStmt stmt locVarTable visibleClassList, locVarTable) 
 
@@ -413,6 +413,7 @@ typeCheckVarDecs varDecs locVarTable visibleClassList =
                                                    typedMaybeInitExpr
                     updatedTypedVarDecs =
                         currentTypedVarDecs ++ [nextTypedVarDec]
+                    
                 in (updatedTypedVarDecs, updatedLocVarTable)
 typeCheckSwitchCases = undefined
 
@@ -461,7 +462,8 @@ isValidTypedBinaryOperator operator typeA typeB =
         ,("<","int","int"),("&&","boolean","boolean")
         ,("||","boolean","boolean"),("&","int","int")
         ,("|","int","int"),("^","int","int")
-        ,("<<","int","int"),(">>","int","int")]
+        ,("<<","int","int"),(">>","int","int")
+        ,(">>>","int","int")]
 
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
