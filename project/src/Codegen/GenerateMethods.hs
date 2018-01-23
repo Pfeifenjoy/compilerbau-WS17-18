@@ -10,6 +10,7 @@ module Codegen.GenerateMethods (
 import ABSTree
 import qualified Codegen.Data.Assembler as A
 import Codegen.GenerateFields(genCode)
+import Codegen.EvalCode
 import Data.Char(ord)
 import qualified Data.HashMap.Lazy as HM
 import Codegen.Data.Assembler hiding (Return, New)

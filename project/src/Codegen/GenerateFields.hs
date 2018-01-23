@@ -9,10 +9,9 @@ module Codegen.GenerateFields (
 
 import ABSTree hiding (Return)
 import Codegen.Data.ClassFormat
+import Codegen.EvalCode
 import Codegen.Data.Assembler
 import Codegen.GenerateConstantPool
-import Data.Char(ord)
-import Data.Bits
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
 
@@ -97,18 +96,8 @@ genCode (VariableDecl name typ  _ (Just expr)) =
          (b1,b2) = split16Byte index
      return (if val > 5 then 6 else 5
             ,[Aload0,iconst val,Putfield b1 b2])
--- helper functions
 
-evalInt ::  Expr -> Int
-evalInt (BooleanLiteral True)  = 1
-evalInt (BooleanLiteral False) = 0
-evalInt (CharLiteral char)     = ord char
-evalInt (IntegerLiteral int)   = fromIntegral int
-evalInt (Binary "&&" expr1 expr2) = evalInt expr1 .&. evalInt expr2
-evalInt (Binary "||" expr1 expr2) = evalInt expr1 .|. evalInt expr2
-evalInt (Binary "+" expr1 expr2) = evalInt expr1 + evalInt expr2
-evalInt (Binary "-" expr1 expr2) = evalInt expr1 - evalInt expr2
-evalInt (Binary "*" expr1 expr2) = evalInt expr1 * evalInt expr2
+-- helper functions
 
 exprToConstantPool ::  Expr -> State ClassFile Int
 exprToConstantPool = genInteger . evalInt
