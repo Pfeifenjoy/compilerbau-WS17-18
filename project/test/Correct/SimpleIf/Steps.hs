@@ -61,6 +61,19 @@ simpleIfABS = [Class "SimpleIf" [FieldDecl [VariableDecl "i" "int" False Nothing
                 ]
               ]
 
+simpleIfTypedABS = [Class "SimpleIf" [FieldDecl [VariableDecl "i" "int" False Nothing] Public False]
+               [MethodDecl "doIf" "void" []
+                   (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "a" "int" False Nothing]) "void",
+                           TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 5) "int")) "int")) "void",
+                           TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 0) "int")) "int")) "void",
+                           TypedStmt (If (TypedExpr (Binary "<" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 5) "int")) "boolean")
+                               (TypedStmt (Block [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "void"]
+                                ) "void")
+                               (Just (TypedStmt (Block [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "void"]) "void"))) "void"]
+                  ) "void" ) Public False
+                ]
+              ]
+
 
 
 

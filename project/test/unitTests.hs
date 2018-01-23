@@ -2,10 +2,11 @@ module Main (module Main) where
 import           UnitTests.LexTests
 import           UnitTests.ParserTests
 import           UnitTests.TypeTests
+import           Utils.ClassFileChecker
 import           Utils.SUnit
 
 allTests :: [TestUnit]
-allTests = lexTests ++ parserTests -- ++ typeTests
+allTests = lexTests ++ parserTests ++ typeTests
 
 testResults :: [TestUnit] -> IO()
 testResults tests = putStrLn (color Blue ("Testresults: " ++ show (numberOfSuccess tests) ++ "/" ++ show (length tests) ++ " (" ++ show (intDivisionPercentage (numberOfSuccess tests) (length tests)) ++ "%) passed"))
@@ -30,12 +31,12 @@ main = do
           testResults parserTests
           putStrLn ""
 
-          -- putStrLn "TypeChecker-Tests"
-          -- putStrLn "-------------------------"
-          -- mapM_ (>>= putStrLn) (evalTests typeTests)
-          -- putStrLn ""
-          -- testResults typeTests
-          -- putStrLn ""
+          putStrLn "TypeChecker-Tests"
+          putStrLn "-------------------------"
+          mapM_ (>>= putStrLn) (evalTests typeTests)
+          putStrLn ""
+          testResults typeTests
+          putStrLn ""
 
           putStrLn (color Blue ("All tests: " ++ show (numberOfSuccess allTests) ++ "/" ++ show (length allTests) ++ " (" ++ show (intDivisionPercentage (numberOfSuccess allTests) (length allTests)) ++ "%) passed"))
 

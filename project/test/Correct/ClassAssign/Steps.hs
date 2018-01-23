@@ -41,8 +41,8 @@ classAssignTypedABS = [Class "ClassAssign"
                   [FieldDecl [VariableDecl "a" "int" False Nothing] Public False]
                   [MethodDecl "doStuff" "int" [ArgumentDecl "b" "int" False]
                               (TypedStmt
-                                   (Block [LocalVarDecls [VariableDecl "c" "int" False Nothing],
-                                        TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "c") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int",
+                                   (Block [TypedStmt (LocalVarDecls [VariableDecl "c" "int" False Nothing]) "void",
+                                        TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "c") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "void",
                                    TypedStmt (Return (TypedExpr (LocalOrFieldVar "b") "int")) "int"]) "int") Public False]
                  ]
 

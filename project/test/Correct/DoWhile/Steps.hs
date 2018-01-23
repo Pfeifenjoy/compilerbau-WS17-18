@@ -47,10 +47,15 @@ doWhileABS = [Class "DoWhile" []
 doWhileTypedABS = [Class "DoWhile" []
               [MethodDecl "doStuff" "void" []
                   (TypedStmt
-                    (Block [LocalVarDecls [VariableDecl "i" "int" False (Just (TypedExpr (IntegerLiteral 0) "int"))],
+                    (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "int" False (Just (TypedExpr (IntegerLiteral 0) "int"))]) "void",
                         TypedStmt (DoWhile (TypedExpr (Binary "<" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 3) "int")) "boolean")
                             (TypedStmt
-                                (Block [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (Binary "+" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 1) "int")) "int")) "int")) "int"]) "void")) "void"
+                                (Block [TypedStmt
+                                           (StmtExprStmt
+                                                (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (Binary "+" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 1) "int")) "int")) "int"))
+                                           "void"])
+                                "void"))
+                        "void"
                         , TypedStmt (Block[]) "void"]) "void") Public False
                ]
              ]

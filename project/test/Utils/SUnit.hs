@@ -1,15 +1,18 @@
 module Utils.SUnit (module Utils.SUnit) where
 
 import           ABSTree
+import           Codegen.Data.ClassFormat
+import           Codegen.GenerateClassFile
 import           Control.Exception
-import           Control.Monad     ()
+import           Control.Monad             ()
 import           Data.List
 import           Lexer
 import           Lexer.Token
 import           Parser
-import           System.Directory  ()
+import           System.Directory          ()
 import           System.IO.Unsafe
 import           TypeChecker
+import           Utils.ClassFileChecker
 
 all_tokens :: [Token]
 all_tokens = [ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO, INCREMENT, DECREMENT, NOT, AND, OR, EQUAL, NOT_EQUAL, LESSER, GREATER, LESSER_EQUAL, GREATER_EQUAL, BITWISE_AND, BITWISE_OR, BITWISE_XOR, SHIFTLEFT, SHIFTRIGHT, UNSIGNED_SHIFTRIGHT,
@@ -48,6 +51,9 @@ readTokens s = Lexer.lex (unsafePerformIO . readFile $ ("./test/" ++ s ++ "/Clas
 typeABS :: String -> [Class]
 typeABS s = TypeChecker.checkTypes (Parser.parse (readTokens s))
 
+genClassFiles :: [Class] -> [ClassFile]
+genClassFiles = map Codegen.GenerateClassFile.genClass
+
 runTest :: TestUnit -> IO Bool
 runTest (LexerUnit name expectedTokens) = do
                                               result <- try (evaluate (readTokens name)) :: IO (Either SomeException [Token])
@@ -72,6 +78,8 @@ runTest (ParserException name _) = do
                                                   case result of
                                                     Left _  -> return True
                                                     Right _ -> return False
+
+
 
 testOutput :: (Eq a, Show a) => String -> String -> a -> a -> String
 testOutput step name expected got = let stepName = step ++ ": [" ++ name ++ "] "
@@ -107,7 +115,7 @@ evalTest (TypeUnit name expectedClass) = do
                                                result <- try (evaluate (typeABS name)) :: IO (Either SomeException [Class])
                                                case result of
                                                 Left ex ->  return (color Red ("TypeChecker: [" ++ name ++ "] failed with exception: ")  ++ show ex)
-                                                Right typedClass -> return (testOutput "Parser" name expectedClass typedClass)
+                                                Right typedClass -> return (testOutput "TypeChecker" name expectedClass typedClass)
 
 
 runTests :: [TestUnit] -> [IO Bool]

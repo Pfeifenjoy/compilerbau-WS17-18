@@ -41,3 +41,12 @@ whileLoopABS = [Class "WhileLoop" []
                      ) Public False]
                ]
 
+whileLoopTypedABS = [Class "WhileLoop" []
+                [MethodDecl "doLoop" "void" []
+                    (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "int" False (Just (TypedExpr (IntegerLiteral 0) "int"))]) "void",
+                            TypedStmt (While (TypedExpr (BooleanLiteral True) "boolean")
+                                (TypedStmt (Block [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (Binary "+" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 1) "int")) "int")) "int")) "void"]) "void")) "void"
+                            ]
+                     ) "void") Public False]
+               ]
+

@@ -33,3 +33,11 @@ shortIfABS = [Class "ShortIf" []
                   ]) Public False
               ]
              ]
+
+shortIfTypedABS = [Class "ShortIf" []
+              [MethodDecl "doStuff" "void" []
+                  (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "a" "int" False (Just (TypedExpr (Ternary (TypedExpr (BooleanLiteral True) "boolean") (TypedExpr (IntegerLiteral 1) "int") (TypedExpr (IntegerLiteral 0) "int")) "int"))]) "void"
+
+                  ]) "void") Public False
+              ]
+             ]

@@ -107,21 +107,21 @@ bitWiseOperationABS = [Class "BitWiseOperation" []
 
 bitWiseOperationTypedABS = [Class "BitWiseOperation" []
                        [MethodDecl "doStuff" "void" []
-                           (Block [LocalVarDecls [VariableDecl "a" "int" False (Just (TypedExpr (IntegerLiteral 1) "int"))],
-                                   LocalVarDecls [VariableDecl "b" "int" False (Just (IntegerLiteral 2))],
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "&" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "|" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "^" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "<<" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "^" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "&" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "|" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "<<" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "int",
-                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "int"
-                           ]) Public False
+                           (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "a" "int" False (Just (TypedExpr (IntegerLiteral 1) "int"))]) "void",
+                                   TypedStmt (LocalVarDecls [VariableDecl "b" "int" False (Just (TypedExpr (IntegerLiteral 2) "int"))]) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "&" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "|" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "^" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "b") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "<<" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "^" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "&" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "|" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary "<<" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "void",
+                                   TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (Binary ">>>" (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (LocalOrFieldVar "a") "int")) "int")) "int")) "void"
+                           ]) "void") Public False
                         ]
                       ]
 

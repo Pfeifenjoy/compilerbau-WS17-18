@@ -22,6 +22,22 @@ import           Utils.SUnit
 typeTests :: [TestUnit]
 typeTests = [TypeUnit "Correct/EmptyClass" emptyTypedABS,
              TypeUnit "Correct/InstanzVariable" instanzVariableTypedABS,
+             TypeUnit "Correct/ClassAssign" classAssignTypedABS,
+             TypeUnit "Correct/ClassMethods" classMethodsTypedABS,
+             TypeUnit "Correct/ForLoop" forLoopTypedABS,
              TypeUnit "Correct/LocalVariable" localVariableTypedABS,
-             TypeUnit "Correct/ClassAssign" classAssignTypedABS
+             TypeUnit "Correct/SimpleIf" simpleIfTypedABS,
+             TypeUnit "Correct/ShortIf" shortIfTypedABS,
+             -- TypeUnit "Correct/SwitchCase" switchCaseTypedABS,
+             TypeUnit "Correct/WhileLoop" whileLoopTypedABS,
+             TypeUnit "Correct/WhileLoopCondition" whileLoopConditionTypedABS,
+             TypeUnit "Correct/DoWhile" doWhileTypedABS,
+             -- TypeUnit "Correct/LogicOperations" logicOperationsTypedABS,
+             TypeUnit "Correct/BitWiseOperation" bitWiseOperationTypedABS --,
+             -- TypeUnit "Correct/NewClass" newClassTypedABS,
+             -- TypeUnit "Correct/InstanceOf" instanceOfTypedABS,
+             -- TpyeUnit "Correct/MethodCall" methodCallTypedABS,
+
+
+
             ]
