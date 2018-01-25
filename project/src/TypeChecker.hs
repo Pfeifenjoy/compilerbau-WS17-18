@@ -156,9 +156,8 @@ typeCheckExpr (Binary operator operandExprA operandExprB)
                                      ,"&","|","^","<<",">>",">>>"] -> "int"
                          | op `elem` ["<=",">=","<",">"] -> "boolean"
                          | otherwise -> operandError 
-                     (op, "boolean", "boolean")
-                         | op `elem` ["||","&&"] -> "boolean"
-                         | otherwise -> operandError
+                     ("||", "boolean", "boolean") -> "boolean"
+                     ("&&", "boolean", "boolean") -> "boolean"
                      (op, operA, operB) 
                          | op `elem` ["==","!="] && operA == operB -> operA
                          | otherwise -> operandError
@@ -319,7 +318,7 @@ typeCheckStmt (DoWhile condExpr doWhileExpr) locVarTable visibleClassList =
            typeCheckStmt (While condExpr doWhileExpr)
                          locVarTable
                          visibleClassList
-   in TypedStmt (DoWhile condExpr doWhileExpr) doWhileExprType
+   in TypedStmt (DoWhile typedCondExpr typedDoWhileExpr) doWhileExprType
 typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
               locVarTable
               visibleClassList =
