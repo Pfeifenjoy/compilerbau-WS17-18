@@ -233,7 +233,13 @@ typeCheckStmtExpr (New newClassName argExprs) locVarTable visibleClassList =
                                                     newClassName
                                  else error $ "Constructor arguments not "
                                             ++ " matching"
-                             Nothing -> error "Constructor not found"
+                             Nothing ->
+                                 if argExprsTypes == []
+                                 then TypedStmtExpr (New newClassName
+                                                         typedArgExprs)
+                                                    newClassName
+                                 else error $ "Trying to call default class"
+                                            ++ " constructor with arguments"
                 Nothing -> error $ "Specified Class "
                                  ++ newClassName ++ " not found"                
 typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
@@ -367,10 +373,18 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
     let typedSwitchExpr@(TypedExpr _ switchExprType) =
             typeCheckExpr switchExpr locVarTable visibleClassList
         (typedSwitchCases, switchCasesType) =
-            typeCheckSwitchCases switchExprType
-                                 switchCases
+            typeCheckSwitchCases switchCases
+                                 switchExprType
                                  locVarTable
                                  visibleClassList
+        typedMaybeDefaultCaseStmts =
+           fmap ((.) (\(TypedStmt (Block typedStmts) stmtsType) -> 
+                          (typedStmts, stmtsType))
+                     (\stmts -> 
+                          typeCheckStmt (Block stmts) 
+                                        locVarTable 
+                                        visibleClassList))
+                maybeDefaultCaseStmts
     in undefined
 typeCheckStmt (StmtExprStmt stmtExpr) locVarTable visibleClassList =
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
