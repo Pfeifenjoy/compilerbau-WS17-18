@@ -14,6 +14,7 @@ type LocVarTable = Map.Map VarName Type
 type FieldDecs = [FieldDecl]
 type VarDecs = [VariableDecl]
 type MethodDecs = [MethodDecl]
+type SwitchCases = [SwitchCase]
 
 
 -- main typecheck function
@@ -373,7 +374,7 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
     let typedSwitchExpr@(TypedExpr _ switchExprType) =
             typeCheckExpr switchExpr locVarTable visibleClassList
         (typedSwitchCases, switchCasesType) =
-            typeCheckSwitchCases switchCases
+            typeCheckSwitchCases switchCases 
                                  switchExprType
                                  locVarTable
                                  visibleClassList
@@ -437,7 +438,36 @@ typeCheckVarDecs varDecs locVarTable visibleClassList =
                         currentTypedVarDecs ++ [nextTypedVarDec]
                     
                 in (updatedTypedVarDecs, updatedLocVarTable)
-typeCheckSwitchCases = undefined
+
+-- typecheck switch cases and determine their type
+typeCheckSwitchCases :: SwitchCases 
+                        -> Type 
+                        -> LocVarTable 
+                        -> VisibleClassList
+                        -> (SwitchCases, Type)
+typeCheckSwitchCases switchCases switchExprType locVarTable visibleClassList =
+    let typedSwitchCasesAndSwitchCaseTypes =
+            map (\(SwitchCase switchCaseExpr switchCaseStmts) ->
+                     let typedSwitchCaseExpr@(TypedExpr _ switchCaseExprType) =
+                             typeCheckExpr switchCaseExpr
+                                           locVarTable
+                                           visibleClassList
+                         (TypedStmt (Block typedSwitchCaseStmts)
+                                    switchCaseStmtsType) =
+                             typeCheckStmt (Block switchCaseStmts)
+                                           locVarTable
+                                           visibleClassList
+                     in if switchCaseExprType == "int"
+                        then (SwitchCase typedSwitchCaseExpr
+                                         typedSwitchCaseStmts
+                             , switchCaseStmtsType)
+                        else error "Case expression must me be an integer")
+                switchCases
+        (typedSwitchCases, switchCaseTypes) =
+            unzip typedSwitchCasesAndSwitchCaseTypes
+        switchCasesResultType = 
+            foldr propagateSuperType "void" switchCaseTypes
+    in (typedSwitchCases, switchCasesResultType)    
 
 -- looks up a filed in a class
 classFieldLookup :: FieldName -> Class -> Maybe Type
@@ -480,3 +510,10 @@ propagateSuperType typeA typeB
     | typeA == typeB = typeA
     | otherwise = error $ "Types " ++ typeA ++ " and " ++ typeB
                         ++ " are not compatible"
+
+propagateSuperType' :: Type -> Type -> Maybe Type
+propagateSuperType' "void" typeB = Just typeB
+propagateSuperType' typeA "void" = Just typeA
+propagateSuperType' typeA typeB 
+    | typeA == typeB = Just typeA
+    | otherwise = Nothing 
