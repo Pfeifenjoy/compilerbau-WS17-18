@@ -9,6 +9,7 @@ module Codegen.GenerateConstantPool(
   genFieldRef,
   genFieldRefThis,
   genMethodRef,
+  genMethodRefThis,
   genInterfaceRef,
   genString,
   genInteger,
@@ -79,6 +80,19 @@ genMethodRef :: String-- ^ name of method to insert in constant pool
                       IndexConstantPool -- ^ location of field in constant pool
 genMethodRef name className typ =
   do indexClassName <- genClass className
+     indexNameType <- genNameAndType name typ
+     genInfo MethodRefInfo { _tagCp              = TagMethodRef
+                           , _indexNameCp        = indexClassName
+                           , _indexNameandtypeCp = indexNameType
+                           , _desc               = ""
+                           }
+
+genMethodRefThis :: String-- ^ name of method to insert in constant pool
+                 -> Type -- ^ type of this method
+                 -> State ClassFile -- ^ new constant pool
+                          IndexConstantPool -- ^ location of field in constant pool
+genMethodRefThis name typ =
+  do indexClassName <- view (this . indexTh) <$> get
      indexNameType <- genNameAndType name typ
      genInfo MethodRefInfo { _tagCp              = TagMethodRef
                            , _indexNameCp        = indexClassName

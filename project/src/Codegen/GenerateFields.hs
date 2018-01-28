@@ -9,10 +9,9 @@ module Codegen.GenerateFields (
 
 import ABSTree hiding (Return)
 import Codegen.Data.ClassFormat
+import Codegen.EvalCode
 import Codegen.Data.Assembler
 import Codegen.GenerateConstantPool
-import Data.Char(ord)
-import Data.Bits
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
 
@@ -63,9 +62,11 @@ genInit :: [VariableDecl] -> State ClassFile ()
 genInit vds =
   do indexType <- genUTF8 "()V"
      indexCode <- genUTF8 "Code"
+     indexThis <- genMethodRefThis "<init>" "void"
      indexName <- view (this . indexTh) <$> get
      codeVars <- mapM genCode vds
-     let code =  [Aload0,Invokespecial 0 1]
+     let (b1,b2) = split16Byte indexThis
+         code =  [Aload0,Invokespecial b1 b2]
                     ++ concatMap snd codeVars
                     ++ [Return]
          lengthCode = 5 + sum (map fst codeVars)
@@ -97,18 +98,8 @@ genCode (VariableDecl name typ  _ (Just expr)) =
          (b1,b2) = split16Byte index
      return (if val > 5 then 6 else 5
             ,[Aload0,iconst val,Putfield b1 b2])
--- helper functions
 
-evalInt ::  Expr -> Int
-evalInt (BooleanLiteral True)  = 1
-evalInt (BooleanLiteral False) = 0
-evalInt (CharLiteral char)     = ord char
-evalInt (IntegerLiteral int)   = fromIntegral int
-evalInt (Binary "&&" expr1 expr2) = evalInt expr1 .&. evalInt expr2
-evalInt (Binary "||" expr1 expr2) = evalInt expr1 .|. evalInt expr2
-evalInt (Binary "+" expr1 expr2) = evalInt expr1 + evalInt expr2
-evalInt (Binary "-" expr1 expr2) = evalInt expr1 - evalInt expr2
-evalInt (Binary "*" expr1 expr2) = evalInt expr1 * evalInt expr2
+-- helper functions
 
 exprToConstantPool ::  Expr -> State ClassFile Int
 exprToConstantPool = genInteger . evalInt
