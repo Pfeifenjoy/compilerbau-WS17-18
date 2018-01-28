@@ -48,3 +48,19 @@ logicOperationsABS = [Class "LogicOperations" []
                            ) Public False
                        ]
                      ]
+
+logicOperationsTypedABS = [Class "LogicOperations" []
+                      [MethodDecl "doStuff" "void" []
+                          (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "boolean" False
+                              (Just
+                                    (TypedExpr (Binary "=="
+                                          (TypedExpr (Binary "||"
+                                                (TypedExpr (Binary "&&"
+                                                      (TypedExpr (Unary "!" (TypedExpr (BooleanLiteral True) "boolean")) "boolean")
+                                                (TypedExpr (BooleanLiteral False) "boolean")) "boolean")
+                                                (TypedExpr (BooleanLiteral False) "boolean")) "boolean")
+                                          (TypedExpr (Unary "!" (TypedExpr (Binary "==" (TypedExpr (BooleanLiteral False) "boolean") (TypedExpr (BooleanLiteral True) "boolean")) "boolean")) "boolean")) "boolean"))] ) "void"
+                                 ]
+                           ) "void") Public False
+                       ]
+                     ]

@@ -5,11 +5,13 @@ import           Correct.ClassAssign.Steps
 import           Correct.ClassMethods.Steps
 import           Correct.DoWhile.Steps
 import           Correct.EmptyClass.Steps
+import           Correct.EndlessForLoop.Steps
 import           Correct.ForLoop.Steps
 import           Correct.InstanceOf.Steps
 import           Correct.InstanzVariable.Steps
 import           Correct.LocalVariable.Steps
 import           Correct.LogicOperations.Steps
+import           Correct.LogicOperations2.Steps
 import           Correct.MethodCall.Steps
 import           Correct.NewClass.Steps
 import           Correct.ShortIf.Steps
@@ -25,6 +27,7 @@ parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
                ParserUnit "Correct/ClassAssign" classAssignABS,
                ParserUnit "Correct/ClassMethods" classMethodsABS,
                ParserUnit "Correct/ForLoop" forLoopABS,
+               ParserUnit "Correct/EndlessForLoop" endlessForLoopABS,
                ParserUnit "Correct/LocalVariable" localVariableABS,
                ParserUnit "Correct/SimpleIf" simpleIfABS,
                ParserUnit "Correct/ShortIf" shortIfABS,
@@ -33,6 +36,7 @@ parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
                ParserUnit "Correct/WhileLoopCondition" whileLoopConditionABS,
                ParserUnit "Correct/DoWhile" doWhileABS,
                ParserUnit "Correct/LogicOperations" logicOperationsABS,
+               ParserUnit "Correct/LogicOperations2" logicOperations2ABS,
                ParserUnit "Correct/BitWiseOperation" bitWiseOperationABS,
                ParserUnit "Correct/NewClass" newClassABS,
                ParserUnit "Correct/InstanceOf" instanceOfABS,

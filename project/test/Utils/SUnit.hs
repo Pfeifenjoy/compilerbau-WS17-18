@@ -34,6 +34,7 @@ data Color
     | Blue
     | Red
 
+
 -- Take a color and a string to get the string in the given color
 color :: Color -> String -> String
 color Green text  = "\x1b[32m" ++ text ++ "\x1b[0m"

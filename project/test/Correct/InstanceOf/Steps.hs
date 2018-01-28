@@ -52,8 +52,8 @@ instanceOfTypedABS = [Class "A" [FieldDecl [VariableDecl "a" "int" False Nothing
                  [],
                  Class "B" []
                      [MethodDecl "doStuff" "void" []
-                         (TypedStmt (Block [LocalVarDecls [VariableDecl "a" "A" False (Just (TypedExpr (StmtExprExpr (TypedStmtExpr (New "A" []) "A")) "A"))],
-                                 LocalVarDecls [VariableDecl "b" "boolean" False (Just (TypedExpr (InstanceOf (TypedExpr (LocalOrFieldVar "a") "A") "A") "boolean"))]
+                         (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "a" "A" False (Just (TypedExpr (StmtExprExpr (TypedStmtExpr (New "A" []) "A")) "A"))]) "void",
+                                 TypedStmt (LocalVarDecls [VariableDecl "b" "boolean" False (Just (TypedExpr (InstanceOf (TypedExpr (LocalOrFieldVar "a") "A") "A") "boolean"))]) "void"
                          ]) "void") Public False
                     ]
                 ]

@@ -5,6 +5,7 @@ import           Correct.ClassAssign.Steps
 import           Correct.ClassMethods.Steps
 import           Correct.DoWhile.Steps
 import           Correct.EmptyClass.Steps
+import           Correct.EndlessForLoop.Steps
 import           Correct.ForLoop.Steps
 import           Correct.InstanceOf.Steps
 import           Correct.InstanzVariable.Steps
@@ -27,6 +28,7 @@ lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/ClassAssign" classAssignTokens,
             LexerUnit "Correct/ClassMethods" classMethodTokens,
             LexerUnit "Correct/ForLoop" forLoopTokens,
+            LexerUnit "Correct/EndlessForLoop" endlessForLoopTokens,
             LexerUnit "Correct/LocalVariable" localVariableTokens,
             LexerUnit "Correct/SimpleIf" simpleIfTokens,
             LexerUnit "Correct/ShortIf" shortIfTokens,
@@ -42,3 +44,5 @@ lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/MethodCall" methodCallTokens,
             LexerUnit "Wrong/Syntax/Arithmetic" arithmeticTokens
             ]
+
+
