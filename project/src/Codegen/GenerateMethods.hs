@@ -132,9 +132,8 @@ genCodeStmt (While cond body) =
      breakLine <- (+1) . view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16 $ breakLine - refLine
          (b3,b4) = split16Byte . twoCompliment16 $ refLine - breakLine - 1
-         code = condCode ++ [Ifeq b1 b2]
-                         ++ adBreaks refLine breakLine bodyCode
-                         ++ [Goto b3 b4]
+         code = condCode b1 b2 ++ adBreaks refLine breakLine bodyCode
+                               ++ [Goto b3 b4]
      modify $ over continueLine tail
      return code
 
@@ -143,12 +142,11 @@ genCodeStmt (DoWhile cond body) =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
      bodyCode <- genCodeStmt body
-     condCode <- genCodeExpr cond
+     condCode <- genCond cond
      modify $ over line (+3) -- length of Ifne
      breakLine <- (+1) . view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
-         code = adBreaks refLine breakLine bodyCode ++ condCode
-                                                    ++ [Ifne b1 b2]
+         code = adBreaks refLine breakLine bodyCode ++ condCode b1 b2
      modify $ over continueLine tail
      return code
 
@@ -161,8 +159,7 @@ genCodeStmt (For initStmt cond iter body) =
      breakLine <- view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
          (b3,b4) = split16Byte . twoCompliment16  $ refLine - breakLine - 1
-         code = initialCode ++ condCode
-                            ++ [Ifeq b1 b2]
+         code = initialCode ++ condCode b1 b2
                             ++ adBreaks refLine breakLine bodyCode
                             ++ iterateCode
                             ++ [Goto b3 b4]
@@ -483,16 +480,16 @@ genCodeSwitchCase (SwitchCase expr cas) =
 
 -- helper functions
 
-getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Code,Code)
+getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Int -> Int -> Code,Code)
 getForWhileCode cond body =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
      (condCode,bodyCode) <- getCondBodyCode cond body
      return (refLine,condCode,bodyCode)
 
-getCondBodyCode :: Expr -> Stmt -> State Vars (Code,Code)
+getCondBodyCode :: Expr -> Stmt -> State Vars (Int -> Int -> Code,Code)
 getCondBodyCode cond body =
-  do condCode <- genCodeExpr cond
+  do condCode <- genCond cond
      modify (over line (+3)) -- jump + 2 branch bytes
      bodyCode <- genCodeStmt body
      return (condCode,bodyCode)
@@ -500,7 +497,7 @@ getCondBodyCode cond body =
 -- gen If or cond?e1:e2
 genIf :: (t  -> State Vars Code) -> Expr -> t -> t -> State Vars Code
 genIf gen cond bodyIf bodyElse =
-  do condCode <- genCodeExpr cond
+  do condCode <- genCond cond
      ref <- (+1) . view line <$> get
      modify $ over line (+3) -- length of Ifeq
      bodyIfCode <- gen bodyIf
@@ -510,8 +507,25 @@ genIf gen cond bodyIf bodyElse =
      endElse <- view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
          (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
-     return $ condCode ++ [Ifeq b1 b2] ++ bodyIfCode ++ [Goto b3 b4]
+     return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode
+
+genCond :: Expr -> State Vars (Int -> Int -> Code)
+genCond (TypedExpr (Binary ">" _ _) "") = undefined -- TODO other types
+genCond (TypedExpr (Binary op e1 e2) _) =
+  do c1 <- genCodeExpr e1
+     c2 <- genCodeExpr e2
+     return $ \b1 b2 -> c1 ++ c2 ++ case op of
+                                     "==" -> [IfIcmpeq b1 b2]
+                                     "!=" -> [IfIcmpne b1 b2]
+                                     "<"  -> [IfIcmplt b1 b2]
+                                     ">=" -> [IfIcmpge b1 b2]
+                                     ">"  -> [IfIcmpgt b1 b2]
+                                     "<=" -> [IfIcmple b1 b2]
+                                     _    -> error $ "unknown operation" ++ op
+genCond (TypedExpr expr _) = do c <- genCodeExpr expr
+                                return $ \b1 b2 -> c ++ [Ifeq b1 b2]
+genCond _ = error "untyped expression"
 
 -- generate a method or a constructor
 genMethConst :: Type -- ^ return type
