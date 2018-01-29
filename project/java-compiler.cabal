@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser, TypeChecker, Codegen.GenerateClassFile, 
                        Codegen.GenerateConstantPool, Codegen.GenerateFields, Codegen.GenerateMethods,
-                       Codegen.Data.Assembler, Codegen.Data.ClassFormat
+                       Codegen.Data.Assembler, Codegen.Data.ClassFormat, Codegen.EvalCode
   build-depends:       base <= 4.10.1 , array, unordered-containers
                        , hashable, bytestring, lens, transformers
                        , binary, containers
