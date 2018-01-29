@@ -414,7 +414,7 @@ genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
               -- local variable
               (Just idx)
                 -> do modify $ over line (+(if idx > 3 then 2 else 1))
-                      return $ case typ of
+                      return $ exprCode ++ case typ of
                                  "double"  -> [dstore idx]
                                  "float"   -> [fstore idx]
                                  "long"    -> [lstore idx]
@@ -429,7 +429,7 @@ genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
               _ -> do idx <- zoom classFile $ genFieldRefThis var typ
                       modify $ over line (+3)
                       let (b1,b2) = split16Byte idx
-                      return [Putfield b1 b2] -- TODO or putstatic
+                      return $ exprCode ++ [Putfield b1 b2] -- TODO or putstatic
 
 genCodeStmtExpr (Assign (InstVar _ _) _)
   = error "untyped instance var"
