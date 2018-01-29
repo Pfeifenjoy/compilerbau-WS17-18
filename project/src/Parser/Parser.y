@@ -187,7 +187,7 @@ SwitchCase
     : CASE Expression COLON Statements      { SwitchCase $2 $4 }
 
 DefaultCase
-    : DEFAULT Statements                    { $2 }
+    : DEFAULT COLON Statements                    { $3 }
 
 SwitchCases
     : SwitchCase                            { [$1] }
@@ -298,7 +298,7 @@ StatementExpression
     | Expression SHIFTRIGHT_ASSIGN
         Expression                          { Assign $1 $ Binary ">>" $1 $3 }
     | Expression UNSIGNED_SHIFTRIGHT_ASSIGN
-        Expression                          { Assign $1 $ Binary ">>" $1 $3 }
+        Expression                          { Assign $1 $ Binary ">>>" $1 $3 }
     | Expression DOT IDENTIFIER
         LEFT_PARANTHESES Arguments
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
