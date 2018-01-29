@@ -1,263 +1,305 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Codegen.Data.ClassFormat where
 
 import GHC.Generics (Generic)
+import Codegen.Data.Assembler(Code)
 import Data.Hashable
 import Data.Word
+import Control.Lens
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.ByteString.Lazy as BS
 
 -- class file format
-data ClassFile = ClassFile { magic            :: Magic
-                           , minver           :: MinorVersion
-                           , maxver           :: MajorVersion
-                           , countrCp         :: ConstantPoolCount
-                           , arrayCp          :: CPInfos
-                           , acfg             :: AccessFlags
-                           , this             :: ThisClass
-                           , super            :: SuperClass
-                           , countInterfaces  :: InterfacesCount
-                           , arrayInterfaces  :: Interfaces
-                           , countFields      :: FieldsCount
-                           , arrayFields      :: FieldInfos
-                           , countMethods     :: MethodsCount
-                           , arrayMethods     :: MethodInfos
-                           , countAttributes  :: AttributesCount
-                           , arrayAttributes  :: AttributeInfos
+data ClassFile = ClassFile { _magic           :: Magic
+                           , _minver          :: MinorVersion
+                           , _maxver          :: MajorVersion
+                           , _countrCp        :: ConstantPoolCount
+                           , _arrayCp         :: CPInfos
+                           , _acfg            :: AccessFlags
+                           , _this            :: ThisClass
+                           , _super           :: SuperClass
+                           , _countInterfaces :: InterfacesCount
+                           , _arrayInterfaces :: Interfaces
+                           , _countFields     :: FieldsCount
+                           , _arrayFields     :: FieldInfos
+                           , _countMethods    :: MethodsCount
+                           , _arrayMethods    :: MethodInfos
+                           , _countAttributes :: AttributesCount
+                           , _arrayAttributes :: AttributeInfos
+                           -- InnerClasses(<=1), EnclosingMethod(<=1), signature,
+                           -- SourceFile(<=1), SourceDebugExtension(<=1),
+                           -- synthetic(<=1), deprecated,
+                           -- Runtime(In)Visible(Parameter)Annotations(<=1),
+                           -- BootstrapMethods
                            }
                     deriving Show
 
 -- instance Show ClassFile where
 --          show (ClassFile  magic  minver  maxver  count_cp  array_cp  acfg  this  super  count_interfaces  array_interfaces  count_fields  array_fields  count_methods  array_methods  count_attributes  array_attributes) = "magic = 0x CAFEBABE\n"  ++ (show minver) ++ "\n"  ++ (show maxver) ++ "\n"  ++ "constant_pool_count = " ++ (show count_cp) ++ "\n"  ++ (showCP_Infos array_cp 1) ++ "\n"  ++ (show acfg) ++ "\n"  ++ (show this) ++ "\n"  ++ (show super) ++ "\n\nInterfaces\ncount_interfaces "  ++ (show count_interfaces) ++ "\n"  ++ (show array_interfaces) ++ "\n\nFields\ncount_fields "  ++ (show count_fields) ++ "\n"  ++ (show array_fields) ++ "\n"  ++ (show count_methods) ++ "\n\nMethods\ncount_Methods "  ++ (show array_methods) ++ "\n"  ++ (show count_attributes) ++ "\n"  ++ (show array_attributes)
-         
 
-type CPInfos        = HM.HashMap CPInfo Word8
-type Interfaces     = HM.HashMap Interface Word8
-type FieldInfos     = HM.HashMap FieldInfo Word8
-type MethodInfos    = HM.HashMap MethodInfo Word8
-type AttributeInfos = HM.HashMap AttributeInfo Word8
+
+type CPInfos        = HM.HashMap CPInfo Int
+type Interfaces     = [Interface]
+type FieldInfos     = [FieldInfo]
+type MethodInfos    = [MethodInfo]
+type AttributeInfos = [AttributeInfo]
 
 data Magic = Magic
         deriving Show
 
 newtype MinorVersion = MinorVersion {
-                        numMinVer :: Int
+                        _numMinVer:: Int
                     }
         deriving Show
 
 newtype MajorVersion = MajorVersion {
-                        numMaxVer :: Int
+                        _numMaxVer:: Int
                     }
         deriving Show
 
-data CPInfo = 
+data CPInfo =
           ClassInfo
-                { indexCp               :: IndexConstantPool
-                , desc                  :: String -- comment in Bytcode
+                { _tagCp                :: Tag
+                , _indexCp              :: IndexConstantPool
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | FieldRefInfo 
-                { indexNameCp           :: IndexConstantPool
-                , indexNameandtypeCp    :: IndexConstantPool
-                , desc                  :: String -- comment in Bytcode
+        | FieldRefInfo
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
+                , _indexNameandtypeCp   :: IndexConstantPool
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | MethodRefInfo 
-                { indexNameCp           :: IndexConstantPool
-                , indexNameandtypeCp    :: IndexConstantPool
-                , desc                  :: String-- comment in Bytcode
+        | MethodRefInfo
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
+                , _indexNameandtypeCp   :: IndexConstantPool
+                , _desc                 :: String-- comment in Bytcode
                 }
-        | InterfaceMethodRefInfo 
-                { indexNameCp           :: IndexConstantPool
-                , indexNameandtypeCp    :: IndexConstantPool
-                , desc                  :: String -- comment in Bytcode
+        | InterfaceMethodRefInfo
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
+                , _indexNameandtypeCp   :: IndexConstantPool
+                , _desc                 :: String -- comment in Bytcode
                 }
         | StringInfo
-                { indexCp               :: IndexConstantPool
-                , desc                  :: String -- comment in Bytcode
+                { _tagCp                :: Tag
+                , _indexCp              :: IndexConstantPool
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | IntegerInfo 
-                { numiCp                :: Int
-                , desc                  :: String -- comment in Bytcode
+        | IntegerInfo
+                { _tagCp                :: Tag
+                , _numiCp               :: Int
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | FloatInfo 
-                { numfCp                :: Float
-                , desc                  :: String -- comment in Bytcode
+        | FloatInfo
+                { _tagCp                :: Tag
+                , _numfCp               :: Float
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | LongInfo 
-                { numiL1Cp              :: Int
-                , numiL2Cp              :: Int
-                , desc                  :: String -- comment in Bytcode
+        | LongInfo
+                { _tagCp                :: Tag
+                , _numiL1Cp             :: Int
+                , _numiL2Cp             :: Int
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | DoubleInfo 
-                { numiD1Cp              :: Int
-                , numiD2Cp              :: Int
-                , desc                  :: String -- comment in Bytcode
+        | DoubleInfo
+                { _tagCp                :: Tag
+                , _numiD1Cp             :: Int
+                , _numiD2Cp             :: Int
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | NameAndTypeInfo 
-                { indexNameCp           :: IndexConstantPool
-                , indexDescrCp          :: IndexConstantPool
-                , desc                  :: String -- comment in Bytcode
+        | NameAndTypeInfo
+                { _tagCp                :: Tag
+                , _indexNameCp          :: IndexConstantPool
+                , _indexTypeCp          :: IndexConstantPool
+                , _desc                 :: String -- comment in Bytcode
                 }
-        | Utf8Info 
-                { tamCp                 :: Int    -- length of string
-                , cadCp                 :: String -- name of string
-                , desc                  :: String -- comment in Bytcode
+        | Utf8Info
+                { _tagCp                :: Tag
+                , _tamCp                :: Int    -- length of string
+                , _cadCp                :: String -- name of string
+                , _desc                 :: String -- comment in Bytcode
                 }
             deriving (Show,Eq,Generic)
 
-instance Hashable CPInfo 
+instance Hashable CPInfo
 
 showCPInfos :: [CPInfo] -> Int -> String
 showCPInfos [] n = ""
 showCPInfos (x : xss) n = show n ++ "|" ++ show x ++ "\n" ++ showCPInfos xss (n+1)
 
+data Tag = TagClass
+         | TagFieldRef
+         | TagMethodRef
+         | TagInterfaceMethodRef
+         | TagString
+         | TagInteger
+         | TagFloat
+         | TagLong
+         | TagDouble
+         | TagNameAndType
+         | TagUtf8
+        deriving (Show,Eq,Generic)
+
+instance Hashable Tag
 
 newtype AccessFlags = AccessFlags [Int]
             deriving Show
 
-accPublic     :: Int
+accPublic    :: Int
 accPublic     = 1
 
-accPrivate    :: Int
+accPrivate   :: Int
 accPrivate    = 2
 
-accProtected  :: Int
+accProtected :: Int
 accProtected  = 4
 
-accStatic     :: Int
+accStatic    :: Int
 accStatic     = 8
 
-accFinal      :: Int
+accFinal     :: Int
 accFinal      = 16
 
-accSuperSynchronized      :: Int
+accSuperSynchronized     :: Int
 accSuperSynchronized      = 32
 
-accVolatileBridge   :: Int
+accVolatileBridge  :: Int
 accVolatileBridge   = 64
 
-accTransientVarargs  :: Int
+accTransientVarargs :: Int
 accTransientVarargs  = 128
 
-accNative :: Int
+accNative:: Int
 accNative = 256
 
-accInterface  :: Int
+accInterface :: Int
 accInterface  = 512
 
-accAbstract   :: Int
+accAbstract  :: Int
 accAbstract   = 1024
 
-accStrict :: Int
+accStrict:: Int
 accStrict = 2048
 
-accSynthetic  :: Int
+accSynthetic :: Int
 accSynthetic  = 4096
 
-accAnnotation :: Int
+accAnnotation:: Int
 accAnnotation = 8192
 
-accEnum    :: Int
+accEnum   :: Int
 accEnum    = 16384
 
 newtype ThisClass = ThisClass {
-                    indexTh  :: IndexConstantPool
+                    _indexTh :: IndexConstantPool
                  }
         deriving Show
 
 newtype SuperClass = SuperClass {
-                    indexSp  :: IndexConstantPool
+                    _indexSp :: IndexConstantPool
                   }
         deriving Show
 
 newtype Interface = Interface {
-                    indexIf  :: IndexConstantPool
+                    _indexIf :: IndexConstantPool
                   }
         deriving Show
 
-data FieldInfo = FieldInfo 
-                        { afFi           :: AccessFlags
-                        , indexNameFi    :: IndexConstantPool       -- name_index
-                        , indexDescrFi   :: IndexConstantPool       -- descriptor_index
-                        , tamFi          :: Int                     -- count_attributte
-                        , arrayAttrFi    :: AttributeInfos
+data FieldInfo = FieldInfo
+                        { _afFi          :: AccessFlags
+                        , _indexNameFi   :: IndexConstantPool       -- name_index
+                        , _indexDescrFi  :: IndexConstantPool       -- descriptor_index
+                        , _tamFi         :: Int                     -- count_attributte
+                        , _arrayAttrFi   :: AttributeInfos
+                        -- optional: ConstantValue(<=1), synthetic(<=1), deprecated(<=1),
+                        -- Signature
+                        -- Runtime(In)Visible(Parameter)Annotations(<=1)
                         }
             deriving Show
 
-data MethodInfo = MethodInfo 
-                        { afMi           :: AccessFlags
-                        , indexNameMi    :: IndexConstantPool       -- name_index
-                        , indexDescrMi   :: IndexConstantPool       -- descriptor_index
-                        , tamMi          :: Int                       -- attributes_count
-                        , arrayAttrMi    :: AttributeInfos
+data MethodInfo = MethodInfo
+                        { _afMi          :: AccessFlags
+                        , _indexNameMi   :: IndexConstantPool       -- name_index
+                        , _indexDescrMi  :: IndexConstantPool       -- descriptor_index
+                        , _tamMi         :: Int                     -- attributes_count
+                        , _arrayAttrMi   :: AttributeInfos
+                        -- Exceptions(<=1) code(<=1), synthetic(<=1) deprecated(<=1),
+                        -- Signature
+                        -- Runtime(In)Visible(Parameter)Annotations(<=1),
+                        -- AnnotationsDefault
                         }
                     deriving Show
 
 data AttributeInfo =
-        AttributeGeneric 
-            { indexNameAttr             :: IndexConstantPool
-            , tamLenAttr                :: Int
-            , restAttr                  :: BS.ByteString
+        AttributeGeneric
+            { _indexNameAttr            :: IndexConstantPool
+            , _tamLenAttr               :: Int
+            , _restAttr                 :: BS.ByteString
             }
 
-      | AttributeConstantValue 
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamAttr                   :: Int                              -- attribute_length
-            , indexValueAttr            :: IndexConstantPool              -- constantvalue_index
+      | AttributeConstantValue
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamAttr                  :: Int                              -- attribute_length
+            , _indexValueAttr           :: IndexConstantPool              -- constantvalue_index
             }
-      | AttributeCode 
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
-            , lenStackAttr              :: Int                              -- max_stack
-            , lenLocalAttr              :: Int                              -- max_local
-            , tamCodeAttr               :: Int                              -- code_length
-            , arrayCodeAttr             :: ListaInt                         -- code como array de bytes
-            , tamExAttr                 :: Int                              -- exceptions_length
-            , arrayExAttr               :: Tupla4Int                        -- no usamos
-            , tamAtrrAttr               :: Int                              -- attributes_count
-            , arrayAttrAttr             :: AttributeInfos
+      | AttributeCode
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
+            , _lenStackAttr             :: Int                              -- max_stack
+            , _lenLocalAttr             :: Int                              -- max_local
+            , _tamCodeAttr              :: Int                              -- code_length
+            , _arrayCodeAttr            :: Code               -- code como array de bytes
+            , _tamExAttr                :: Int                              -- exceptions_length
+            , _arrayExAttr              :: Tupla4Int                        -- no usamos
+            , _tamAtrrAttr              :: Int                              -- attributes_count
+            , _arrayAttrAttr            :: AttributeInfos
+            -- LineNumberTable, LocalVariableTable, LocalVariableTypeTable,
+            -- deprecated, StackMapTable(<=1)
             }
-      
+
       | AttributeExceptions
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
-            , tamNumExAttr              :: Int                              -- number of exceptions
-            , exceptionIndexTable       :: [Int]                            -- exception_index_table 
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
+            , _tamNumExAttr             :: Int                              -- number of exceptions
+            , _exceptionIndexTable      :: [Int]                            -- exception_index_table
             }
-      
+
       | AttributeInnerClasses
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
-            , tamClasses                :: Int                              -- number_classes
-            , arrayClasses              :: [(Int,Int,Int,AccessFlags)]       -- classes
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
+            , _tamClasses               :: Int                              -- number_classes
+            , _arrayClasses             :: [(Int,Int,Int,AccessFlags)]       -- classes
             }
-      
+
       | AttributeSynthetic
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
             }
-      
-      | AttributeSourceFile 
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
-            , indexSrcAttr              :: IndexConstantPool              -- sourcefile_index
+
+      | AttributeSourceFile
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
+            , _indexSrcAttr             :: IndexConstantPool              -- sourcefile_index
             }
-            
-      | AttributeLineNumberTable 
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
-            , tamTableAttr              :: Int                              -- lineNumberTable_length
-            , arrayLineAttr             :: Tupla2Int                        -- (start_pc, line_number)
+
+      | AttributeLineNumberTable
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
+            , _tamTableAttr             :: Int                              -- lineNumberTable_length
+            , _arrayLineAttr            :: Tupla2Int                        -- (start_pc, line_number)
             }
-      | AttributeLocalVariableTable 
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
-            , tamTableAttr              :: Int                              -- local_varible_table_length
-            , arrayVarAttr              :: Tupla5Int                        -- (start_pc, length, name_index, descriptor_index, inlinedex)
+      | AttributeLocalVariableTable
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
+            , _tamTableAttr             :: Int                              -- local_varible_table_length
+            , _arrayVarAttr             :: Tupla5Int                        -- (start_pc, length, name_index, descriptor_index, inlinedex)
             }
       | AttributeDeprecated
-            { indexNameAttr             :: IndexConstantPool              -- attribute_name_index
-            , tamLenAttr                :: Int                              -- attribute_length
+            { _indexNameAttr            :: IndexConstantPool              -- attribute_name_index
+            , _tamLenAttr               :: Int                              -- attribute_length
             }
          deriving Show
 
@@ -265,11 +307,21 @@ type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
 type ListaInt  = [Int]
-type ConstantPoolCount  = Word8 
-type InterfacesCount    = Word8 
-type FieldsCount        = Word8 
-type MethodsCount       = Word8 
-type AttributesCount    = Word8 
-type IndexConstantPool = Word8 
+type ConstantPoolCount  = Int
+type InterfacesCount    = Int
+type FieldsCount        = Int
+type MethodsCount       = Int
+type AttributesCount    = Int
+type IndexConstantPool  = Int
 
-
+makeLenses ''ClassFile
+makeLenses ''MinorVersion
+makeLenses ''MajorVersion
+makeLenses ''CPInfo
+makeLenses ''AccessFlags
+makeLenses ''ThisClass
+makeLenses ''SuperClass
+makeLenses ''Interface
+makeLenses ''FieldInfo
+makeLenses ''MethodInfo
+makeLenses ''AttributeInfo

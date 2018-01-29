@@ -52,4 +52,14 @@ newClassABS = [Class "A" [FieldDecl [VariableDecl "a" "int" False Nothing] Publi
               ]
 
 
+newClassTypedABS = [Class "A" [FieldDecl [VariableDecl "a" "int" False Nothing] Public False] [],
+               Class "B" [] [MethodDecl "doStuff" "void" []
+                                 (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "a" "A" False (Just (TypedExpr (StmtExprExpr (TypedStmtExpr (New "A" []) "A")) "A"))]) "void",
+                                         TypedStmt (LocalVarDecls [VariableDecl "b" "int" False (Just (TypedExpr (InstVar (TypedExpr (LocalOrFieldVar "a") "A") "a") "int"))]) "void",
+                                         TypedStmt (LocalVarDecls [VariableDecl "c" "A" False (Just (TypedExpr JNull "void"))]) "void"
+                                 ]) "void") Public False
+                            ]
+              ]
+
+
 

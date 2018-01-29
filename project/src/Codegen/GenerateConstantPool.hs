@@ -1,83 +1,189 @@
-module Codegen.GenerateConstantPool where 
+{-# OPTIONS -Wall #-}
+{-|
+This module contains functions which insert different constants in the
+constant pool.  The functions give back the index of the inserted
+constant in the constant pool.  If a constant is already in the constant
+pool, they only give back the index, without inserting a new constant.
+-}
+module Codegen.GenerateConstantPool(
+  genClass,
+  genFieldRef,
+  genFieldRefThis,
+  genMethodRef,
+  genMethodRefThis,
+  genInterfaceRef,
+  genString,
+  genInteger,
+  genFloat,
+  genLong,
+  genDouble,
+  genNameAndType,
+  genUTF8
+) where
 import Codegen.Data.ClassFormat
 import ABSTree
-import Data.Word
-import Prelude hiding ((!))
+import Control.Lens
+import Control.Monad.Trans.State.Lazy
 import qualified Data.HashMap.Lazy as HM
 import Data.HashMap.Lazy ((!))
 
-generateUTF8 :: CPInfos -> String -> Word8 -> (CPInfos,Word8)
-generateUTF8 hm str index = (newHM , newHM ! utf8info)
-  where
-    utf8info = Utf8Info { tamCp = length str
-                        , cadCp = str
-                        , desc  = ""
-                        }
-    newHM = HM.insert utf8info (index+1) hm
-
-generateExpr :: CPInfos -> Expr -> Word8 -> (CPInfos,Word8)
-generateExpr hm This index = (newHM ,newHM ! clInfo)
-  where
-    clInfo = ClassInfo { indexCp = indexName 
-                       , desc = ""
+-- | insert a class in the constant pool
+genClass :: String -- ^ class to insert in constant pool
+         -> State ClassFile -- ^ new constant pool
+                  IndexConstantPool -- ^ location of field in constant pool
+genClass name =
+  do idx <- genUTF8 name
+     genInfo ClassInfo { _tagCp   = TagClass
+                       , _indexCp = idx
+                       , _desc    = ""
                        }
-    newHM = HM.insert clInfo (index+1) hm
-    (hm',indexName) = generateUTF8 hm "This" index
-                                           
--- generate Super 
--- variables
-generateExpr hm (TypedExpr (LocalOrFieldVar name) typ) index = undefined 
-generateExpr hm (InstVar expr name) index = undefined 
-    -- operators
-generateExpr hm (Unary str expr) index = undefined 
-generateExpr hm (Binary str expr1 expr2 ) index = undefined -- (&&, ||, ..., instanceOf)
-generateExpr hm (InstanceOf expr typ) index = undefined 
-    -- TODO extra instanceOf
-generateExpr hm (Ternary expr1 expr2 expr3 ) index = undefined 
-    --literals
-generateExpr hm (BooleanLiteral bool) index = undefined 
-    -- | ByteLiteral Int8
-generateExpr hm (CharLiteral char) index = undefined 
-generateExpr hm (IntegerLiteral int32) index = undefined 
-    -- | LongLiteral Int64
-    -- | FloatLiteral Float
-    -- | DoubleLiteral Double
-    -- | StringLiteral String
-generateExpr hm JNull index = undefined 
-    -- other
-generateExpr hm (StmtExprExpr stmtExpr) index = undefined 
-generateExpr hm (TypedExpr expr _ ) index = undefined 
 
 
-generateStmt :: CPInfos -> Stmt -> Word8 -> (CPInfos,Word8)
--- Function Statments
-generateStmt hm (Return expr) index = undefined 
--- Loop Statements
-generateStmt hm (While condExpr stmt ) index = undefined
-generateStmt hm (DoWhile condExpr stmt ) index = undefined
-generateStmt hm (For startStmt iterateExpr endStmt stmt) index = undefined
--- | ForEach { iterable :: Expr, range :: Expr }
-generateStmt hm Break index = undefined 
-generateStmt hm Continue index = undefined 
--- Conditional Statements
-generateStmt hm (If condExpr stmt (Just elseStmt) ) index = undefined 
-generateStmt hm (If condExpr stmt Nothing ) index = undefined 
-generateStmt hm (Switch varExprs [cases] (Just finalStmt) ) index = undefined 
-generateStmt hm (Switch varExprs [cases] Nothing ) index = undefined 
--- other
-generateStmt hm (LocalVarDecls variableDecls) index = undefined 
-generateStmt hm (StmtExprStmt stmtExpr) index = undefined 
-generateStmt hm (TypedStmt stmt typ) index = undefined 
 
-generateStmtVariableDecl :: CPInfos -> VariableDecl -> Word8 -> (CPInfos,Word8)
-generateStmtVariableDecl hm (VariableDecl name typ final (Just expr)) index = undefined 
-generateStmtVariableDecl hm (VariableDecl name typ final Nothing    ) index = undefined 
+-- | insert a field variable in the constant pool
+genFieldRef :: String -- ^ field to insert in constant pool
+            -> String -- ^ class in which this field is
+            -> Type -- ^ type of this Field
+            -> State ClassFile -- ^ new constant pool
+                     IndexConstantPool -- ^ location of field in constant pool
+genFieldRef name className typ =
+  do indexClassName <- genClass className
+     indexNameType <- genNameAndType name typ
+     genInfo FieldRefInfo { _tagCp              = TagFieldRef
+                          , _indexNameCp        = indexClassName
+                          , _indexNameandtypeCp = indexNameType
+                          , _desc               = ""
+                          }
 
-generateStmtExpr :: CPInfos -> StmtExpr -> Word8 -> (CPInfos,Word8)
-generateStmtExpr hm (Assign expr1 expr2) index = undefined 
-generateStmtExpr hm (New typ argExprs) index = undefined 
-generateStmtExpr hm (MethodCall expr str exprs) index = undefined 
-generateStmtExpr hm (TypedStmtExpr stmtExpr typ) index = undefined 
+-- | insert a field variable of this class in the constant pool
+genFieldRefThis :: String -- ^ field to insert in constant pool
+                -> Type -- ^ type of this Field
+                -> State ClassFile -- ^ new constant pool
+                         -- | location of field in constant pool
+                         IndexConstantPool
+genFieldRefThis name typ =
+  do indexClassName <- view (this . indexTh) <$> get
+     indexNameType <- genNameAndType name typ
+     genInfo FieldRefInfo { _tagCp              = TagFieldRef
+                          , _indexNameCp        = indexClassName
+                          , _indexNameandtypeCp = indexNameType
+                          , _desc               = ""
+                          }
 
-generateStmtSwitchCase :: CPInfos -> SwitchCase -> Word8 -> (CPInfos,Word8)
-generateStmtSwitchCase hm (SwitchCase expr stmts) index = undefined 
+-- | insert a method in the constant pool
+genMethodRef :: String-- ^ name of method to insert in constant pool
+             -> String -- ^ class in which this method is
+             -> Type -- ^ type of this method
+             -> State ClassFile -- ^ new constant pool
+                      IndexConstantPool -- ^ location of field in constant pool
+genMethodRef name className typ =
+  do indexClassName <- genClass className
+     indexNameType <- genNameAndType name typ
+     genInfo MethodRefInfo { _tagCp              = TagMethodRef
+                           , _indexNameCp        = indexClassName
+                           , _indexNameandtypeCp = indexNameType
+                           , _desc               = ""
+                           }
+
+genMethodRefThis :: String-- ^ name of method to insert in constant pool
+                 -> Type -- ^ type of this method
+                 -> State ClassFile -- ^ new constant pool
+                          IndexConstantPool -- ^ location of field in constant pool
+genMethodRefThis name typ =
+  do indexClassName <- view (this . indexTh) <$> get
+     indexNameType <- genNameAndType name typ
+     genInfo MethodRefInfo { _tagCp              = TagMethodRef
+                           , _indexNameCp        = indexClassName
+                           , _indexNameandtypeCp = indexNameType
+                           , _desc               = ""
+                           }
+
+-- | insert a interface in the constant pool
+genInterfaceRef :: String -> State ClassFile IndexConstantPool
+genInterfaceRef = undefined
+
+-- | insert a string in the constant pool
+genString :: String -> State ClassFile IndexConstantPool
+genString = undefined
+
+-- | inserts a integer in the constant pool
+genInteger :: Int -- ^ Int to insert in the constant pool
+           -> State ClassFile -- ^ new constant pool
+                    IndexConstantPool -- ^ location of int in constant pool
+genInteger int = genInfo IntegerInfo { _tagCp  = TagInteger
+                                     , _numiCp = int
+                                     , _desc   = ""
+                                     }
+
+-- | insert a float in the constant pool
+genFloat :: Float -- ^ Float to insert in the constant pool
+         -> State ClassFile -- ^ new constant pool
+                  IndexConstantPool -- ^ location of int in constant pool
+genFloat float = genInfo FloatInfo { _tagCp  = TagFloat
+                                   , _numfCp = float
+                                   , _desc   = ""
+                                   }
+
+-- | insert a long in the constant pool
+genLong :: (Int,Int) -- ^ Long to insert in the constant pool
+        -> State ClassFile -- ^ new constant pool
+                 IndexConstantPool -- ^ location of int in constant pool
+genLong (int1,int2) = genInfo LongInfo { _tagCp    = TagLong
+                                       , _numiL1Cp = int1
+                                       , _numiL2Cp = int2
+                                       , _desc     = ""
+                                       }
+
+-- | insert a double in the constant pool
+genDouble :: (Int,Int) -- ^ Double to insert in the constant pool
+          -> State ClassFile -- ^ new constant pool
+                   IndexConstantPool -- ^ location of int in constant pool
+genDouble (int1,int2) = genInfo DoubleInfo { _tagCp    = TagDouble
+                                           , _numiD1Cp = int1
+                                           , _numiD2Cp = int2
+                                           , _desc     = ""
+                                           }
+
+-- | insert name and type
+genNameAndType :: String -- ^ name to insert in constant pool
+               -> Type -- ^ type to insert in constant pool
+               -> State ClassFile -- ^ new constant pool
+                        IndexConstantPool -- ^ location of int in constant pool
+genNameAndType name typ =
+  do indexName <- genUTF8 name
+     indexType <- genUTF8 typ
+     genInfo NameAndTypeInfo { _tagCp       = TagNameAndType
+                             , _indexNameCp = indexName
+                             , _indexTypeCp = indexType
+                             , _desc        = ""
+                             }
+
+
+-- | inserts a utf8 in the constant pool
+genUTF8 :: String -- ^ string to insert in the constant pool
+        -> State ClassFile -- ^ new constant pool
+                 IndexConstantPool -- ^ location of String in constant pool
+genUTF8 str = genInfo Utf8Info { _tagCp = TagUtf8
+                               , _tamCp = length str
+                               , _cadCp = str
+                               , _desc  = ""
+                               }
+
+-- helper
+
+-- | inserts a info into the constant pool
+genInfo :: CPInfo
+        -> State ClassFile -- ^ new constant pool
+                 IndexConstantPool -- ^ location of info in the constant pool
+genInfo cpInfo =
+  do modify $
+       \cf -> over arrayCp
+                (\hm -> case HM.lookup cpInfo hm of
+                         (Just _) -> hm
+                         _        -> HM.insert cpInfo
+                                               (cf^.countrCp+1) hm) cf
+     cf <- get
+     let loc = (cf^.arrayCp) ! cpInfo
+         n   = if loc > cf^.countrCp then 1 else 0
+     put $ countrCp +~ n $ cf
+     return loc

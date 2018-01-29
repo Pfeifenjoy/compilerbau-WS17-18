@@ -1,6 +1,8 @@
 module  Correct.EmptyClass.Steps where
 
 import           ABSTree
+import           Codegen.Data.ClassFormat
+import           Data.HashMap.Lazy        (fromList)
 import           Lexer.Token
 
 emptyTokens = [Lexer.Token.CLASS,
@@ -11,4 +13,6 @@ emptyTokens = [Lexer.Token.CLASS,
 
 emptyABS = [Class "Test" [] []]
 emptyTypedABS = [Class "Test" [] []]
+
+emptyClassFile = ClassFile Magic (MinorVersion 0) (MajorVersion 0) 0 (fromList []) (AccessFlags []) (ThisClass 0) (SuperClass 0) 0 [] 0 [] 0 [] 0 []
 

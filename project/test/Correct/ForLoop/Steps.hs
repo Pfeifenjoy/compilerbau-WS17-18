@@ -60,4 +60,27 @@ forLoopABS = [Class "ForLoop"
                           ]) Public False]
              ]
 
+forLoopTypedABS = [Class "ForLoop"
+              []
+              [MethodDecl "doLoop" "void" []
+                  (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "a" "int" False Nothing]) "void",
+                          TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 0) "int")) "int")) "void",
+                          TypedStmt (For (TypedStmt (LocalVarDecls [VariableDecl "i" "int" False (Just (TypedExpr (IntegerLiteral 0) "int"))]) "void")
+                                      (TypedExpr (Binary "<" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 3) "int")) "boolean")
+                                      (TypedStmt (StmtExprStmt (TypedStmtExpr (LazyAssign (TypedExpr (LocalOrFieldVar "i") "int")
+                                        (TypedExpr (Binary "+" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 1) "int")) "int")) "int")) "void")
+                              (TypedStmt (Block [
+                                              TypedStmt (StmtExprStmt (TypedStmtExpr
+                                                        (Assign (TypedExpr (LocalOrFieldVar "a") "int")
+                                                          (TypedExpr (Binary "+" (TypedExpr (LocalOrFieldVar "a") "int")
+                                                            (TypedExpr (LocalOrFieldVar "i") "int")) "int")) "int")) "void",
+                                      (TypedStmt Continue "void")
+                              ]) "void")) "void"
+                          ]) "void") Public False]
+             ]
+
+
+
+
+
 
