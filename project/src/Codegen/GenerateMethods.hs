@@ -53,7 +53,7 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
      let genInitCode = mapM genFD
          genFD (FieldDecl vds _ _) = mapM genCode vds
      (lengthInit,codeInit)
-       <- if (typ == "") -- constructors have no type
+       <- if typ == "" -- constructors have no type
           then (\p -> ((+5) .sum $ map fst p
                           , [Aload0, Invokespecial 0 1] ++ concatMap snd p))
                     . concat <$> genInitCode fds
@@ -187,7 +187,7 @@ genCodeStmt (If cond body Nothing) =
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
      return $ condCode b1 b2 ++ bodyCode
 
-genCodeStmt (Switch _ _ _) = undefined
+genCodeStmt Switch{} = undefined
 -- genCodeStmt (Switch expr switchCases (Just stmts)) =
 --   do exprCode <- genCodeExpr expr -- code to compare
 --      ref <- view line <$> get
@@ -305,7 +305,7 @@ genCodeExpr (TypedExpr (Unary op expr) typ)
                                >> return [Ineg, Iconst1, Isub]
             (_,_)           -> error "dont know operation")
 
-genCodeExpr (Binary _ _ _) = error "untyped binary"
+genCodeExpr Binary{} = error "untyped binary"
 genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
   = genCodeExpr expr1
     -++- genCodeExpr expr2
@@ -446,11 +446,11 @@ genCodeStmtExpr (Assign (Unary _ _) _)
   = error "cant assign to unary"
 genCodeStmtExpr (Assign This _)
   = error "cant assign to This"
-genCodeStmtExpr (Assign (Binary _ _ _) _)
+genCodeStmtExpr (Assign Binary{} _)
   = error "cant assign to binary"
 genCodeStmtExpr (Assign (InstanceOf _ _) _)
   = error "cant assign to instanceOf"
-genCodeStmtExpr (Assign (Ternary _ _ _) _)
+genCodeStmtExpr (Assign Ternary{} _)
   = error "cant assign to ternary"
 genCodeStmtExpr (Assign _  _) = error "cant assign this!!" -- TODO
 genCodeStmtExpr (New typ args) =
