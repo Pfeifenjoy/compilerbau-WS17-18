@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall #-}
 {-|
 This module contains functions which insert different constants in the
 constant pool.  The functions give back the index of the inserted
@@ -23,20 +24,17 @@ import Codegen.Data.ClassFormat
 import ABSTree
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
-import Control.Arrow
-import Prelude hiding ((!))
 import qualified Data.HashMap.Lazy as HM
 import Data.HashMap.Lazy ((!))
-
 
 -- | insert a class in the constant pool
 genClass :: String -- ^ class to insert in constant pool
          -> State ClassFile -- ^ new constant pool
                   IndexConstantPool -- ^ location of field in constant pool
 genClass name =
-  do index <- genUTF8 name
+  do idx <- genUTF8 name
      genInfo ClassInfo { _tagCp   = TagClass
-                       , _indexCp = index
+                       , _indexCp = idx
                        , _desc    = ""
                        }
 
@@ -101,9 +99,11 @@ genMethodRefThis name typ =
                            }
 
 -- | insert a interface in the constant pool
+genInterfaceRef :: String -> State ClassFile IndexConstantPool
 genInterfaceRef = undefined
 
 -- | insert a string in the constant pool
+genString :: String -> State ClassFile IndexConstantPool
 genString = undefined
 
 -- | inserts a integer in the constant pool
