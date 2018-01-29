@@ -5,6 +5,7 @@ import Data.Char(ord)
 import Data.Bits
 
 evalInt ::  Expr -> Int
+evalInt (TypedExpr expr _)  = evalInt expr
 evalInt (BooleanLiteral True)  = 1
 evalInt (BooleanLiteral False) = 0
 evalInt (CharLiteral char)     = ord char
