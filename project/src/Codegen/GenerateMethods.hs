@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS -Wall #-}
 
 {-|
 This module generates the code for all methods except the <init> method
@@ -16,9 +17,7 @@ import qualified Data.HashMap.Lazy as HM
 import Codegen.Data.Assembler hiding (Return, New)
 import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
-import Control.Lens
-import Control.Arrow
-import Control.Monad
+import Control.Lens hiding (op)
 import Control.Monad.Trans.State.Lazy
 
 -- | The name of a local variable.  It is the name in the source code
@@ -51,18 +50,16 @@ genMethod :: [FieldDecl] -- ^ fields for initial code of constructor
 genMethod fds (MethodDecl name typ argDecls stmt vis static) =
   do indexName <- genUTF8 name
      -- generate initial code for constructors
-     let lengthInit = 0
-         codeInit = []
-         genInitCode = mapM genFD
+     let genInitCode = mapM genFD
          genFD (FieldDecl vds _ _) = mapM genCode vds
-     when (typ == "") -- constructors have no type
-       $ do (lengthInit,codeInit)
-                <- (\p -> ((+5) .sum $ map fst p
+     (lengthInit,codeInit)
+       <- if (typ == "") -- constructors have no type
+          then (\p -> ((+5) .sum $ map fst p
                           , [Aload0, Invokespecial 0 1] ++ concatMap snd p))
                     . concat <$> genInitCode fds
-            return ()
+          else return (0,[])
      -- generate descriptor
-     let getArgDesr (ArgumentDecl _ typ _) = typeToDescriptor typ
+     let getArgDesr (ArgumentDecl _ argTyp _) = typeToDescriptor argTyp
          descr = "(" ++ concatMap getArgDesr argDecls ++ ")"
                      ++ typeToDescriptor typ
      indexType <- genUTF8 descr
@@ -112,6 +109,7 @@ genCodeStmt (Block stmts) =
      return code
 
 -- Return
+genCodeStmt (Return _) = error "untyped return"
 genCodeStmt (TypedStmt (Return expr) typ) =
   do exprCode <- genCodeExpr expr
      modify $ over line (+1) -- length of Ireturn
@@ -155,8 +153,8 @@ genCodeStmt (DoWhile cond body) =
      return code
 
 -- For
-genCodeStmt (For init cond iter body) =
-  do initialCode <- genCodeStmt init -- i.e. i = 1
+genCodeStmt (For initStmt cond iter body) =
+  do initialCode <- genCodeStmt initStmt -- i.e. i = 1
      (refLine,condCode,bodyCode) <- getForWhileCode cond body
      iterateCode <- genCodeStmt iter -- i.e. i++
      modify (over line (+3)) -- Goto b1 b2
@@ -190,31 +188,32 @@ genCodeStmt (If cond body Nothing) =
      (condCode,bodyCode) <- getCondBodyCode cond body
      endIf <- view line <$> get
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
-     return $ condCode ++ [Ifeq b1 b2] ++ bodyCode
+     return $ condCode b1 b2 ++ bodyCode
 
-genCodeStmt (Switch expr switchCases (Just stmts)) =
-  do exprCode <- genCodeExpr expr -- code to compare
-     ref <- view line <$> get
-     let pad = mod (ref+1) 4
-         len = pad + 8 + 2 * length switchCases
-     modify $ over line (+len) -- length of tableswitch assembler
-     caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
-     def <- (+1) . view line <$> get
-     -- TODO default code
-     modifyStack (-1)
-     let (d1,d2,d3,d4) = split32Byte def
-         (n1,n2,n3,n4) = split32Byte $ length switchCases
-     return $ exprCode
-               ++ [Lookupswitch (replicate pad 0)
-                   d1 d2 d3 d4 n1 n2 n3 n4
-                   (map (\(x,y,_)
-                      -> let (b1,b2,b3,b4) = split32Byte x
-                             (b5,b6,b7,b8) = split32Byte y
-                         in (b1,b2,b3,b4,b5,b6,b7,b8))
-                    caseCodes)]
-               ++ concatMap (\(_,_,x) -> x) caseCodes
-
-genCodeStmt (Switch expr switchCases Nothing) = undefined
+genCodeStmt (Switch _ _ _) = undefined
+-- genCodeStmt (Switch expr switchCases (Just stmts)) =
+--   do exprCode <- genCodeExpr expr -- code to compare
+--      ref <- view line <$> get
+--      let pad = mod (ref+1) 4
+--          len = pad + 8 + 2 * length switchCases
+--      modify $ over line (+len) -- length of tableswitch assembler
+--      caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
+--      def <- (+1) . view line <$> get
+--      -- TODO default code
+--      modifyStack (-1)
+--      let (d1,d2,d3,d4) = split32Byte def
+--          (n1,n2,n3,n4) = split32Byte $ length switchCases
+--      return $ exprCode
+--                ++ [Lookupswitch (replicate pad 0)
+--                    d1 d2 d3 d4 n1 n2 n3 n4
+--                    (map (\(x,y,_)
+--                       -> let (b1,b2,b3,b4) = split32Byte x
+--                              (b5,b6,b7,b8) = split32Byte y
+--                          in (b1,b2,b3,b4,b5,b6,b7,b8))
+--                     caseCodes)]
+--                ++ concatMap (\(_,_,x) -> x) caseCodes
+--
+-- genCodeStmt (Switch expr switchCases Nothing) = undefined
 genCodeStmt (LocalVarDecls vds)
   = foldr ((-++-) . genCodeVarDecl) (return []) vds
 genCodeStmt (StmtExprStmt stmtExpr) = genCodeStmtExpr stmtExpr
@@ -224,6 +223,7 @@ genCodeExpr :: Expr -> State Vars Code
 genCodeExpr This =  modify (over line (+1)) >> return [Aload0]
 
 --Vars
+genCodeExpr (LocalOrFieldVar _) = error "untyped variable"
 genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
   do locVar <- getLocIdx var . view localVar <$> get
      case locVar of
@@ -244,6 +244,7 @@ genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
                let (b1,b2) = split16Byte idx
                return [Getstatic b1 b2]
 
+genCodeExpr (InstVar _ _) = error "untyped instance variable"
 genCodeExpr (TypedExpr (InstVar obj varName) typ) =
   do code <- genCodeExpr obj
      indexVar
@@ -256,6 +257,7 @@ genCodeExpr (TypedExpr (InstVar obj varName) typ) =
      let (b1,b2) = split16Byte indexVar
      return $ code ++ [Getfield b1 b2] -- variable of a object
 
+genCodeExpr (Unary _ _) = error "untyped unary operation"
 genCodeExpr (TypedExpr (Unary op expr) typ)
   = genCodeExpr expr
     -++- (case (op,typ) of
@@ -287,50 +289,79 @@ genCodeExpr (TypedExpr (Unary op expr) typ)
             ("--","double") -> modify (over line (+2))
                                >> modifyStack 1 -- could change max
                                >> modifyStack (-1)
-                               >> return [Dconst1,Dneg]
+                               >> return [Dconst1,Dsub]
             ("--","float")  -> modify (over line (+2))
                                >> modifyStack 1 -- could change max
                                >> modifyStack (-1)
-                               >> return [Fconst1,Fneg]
+                               >> return [Fconst1,Fsub]
             ("--","long")   -> modify (over line (+2))
                                >> modifyStack 1 -- could change max
                                >> modifyStack (-1)
-                               >> return [Lconst1,Lneg]
+                               >> return [Lconst1,Lsub]
             ("--",_)        -> modify (over line (+2))
                                >> modifyStack 1 -- could change max
                                >> modifyStack (-1)
-                               >> return [Iconst1,Ineg]
+                               >> return [Iconst1,Isub]
             ("!",_)         -> modify (over line (+3))
                                >> modifyStack 1 -- could change max
                                >> modifyStack (-1)
-                               >> return [Ineg, Iconst1, Isub])
+                               >> return [Ineg, Iconst1, Isub]
+            (_,_)           -> error "dont know operation")
 
+genCodeExpr (Binary _ _ _) = error "untyped binary"
 genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
   = genCodeExpr expr1
     -++- genCodeExpr expr2
     -++- (modify (over line (+1))
           >> modifyStack (-1)
-          >> return (case (op,typ) of
-                        ("+" ,"double") -> [Dadd]
-                        ("+" ,"float")  -> [Fadd]
-                        ("+" ,"long")   -> [Ladd]
-                        ("+" ,_)        -> [Iadd]
-                        ("-" ,"double") -> [Dsub]
-                        ("-" ,"float")  -> [Fsub]
-                        ("-" ,"long")   -> [Lsub]
-                        ("-" ,_)        -> [Isub]
-                        ("*" ,"double") -> [Dmul]
-                        ("*" ,"float")  -> [Fmul]
-                        ("*" ,"long")   -> [Lmul]
-                        ("*" ,_)        -> [Imul]
-                        ("&&",_)        -> [Iand]
-                        ("||",_)        -> [Ior]))
+          >> (case (op,typ) of
+                 ("+" ,"double") -> return [Dadd]
+                 ("+" ,"float")  -> return [Fadd]
+                 ("+" ,"long")   -> return [Ladd]
+                 ("+" ,_)        -> return [Iadd]
+                 ("-" ,"double") -> return [Dsub]
+                 ("-" ,"float")  -> return [Fsub]
+                 ("-" ,"long")   -> return [Lsub]
+                 ("-" ,_)        -> return [Isub]
+                 ("*" ,"double") -> return [Dmul]
+                 ("*" ,"float")  -> return [Fmul]
+                 ("*" ,"long")   -> return [Lmul]
+                 ("*" ,_)        -> return [Imul]
+                 ("^" ,_)        -> return [Ixor]
+                 ("<<" ,_)       -> return [Ishl]
+                 (">>" ,_)       -> return [Ishr]
+                 (">>>" ,_)      -> return [Iushr]
+                 ("&",_)         -> return [Iand]
+                 -- TODO 2 complement
+                 ("==",_)        -> modify (over line (+8))
+                                    >> return [IfIcmpne 0 3, Iconst1
+                                              , Goto 0 3, Iconst0]
+                 ("!=",_)        -> modify (over line (+8))
+                                    >> return [IfIcmpeq 0 3, Iconst1
+                                              , Goto 0 3, Iconst0]
+                 ("<" ,_)        -> modify (over line (+8))
+                                    >> return [IfIcmpge 0 3, Iconst1
+                                              , Goto 0 3, Iconst0]
+                 (">=",_)        -> modify (over line (+8))
+                                    >> return [IfIcmplt 0 3, Iconst1
+                                              , Goto 0 3, Iconst0]
+                 (">" ,_)        -> modify (over line (+8))
+                                    >> return [IfIcmple 0 3, Iconst1
+                                              , Goto 0 3, Iconst0]
+                 ("<=",_)        -> modify (over line (+8))
+                                    >> return [IfIcmpgt 0 3, Iconst1
+                                              , Goto 0 3, Iconst0]
+                 ("&&",_)        -> return [Iand]
+                 ("|",_)         -> return [Ior]
+                 ("||",_)        -> return [Ior]
+                 (_,_)           -> error "dont know operation"))
 
 genCodeExpr (InstanceOf expr typ) =
-  do modify $ over line (+3)
+  do code <- genCodeExpr expr
+     modify $ over line (+3)
      idx <- zoom classFile $ genClass typ
      let (b1,b2) = split16Byte idx
-     return [Instanceof b1 b2]
+     return $ code ++ [Instanceof b1 b2]
 
 -- expr1 ? expr2 : expr3
 genCodeExpr (Ternary cond expr1 expr2)
@@ -375,6 +406,8 @@ genCodeVarDecl (VariableDecl name typ _ mayExpr) =
        _           -> return []
 
 genCodeStmtExpr :: StmtExpr -> State Vars Code
+genCodeStmtExpr (Assign (LocalOrFieldVar _) _)
+  = error "untyped local or field var"
 genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
   = genCodeExpr expr
     -++- do exprCode <- genCodeExpr expr
@@ -401,6 +434,8 @@ genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
                       let (b1,b2) = split16Byte idx
                       return [Putfield b1 b2] -- TODO or putstatic
 
+genCodeStmtExpr (Assign (InstVar _ _) _)
+  = error "untyped instance var"
 genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
                                                   typ) expr) className)
   = genCodeExpr obj
@@ -410,7 +445,17 @@ genCodeStmtExpr (TypedStmtExpr (Assign (TypedExpr (InstVar obj name)
             modifyStack (-2)
             let (b1,b2) = split16Byte idx
             return [Putfield b1 b2]
-
+genCodeStmtExpr (Assign (Unary _ _) _)
+  = error "cant assign to unary"
+genCodeStmtExpr (Assign This _)
+  = error "cant assign to This"
+genCodeStmtExpr (Assign (Binary _ _ _) _)
+  = error "cant assign to binary"
+genCodeStmtExpr (Assign (InstanceOf _ _) _)
+  = error "cant assign to instanceOf"
+genCodeStmtExpr (Assign (Ternary _ _ _) _)
+  = error "cant assign to ternary"
+genCodeStmtExpr (Assign _  _) = error "cant assign this!!" -- TODO
 genCodeStmtExpr (New typ args) =
   do obj <- zoom classFile $ genClass typ
      let (b1,b2) = split16Byte obj
@@ -425,6 +470,8 @@ genCodeStmtExpr (TypedStmtExpr (MethodCall (TypedExpr _ cl) n args) typ)
 genCodeStmtExpr (LazyAssign var expr)
   = genCodeStmtExpr (Assign var expr)
 genCodeStmtExpr (TypedStmtExpr se _) = genCodeStmtExpr se
+
+genCodeStmtExpr _ = error "cant compile this!!" -- TODO
 
 genCodeSwitchCase :: SwitchCase -> State Vars (LineNumber,Int,Code)
 genCodeSwitchCase (SwitchCase expr cas) =
@@ -451,6 +498,7 @@ getCondBodyCode cond body =
      return (condCode,bodyCode)
 
 -- gen If or cond?e1:e2
+genIf :: (t  -> State Vars Code) -> Expr -> t -> t -> State Vars Code
 genIf gen cond bodyIf bodyElse =
   do condCode <- genCodeExpr cond
      ref <- (+1) . view line <$> get
@@ -471,9 +519,9 @@ genMethConst :: Type -- ^ return type
              -> String -- ^ method name
              -> [Expr] -- ^ arguments for method
              -> State Vars Code
-genMethConst typ cl name args =
+genMethConst typ' cl name args =
   do let typ = "(" ++ concatMap (typeToDescriptor . \(TypedExpr _ t) -> t) args
-                   ++ ";)" ++ typ
+                   ++ ";)" ++ typ'
      idx <- zoom classFile $ genMethodRef name cl typ
      let (b1,b2) = split16Byte idx
      -- remove args and methodref from operand stack
@@ -503,11 +551,11 @@ adBreaks :: LineNumber -- ^ current line in code
          -> LineNumber -- ^ line to jump to
          -> Code -- ^ code without right break references
          -> Code -- ^ code with right break references
-adBreaks refIndex index [] = []
-adBreaks refIndex index (Goto 0 0:as)
-  = Goto b1 b2: adBreaks (refIndex + 1) index as
-      where (b1,b2) = split16Byte . twoCompliment16 $ index - refIndex
-adBreaks refIndex index (a:as) = a : adBreaks (refIndex + 1) index as
+adBreaks _ _ [] = []
+adBreaks refIndex idx (Goto 0 0:as)
+  = Goto b1 b2: adBreaks (refIndex + 1) idx as
+      where (b1,b2) = split16Byte . twoCompliment16 $ idx - refIndex
+adBreaks refIndex idx (a:as) = a : adBreaks (refIndex + 1) idx as
 
 
 -- | concatenates to lists in applicatives
