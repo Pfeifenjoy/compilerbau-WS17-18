@@ -2,6 +2,7 @@
 This module generates the fields. Additional it gens the init
 method, which is used to assign non final values to the fields.
 -}
+{-# OPTIONS -Wall #-}
 module Codegen.GenerateFields (
   genFields,
   genCode
@@ -14,20 +15,22 @@ import Codegen.Data.Assembler
 import Codegen.GenerateConstantPool
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
+import qualified Data.HashMap.Lazy as HM
 
 genFields :: Bool -- ^ exists constructor with no arguments
           -> [FieldDecl]
           -> State ClassFile ()
 genFields False [] = genInit []
-genFields constructor fds = mapM_ (genFD constructor) fds
+genFields constructor fds
+  = do mapM_ genFD fds
+       if constructor
+       then return ()
+       else genInit (concatMap (\(FieldDecl vds _ _) -> vds) fds)
 
-genFD :: Bool -- ^ exists constructor with no arguments
-      -> FieldDecl
+genFD :: FieldDecl
       -> State ClassFile ()
-genFD constructor (FieldDecl vds vis static)
-  = mapM_ (genVD vis static) vds >> if constructor
-                                    then return ()
-                                    else genInit vds
+genFD (FieldDecl vds vis static)
+  = mapM_ (genVD vis static) vds
 
 genVD :: Visibility
       -> Bool -- ^ is the field static?
