@@ -201,6 +201,7 @@ genUTF8 str = genInfo Utf8Info { _tagCp = TagUtf8
 -- helper
 
 -- | inserts a info into the constant pool
+-- constant pool counter is one more then the elements in the constant pool
 genInfo :: CPInfo
         -> State ClassFile -- ^ new constant pool
                  IndexConstantPool -- ^ location of info in the constant pool
@@ -210,9 +211,9 @@ genInfo cpInfo =
                 (\hm -> case HM.lookup cpInfo hm of
                          (Just _) -> hm
                          _        -> HM.insert cpInfo
-                                               (cf^.countrCp+1) hm) cf
+                                               (cf^.countrCp) hm) cf
      cf <- get
      let loc = (cf^.arrayCp) ! cpInfo
-         n   = if loc > cf^.countrCp then 1 else 0
+         n   = if loc+1 > cf^.countrCp then 1 else 0
      put $ countrCp +~ n $ cf
      return loc
