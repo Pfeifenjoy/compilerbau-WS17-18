@@ -12,27 +12,28 @@ import Data.Word
 import Data.Int
 import Data.Bits
 import Data.HashMap.Lazy as HM (fromList, toList)
+import Data.List (sortOn,)
 import Control.Arrow
 
 instance Binary ClassFile where
     put (ClassFile mg mnv mjv tamCp mapCp flgs ths spr tamIf lstIf tamFd
                    lstFd tamMth lstMth tamAttr lstAttr)
-        = put mg                        >>
-          put mnv                       >>
-          put mjv                       >>
-          put (fromInt2Word16 tamCp)    >>
-          mapM_ put (HM.toList mapCp)   >>
-          put flgs                      >>
-          put ths                       >>
-          put spr                       >>
-          put (fromInt2Word16 tamIf)    >>
-          mapM_ put lstIf               >>
-          put (fromInt2Word16 tamFd)    >>
-          mapM_ put lstFd               >>
-          put (fromInt2Word16 tamMth)   >>
-          mapM_ put lstMth              >>
-          put (fromInt2Word16 tamAttr)  >>
-          mapM_ put lstAttr
+        = do put mg
+             put mnv
+             put mjv
+             put (fromInt2Word16 tamCp)
+             mapM_ (put . fst) . sortOn snd $ HM.toList mapCp
+             put flgs
+             put ths
+             put spr
+             put (fromInt2Word16 tamIf)
+             mapM_ put lstIf
+             put (fromInt2Word16 tamFd)
+             mapM_ put lstFd
+             put (fromInt2Word16 tamMth)
+             mapM_ put lstMth
+             put (fromInt2Word16 tamAttr)
+             mapM_ put lstAttr
 
     -- el tamanio del constantPool = 1 + length(constantPool)
     get = do mg          <- get :: Get Magic
@@ -40,7 +41,8 @@ instance Binary ClassFile where
              mjv         <- get :: Get MajorVersion
              wtamCp      <- getWord16
              let tamCp   =  fromWord162Int wtamCp
-             mapCp       <- fmap HM.fromList $ getMany $ tamCp-1
+             mapCp       <- fmap (\cps -> HM.fromList (zip cps [1..]))
+                               (getMany $ tamCp-1)
              flgs        <- get :: Get AccessFlags
              ths         <- get :: Get ThisClass
              spr         <- get :: Get SuperClass
