@@ -187,30 +187,32 @@ genCodeStmt (If cond body Nothing) =
      let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
      return $ condCode b1 b2 ++ bodyCode
 
-genCodeStmt Switch{} = undefined
--- genCodeStmt (Switch expr switchCases (Just stmts)) =
---   do exprCode <- genCodeExpr expr -- code to compare
---      ref <- view line <$> get
---      let pad = mod (ref+1) 4
---          len = pad + 8 + 2 * length switchCases
---      modify $ over line (+len) -- length of tableswitch assembler
---      caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
---      def <- (+1) . view line <$> get
---      -- TODO default code
---      modifyStack (-1)
---      let (d1,d2,d3,d4) = split32Byte def
---          (n1,n2,n3,n4) = split32Byte $ length switchCases
---      return $ exprCode
---                ++ [Lookupswitch (replicate pad 0)
---                    d1 d2 d3 d4 n1 n2 n3 n4
---                    (map (\(x,y,_)
---                       -> let (b1,b2,b3,b4) = split32Byte x
---                              (b5,b6,b7,b8) = split32Byte y
---                          in (b1,b2,b3,b4,b5,b6,b7,b8))
---                     caseCodes)]
---                ++ concatMap (\(_,_,x) -> x) caseCodes
---
--- genCodeStmt (Switch expr switchCases Nothing) = undefined
+genCodeStmt (Switch expr switchCases defCase) =
+  do exprCode <- genCodeExpr expr -- code to compare
+     ref <- view line <$> get
+     let pad = mod (ref+1) 4
+         len = pad + 8 + 2 * length switchCases
+     modify $ over line (+len) -- length of tableswitch assembler
+     caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
+     def <- (+1) . view line <$> get
+     -- TODO add goto address to end of switch case
+     defCode <- case defCase of
+                  Nothing -> return []
+                  (Just stmts) -> genCodeStmt $ Block stmts
+     modifyStack (-1)
+     let (d1,d2,d3,d4) = split32Byte def
+         (n1,n2,n3,n4) = split32Byte $ length switchCases
+     return $ exprCode
+               ++ [Lookupswitch (replicate pad 0)
+                   d1 d2 d3 d4 n1 n2 n3 n4
+                   (map (\(x,y,_)
+                      -> let (b1,b2,b3,b4) = split32Byte x
+                             (b5,b6,b7,b8) = split32Byte y
+                         in (b1,b2,b3,b4,b5,b6,b7,b8))
+                    caseCodes)]
+               ++ concatMap (\(_,_,x) -> x) caseCodes
+               ++ defCode
+
 genCodeStmt (LocalVarDecls vds)
   = foldr ((-++-) . genCodeVarDecl) (return []) vds
 genCodeStmt (StmtExprStmt stmtExpr) = genCodeStmtExpr stmtExpr
@@ -475,7 +477,7 @@ genCodeSwitchCase (SwitchCase expr cas) =
   do lin <- view line <$> get
      code <- genCodeStmt (Block cas)
      modify $ over line (+3) -- length of goto
-     -- goto offset will be added later TODO
+     -- goto offset will be added later
      return (lin,evalInt expr,code++[Goto 0 0])
 
 -- helper functions
