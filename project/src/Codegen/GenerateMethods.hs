@@ -42,8 +42,7 @@ data Vars = Vars { -- | maps the index of a local Variable to its name.
 makeLenses ''Vars
 
 genMethods :: [FieldDecl] -> [MethodDecl] -> State ClassFile ()
-genMethods vds mds
-  = modify (set countMethods (length mds)) >> mapM_ (genMethod vds) mds
+genMethods vds = mapM_ (genMethod vds)
 
 genMethod :: [FieldDecl] -- ^ fields for initial code of constructor
           -> MethodDecl -> State ClassFile ()

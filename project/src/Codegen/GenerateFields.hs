@@ -97,11 +97,11 @@ genInit vds =
 
 genCode :: VariableDecl -> State ClassFile (Int,Code)
 genCode (VariableDecl _ _  _ Nothing) = return (0,[])
-genCode (VariableDecl name "float" _ (Just expr)) = undefined
+genCode (VariableDecl _ "float" _ (Just _)) = undefined
 genCode (VariableDecl name typ  _ (Just expr)) =
-  do index <- genFieldRefThis name $ typeToDescriptor typ
+  do idx <- genFieldRefSuper name $ typeToDescriptor typ
      let val = evalInt expr
-         (b1,b2) = split16Byte index
+         (b1,b2) = split16Byte idx
      return (if val > 5 then 6 else 5
             ,[Aload0,iconst val,Putfield b1 b2])
 
