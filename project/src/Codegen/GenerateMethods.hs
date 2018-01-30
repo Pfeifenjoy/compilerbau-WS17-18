@@ -76,16 +76,16 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                            , _classFile = cf
                            , _curStack = 0
                            , _maxStack = 0
-                           , _line = 0
+                           , _line = lengthInit
                            , _continueLine = []
                            }
      put $ vars^.classFile
      let accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = 16 + vars^.line + lengthInit
+                                  , _tamLenAttr = 12 + vars^.line
                                   , _lenStackAttr = vars^.maxStack
-                                  , _lenLocalAttr = length $ vars^.localVar
-                                  , _tamCodeAttr = vars^.line + lengthInit
+                                  , _lenLocalAttr = sum . map HM.size $ vars^.localVar
+                                  , _tamCodeAttr = vars^.line
                                   , _arrayCodeAttr = code
                                   , _tamExAttr = 0
                                   , _arrayExAttr = []

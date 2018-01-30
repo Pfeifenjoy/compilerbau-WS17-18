@@ -77,7 +77,7 @@ genInit vds =
                     ++ [Return]
          lengthCode = 5 + sum (map fst codeVars)
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = 14+lengthCode
+                                  , _tamLenAttr = 12+lengthCode
                                   , _lenStackAttr = 1
                                   , _lenLocalAttr = 1
                                   , _tamCodeAttr = lengthCode
