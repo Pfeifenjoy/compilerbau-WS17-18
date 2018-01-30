@@ -9,8 +9,10 @@ module Codegen.GenerateConstantPool(
   genClass,
   genFieldRef,
   genFieldRefThis,
+  genFieldRefSuper,
   genMethodRef,
   genMethodRefThis,
+  genMethodRefSuper,
   genInterfaceRef,
   genString,
   genInteger,
@@ -70,6 +72,20 @@ genFieldRefThis name typ =
                           , _desc               = ""
                           }
 
+-- | insert a field variable of super class in the constant pool
+genFieldRefSuper :: String -- ^ field to insert in constant pool
+                 -> Type -- ^ type of this Field
+                 -> State ClassFile -- ^ new constant pool
+                          -- | location of field in constant pool
+                          IndexConstantPool
+genFieldRefSuper name typ =
+  do indexClassName <- view (super . indexSp) <$> get
+     indexNameType <- genNameAndType name typ
+     genInfo FieldRefInfo { _tagCp              = TagFieldRef
+                          , _indexNameCp        = indexClassName
+                          , _indexNameandtypeCp = indexNameType
+                          , _desc               = ""
+                          }
 -- | insert a method in the constant pool
 genMethodRef :: String-- ^ name of method to insert in constant pool
              -> String -- ^ class in which this method is
@@ -91,6 +107,19 @@ genMethodRefThis :: String-- ^ name of method to insert in constant pool
                           IndexConstantPool -- ^ location of field in constant pool
 genMethodRefThis name typ =
   do indexClassName <- view (this . indexTh) <$> get
+     indexNameType <- genNameAndType name typ
+     genInfo MethodRefInfo { _tagCp              = TagMethodRef
+                           , _indexNameCp        = indexClassName
+                           , _indexNameandtypeCp = indexNameType
+                           , _desc               = ""
+                           }
+
+genMethodRefSuper :: String-- ^ name of method to insert in constant pool
+                  -> Type -- ^ type of this method
+                  -> State ClassFile -- ^ new constant pool
+                           IndexConstantPool -- ^ location of field in constant pool
+genMethodRefSuper name typ =
+  do indexClassName <- view (super . indexSp) <$> get
      indexNameType <- genNameAndType name typ
      genInfo MethodRefInfo { _tagCp              = TagMethodRef
                            , _indexNameCp        = indexClassName
