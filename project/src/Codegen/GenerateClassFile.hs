@@ -1,4 +1,5 @@
 module Codegen.GenerateClassFile (
+  encode,
   genClass
 ) where
 import ABSTree(Class(..),MethodDecl(..))
@@ -9,6 +10,7 @@ import Codegen.GenerateMethods
 import Data.HashMap.Lazy (fromList)
 import Control.Monad.Trans.State.Lazy
 import Control.Lens
+import Data.Binary(encode)
 
 genClass :: Class -> ClassFile
 genClass (Class typ fds mds)
