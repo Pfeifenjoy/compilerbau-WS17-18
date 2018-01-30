@@ -65,8 +65,11 @@ genInit :: [VariableDecl] -> State ClassFile ()
 genInit vds =
   do indexType <- genUTF8 "()V"
      indexCode <- genUTF8 "Code"
-     indexThis <- genMethodRefThis "<init>" "void"
-     indexName <- view (this . indexTh) <$> get
+     indexThis <- genMethodRefSuper "<init>" "()V"
+     indexClass <- view (this . indexTh) <$> get
+     (ClassInfo _ indexName _) <- fst . head . filter ((==indexClass) . snd)
+                                      . HM.toList . view arrayCp <$> get
+
      codeVars <- mapM genCode vds
      let (b1,b2) = split16Byte indexThis
          code =  [Aload0,Invokespecial b1 b2]
