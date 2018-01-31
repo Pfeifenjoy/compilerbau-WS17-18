@@ -239,6 +239,7 @@ genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
      case locVar of
        (Just idx)
          -> do modify $ over line (+(if idx > 3 then 2 else 1))
+               modifyStack 1
                return $ case typ of
                           "double"    -> [dload idx]
                           "float"     -> [fload idx]
@@ -378,14 +379,20 @@ genCodeExpr (Ternary cond expr1 expr2)
   = genIf genCodeExpr cond expr1 expr2
 
 genCodeExpr (BooleanLiteral True)
-  = modify (over line (+1)) >> return [Iconst1]
+  = do modify (over line (+1))
+       modifyStack 1
+       return [Iconst1]
 genCodeExpr (BooleanLiteral False)
-  = modify (over line (+1)) >> return [Iconst0]
+  = do modify (over line (+1))
+       modifyStack 1
+       return [Iconst0]
 genCodeExpr (CharLiteral char)
   = do modify (over line (+(if ord char> 5 then 2 else 1)))
+       modifyStack 1
        return [iconst $ ord char]
 genCodeExpr (IntegerLiteral int)
   = do modify (over line (+(if int > 5 then 2 else 1)))
+       modifyStack 1
        return [iconst $ fromIntegral int]
     --  LongLiteral Int64
     --  FloatLiteral Float
