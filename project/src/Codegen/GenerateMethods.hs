@@ -80,8 +80,11 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                                    : map (\(ArgumentDecl n _ _) -> n)
                                          argDecls
                            , _classFile = cf
-                           , _curStack = 0
-                           , _maxStack = lengthStack
+                           , _curStack = case () of
+                                          _ | lengthInit > 5 -> 2
+                                          _ | lengthInit > 0 -> 1
+                                          _ ->  0
+                           , _maxStack = 0
                            , _line = lengthInit
                            , _continueLine = []
                            }
