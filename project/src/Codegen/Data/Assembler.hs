@@ -235,7 +235,7 @@ data Assembler
   | Breakpoint
   | Impdep1
   | Impdep2
-  deriving(Show)
+  deriving(Show,Eq)
 
 type Code = [Assembler]
 
@@ -430,7 +430,7 @@ codeToInt (Putfield byte1 byte2:xs) = 0xb5 : byte1 : byte2 : codeToInt xs
 codeToInt (Invokevirtual byte1 byte2:xs) = 0xb6 : byte1 : byte2 : codeToInt xs
 codeToInt (Invokespecial byte1 byte2:xs) = 0xb7 : byte1 : byte2 : codeToInt xs
 codeToInt (Invokestatic byte1 byte2:xs) = 0xb8 : byte1 : byte2 : codeToInt xs
-codeToInt (Invokeinterface idx1 idx2 count:xs) 
+codeToInt (Invokeinterface idx1 idx2 count:xs)
   = 0xb9 : idx1 : idx2 : count : 0 : codeToInt xs
 codeToInt (Invokedynamic idx1 idx2:xs) = 0xba:idx1:idx2:0:0:codeToInt xs
 codeToInt (New byte1 byte2:xs) = 0xbb : byte1 : byte2 : codeToInt xs
@@ -442,9 +442,9 @@ codeToInt (Checkcast byte1 byte2:xs) = 0xc0 : byte1 : byte2 : codeToInt xs
 codeToInt (Instanceof byte1 byte2:xs) = 0xc1 : byte1 : byte2 : codeToInt xs
 codeToInt (Monitorenter:xs) = 0xc2 : codeToInt xs
 codeToInt (Monitorexit:xs) = 0xc3 : codeToInt xs
-codeToInt (Wide op b1 b2 Nothing Nothing:xs) 
+codeToInt (Wide op b1 b2 Nothing Nothing:xs)
   = 0xc4:codeToInt [op] ++ [b1,b2]++ codeToInt xs
-codeToInt (Wide op b1 b2 (Just b3) (Just b4):xs) 
+codeToInt (Wide op b1 b2 (Just b3) (Just b4):xs)
   = 0xc4:codeToInt [op] ++ [b1,b2,b3,b4]++ codeToInt xs
 codeToInt (Multianewarray b1 b2 bs:xs) = 0xc5:b1:b2:(bs ++ codeToInt xs)
 codeToInt (Ifnull byte1 byte2:xs) = 0xc6 : byte1 : byte2 : codeToInt xs

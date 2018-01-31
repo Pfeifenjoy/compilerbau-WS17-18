@@ -15,5 +15,6 @@ class BitWiseOperation {
 		a <<= a;
 		a >>= a;
 		a >>>= a;
+                return;
 	}
 }

@@ -19,6 +19,7 @@ import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Control.Lens hiding (op)
 import Control.Monad.Trans.State.Lazy
+import qualified Data.Set as S
 
 -- | The name of a local variable.  It is the name in the source code
 --   followed by the deepness in a nested block
@@ -32,6 +33,7 @@ type LineNumber = Int
 
 data Vars = Vars { -- | maps the index of a local Variable to its name.
                    _localVar :: [HM.HashMap LocVarName LocVarIndex ]
+                 , _allLocalVar :: S.Set String
                  , _classFile :: ClassFile
                  , _curStack :: Int
                  , _maxStack :: Int
@@ -72,20 +74,30 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                                             (map
                                               (\(ArgumentDecl n _ _) -> n)
                                               argDecls) [1..]]
+                           , _allLocalVar
+                                = S.fromList $
+                                   "This"
+                                   : map (\(ArgumentDecl n _ _) -> n)
+                                         argDecls
                            , _classFile = cf
                            , _curStack = 0
-                           , _maxStack = 0
+                           , _maxStack = lengthStack
                            , _line = lengthInit
                            , _continueLine = []
                            }
      put $ vars^.classFile
-     let accessFlags = visToFlag vis : [8 | static]
+     let addReturn = typ == "void" && last code /= A.Return
+         accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
                                   , _tamLenAttr = 12 + vars^.line
                                   , _lenStackAttr = vars^.maxStack
-                                  , _lenLocalAttr = sum . map HM.size $ vars^.localVar
-                                  , _tamCodeAttr = vars^.line
-                                  , _arrayCodeAttr = code
+                                  , _lenLocalAttr
+                                       = S.size $ vars^.allLocalVar
+                                  , _tamCodeAttr
+                                       = vars^.line + if addReturn
+                                                      then 1 else 0
+                                  , _arrayCodeAttr
+                                       = code ++ [A.Return | addReturn]
                                   , _tamExAttr = 0
                                   , _arrayExAttr = []
                                   , _tamAtrrAttr = 0

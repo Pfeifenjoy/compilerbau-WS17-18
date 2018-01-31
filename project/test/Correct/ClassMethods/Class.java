@@ -1,5 +1,6 @@
 class ClassMethod {
 	int i = 0;
+        final int a = 3;
 
 	int getInt() {
 		return 1;
