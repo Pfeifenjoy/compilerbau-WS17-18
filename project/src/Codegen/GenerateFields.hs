@@ -54,7 +54,7 @@ genAttrFields :: Maybe Expr
                    -> State ClassFile AttributeInfos
 genAttrFields Nothing  = return []
 genAttrFields (Just expr) =
-  do indexName <- genUTF8 "constant"
+  do indexName <- genUTF8 "ConstantValue"
      indexValue <- exprToConstantPool expr
      return [AttributeConstantValue { _indexNameAttr = indexName
                                     , _tamAttr = 2
