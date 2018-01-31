@@ -416,40 +416,41 @@ genCodeVarDecl (VariableDecl name typ _ mayExpr) =
                          name
                          (maximum (map (HM.foldr max 0) (h:hs))+1)
                          h : hs
+     -- remember all variable to get the number
+     modify $ over allLocalVar $ S.insert name
      case mayExpr of
        (Just expr) -> genCodeStmtExpr
                         (Assign
-                           (TypedExpr (LocalOrFieldVar name) typ) expr)
+                          (TypedExpr (LocalOrFieldVar name) typ) expr)
        _           -> return []
 
 genCodeStmtExpr :: StmtExpr -> State Vars Code
 genCodeStmtExpr (Assign (LocalOrFieldVar _) _)
   = error "untyped local or field var"
 genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
-  = genCodeExpr expr
-    -++- do exprCode <- genCodeExpr expr
-            locVar <- getLocIdx var . view localVar <$> get
-            modifyStack (-1)
-            case locVar of
-              -- local variable
-              (Just idx)
-                -> do modify $ over line (+(if idx > 3 then 2 else 1))
-                      return $ exprCode ++ case typ of
-                                 "double"  -> [dstore idx]
-                                 "float"   -> [fstore idx]
-                                 "long"    -> [lstore idx]
-                                 "byte"    -> [istore idx]
-                                 "short"   -> [istore idx]
-                                 "int"     -> [istore idx]
-                                 "boolean" -> [istore idx]
-                                 "char"    -> [istore idx]
-                                 _         -> [astore idx]
-              -- TODO static call in other class
-              -- field variable
-              _ -> do idx <- zoom classFile $ genFieldRefThis var typ
-                      modify $ over line (+3)
-                      let (b1,b2) = split16Byte idx
-                      return $ exprCode ++ [Putfield b1 b2] -- TODO or putstatic
+  = do exprCode <- genCodeExpr expr
+       locVar <- getLocIdx var . view localVar <$> get
+       modifyStack (-1)
+       case locVar of
+         -- local variable
+         (Just idx)
+           -> do modify $ over line (+(if idx > 3 then 2 else 1))
+                 return $ exprCode ++ case typ of
+                            "double"  -> [dstore idx]
+                            "float"   -> [fstore idx]
+                            "long"    -> [lstore idx]
+                            "byte"    -> [istore idx]
+                            "short"   -> [istore idx]
+                            "int"     -> [istore idx]
+                            "boolean" -> [istore idx]
+                            "char"    -> [istore idx]
+                            _         -> [astore idx]
+         -- TODO static call in other class
+         -- field variable
+         _ -> do idx <- zoom classFile $ genFieldRefThis var typ
+                 modify $ over line (+3)
+                 let (b1,b2) = split16Byte idx
+                 return $ exprCode ++ [Putfield b1 b2] -- TODO or putstatic
 
 genCodeStmtExpr (Assign (InstVar _ _) _)
   = error "untyped instance var"
