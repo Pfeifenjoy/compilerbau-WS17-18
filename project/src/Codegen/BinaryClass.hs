@@ -5,7 +5,7 @@ import Data.Binary
 import Data.Binary.Get
 import Data.Binary.Put
 import qualified Data.ByteString.Lazy as BS
-import Codegen.Data.Assembler(codeToInt)
+import Codegen.Data.Assembler(codeToByte)
 import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Data.Word
@@ -278,7 +278,7 @@ instance Binary AttributeInfo where
           put (fromInt2Word16 mlenStack)                        >>
           put (fromInt2Word16 mlenLocal)                        >>
           put (fromInt2Word32 tamCode)                          >>
-          mapM_ (putWord8 . fromInt2Word8 ) (codeToInt lstCode) >>
+          mapM_ putWord8 (codeToByte lstCode)                   >>
           put (fromInt2Word16 tamEx)                            >>
           mapM_ (\(e1,e2,e3,e4) -> put (fromInt2Word16 e1)
                  >> put (fromInt2Word16 e2) >> put (fromInt2Word16 e3)

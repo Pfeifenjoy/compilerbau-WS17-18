@@ -146,8 +146,8 @@ genCodeStmt (While cond body) =
   do (refLine,condCode,bodyCode) <- getForWhileCode cond body
      modify $ over line (+3) -- length of Goto
      breakLine <- (+1) . view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ breakLine - refLine
-         (b3,b4) = split16Byte . twoCompliment16 $ refLine - breakLine - 1
+     let (b1,b2) = split16Byte $ breakLine - refLine
+         (b3,b4) = split16Byte $ refLine - breakLine - 1
          code = condCode b1 b2 ++ adBreaks refLine breakLine bodyCode
                                ++ [Goto b3 b4]
      modify $ over continueLine tail
@@ -159,9 +159,10 @@ genCodeStmt (DoWhile cond body) =
      modify $ over continueLine (refLine:)
      bodyCode <- genCodeStmt body
      condCode <- genCond cond
+     branchLine <- (+1) . view line <$> get
      modify $ over line (+3) -- length of Ifne
      breakLine <- (+1) . view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
+     let (b1,b2) = split16Byte $ refLine - branchLine
          code = adBreaks refLine breakLine bodyCode ++ condCode b1 b2
      modify $ over continueLine tail
      return code
@@ -173,8 +174,8 @@ genCodeStmt (For initStmt cond iter body) =
      iterateCode <- genCodeStmt iter -- i.e. i++
      modify (over line (+3)) -- Goto b1 b2
      breakLine <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
-         (b3,b4) = split16Byte . twoCompliment16  $ refLine - breakLine - 1
+     let (b1,b2) = split16Byte $ breakLine - refLine
+         (b3,b4) = split16Byte $ refLine - breakLine - 1
          code = initialCode ++ condCode b1 b2
                             ++ adBreaks refLine breakLine bodyCode
                             ++ iterateCode
@@ -190,7 +191,7 @@ genCodeStmt Continue =
   do modify $ over line (+3)
      refLine <- (+1) . view line <$> get
      conLine <- head . view continueLine <$> get
-     let (b1,b2) = split16Byte . twoCompliment16  $ conLine - refLine
+     let (b1,b2) = split16Byte $ conLine - refLine
      return [Goto b1 b2]
 
 genCodeStmt (If cond bodyIf (Just bodyElse))
@@ -200,7 +201,7 @@ genCodeStmt (If cond body Nothing) =
   do ref <- (+1) . view line <$> get
      (condCode,bodyCode) <- getCondBodyCode cond body
      endIf <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
+     let (b1,b2) = split16Byte $ endIf - ref
      return $ condCode b1 b2 ++ bodyCode
 
 genCodeStmt (Switch expr switchCases defCase) =
@@ -506,14 +507,14 @@ genCodeSwitchCase (SwitchCase expr cas) =
 
 -- helper functions
 
-getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Int -> Int -> Code,Code)
+getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Byte -> Byte -> Code,Code)
 getForWhileCode cond body =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
      (condCode,bodyCode) <- getCondBodyCode cond body
      return (refLine,condCode,bodyCode)
 
-getCondBodyCode :: Expr -> Stmt -> State Vars (Int -> Int -> Code,Code)
+getCondBodyCode :: Expr -> Stmt -> State Vars (Byte -> Byte -> Code,Code)
 getCondBodyCode cond body =
   do condCode <- genCond cond
      modify (over line (+3)) -- jump + 2 branch bytes
@@ -531,12 +532,12 @@ genIf gen cond bodyIf bodyElse =
      modify $ over line (+1)
      bodyElseCode <- gen bodyElse
      endElse <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
-         (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
+     let (b1,b2) = split16Byte $ endIf + 4 - ref
+         (b3,b4) = split16Byte $ endElse - endIf
      return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode
 
-genCond :: Expr -> State Vars (Int -> Int -> Code)
+genCond :: Expr -> State Vars (Byte -> Byte -> Code)
 genCond (TypedExpr (Binary ">" _ _) "") = undefined -- TODO other types
 genCond (TypedExpr (Binary op e1 e2) _) =
   do c1 <- genCodeExpr e1
@@ -594,7 +595,7 @@ adBreaks :: LineNumber -- ^ current line in code
 adBreaks _ _ [] = []
 adBreaks refIndex idx (Goto 0 0:as)
   = Goto b1 b2: adBreaks (refIndex + 1) idx as
-      where (b1,b2) = split16Byte . twoCompliment16 $ idx - refIndex
+      where (b1,b2) = split16Byte $ idx - refIndex
 adBreaks refIndex idx (a:as) = a : adBreaks (refIndex + 1) idx as
 
 
