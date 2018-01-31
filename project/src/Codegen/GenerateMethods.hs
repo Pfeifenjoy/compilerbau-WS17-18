@@ -92,7 +92,9 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
      let addReturn = typ == "void" && last code /= A.Return
          accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = 12 + vars^.line
+                                  , _tamLenAttr
+                                       = 12 + vars^.line + if addReturn
+                                                           then 1 else 0
                                   , _lenStackAttr = vars^.maxStack
                                   , _lenLocalAttr
                                        = S.size $ vars^.allLocalVar
