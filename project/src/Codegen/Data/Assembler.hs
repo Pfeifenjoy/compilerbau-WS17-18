@@ -4,25 +4,25 @@ int, which is later translated in to byte code
 -}
 module Codegen.Data.Assembler where
 
-import ABSTree(Visibility(..),Type) 
+import ABSTree(Visibility(..),Type)
 import Data.Bits
 
-type Byte = Int 
+type Byte = Int
 type Indexbyte = Byte
 type Branchbyte = Byte
 type Constbyte = Byte
 type Padbyte = Byte
-type Lowbyte = Byte 
-type Highbyte = Byte 
-type JumpOffsetByte = Byte 
-type Defaultbyte = Byte 
-type Npairs = Byte 
-type MatchOffsetparisbyte = Byte 
-type AtypeByte = Byte 
-type Dimensionbyte = Byte 
+type Lowbyte = Byte
+type Highbyte = Byte
+type JumpOffsetByte = Byte
+type Defaultbyte = Byte
+type Npairs = Byte
+type MatchOffsetparisbyte = Byte
+type AtypeByte = Byte
+type Dimensionbyte = Byte
 type Pairbyte = (Byte,Byte,Byte,Byte,Byte,Byte,Byte,Byte)
 
-data Assembler 
+data Assembler
   = Nop
   | AconstNull
   | IconstM1
@@ -45,7 +45,7 @@ data Assembler
   | LdcW Indexbyte Indexbyte
   | Ldc2W Indexbyte Indexbyte
   | Iload Indexbyte
-  | Lload Indexbyte 
+  | Lload Indexbyte
   | Fload Indexbyte
   | Dload Indexbyte
   | Aload Indexbyte
@@ -193,12 +193,12 @@ data Assembler
   | Goto Branchbyte Branchbyte
   | Jsr Branchbyte Branchbyte
   | Ret Indexbyte
-  | Tableswitch [Padbyte] 
+  | Tableswitch [Padbyte]
                 Defaultbyte Defaultbyte Defaultbyte Defaultbyte
                 Lowbyte Lowbyte Lowbyte Lowbyte
                 Highbyte Highbyte Highbyte Highbyte
                 [JumpOffsetByte]
-  | Lookupswitch [Padbyte] 
+  | Lookupswitch [Padbyte]
                  Defaultbyte Defaultbyte Defaultbyte Defaultbyte
                  Npairs Npairs Npairs Npairs
                  [Pairbyte]
@@ -411,9 +411,9 @@ codeToInt (IfAcmpne byte1 byte2:xs) = 0xa6 : byte1 : byte2 : codeToInt xs
 codeToInt (Goto byte1 byte2:xs) = 0xa7 : byte1 : byte2 : codeToInt xs
 codeToInt (Jsr byte1 byte2:xs) = 0xa8 : byte1 : byte2 : codeToInt xs
 codeToInt (Ret byte:xs) = 0xa9 : byte : codeToInt xs
-codeToInt (Tableswitch bs1 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 bs2:xs) 
+codeToInt (Tableswitch bs1 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 bs2:xs)
   = bs1 ++ (0xaa:b1:b2:b3:b4:b5:b6:b7:b8:b9:b10:b11:b12: bs2 ++ codeToInt xs)
-codeToInt (Lookupswitch bs1 b1 b2 b3 b4 b5 b6 b7 b8 bs2:xs) 
+codeToInt (Lookupswitch bs1 b1 b2 b3 b4 b5 b6 b7 b8 bs2:xs)
   = bs1 ++ (0xab:b1:b2:b3:b4:b5:b6:b7:b8:concatMap pair8ToList bs2 ++ codeToInt xs)
      where
        pair8ToList (a,b,c,d,e,f,g,h) = [a,b,c,d,e,f,g,h]
