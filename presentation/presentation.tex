@@ -1,0 +1,64 @@
+\documentclass[aspectratio=169,handout]{beamer}
+\usepackage{pgfpages}
+\setbeameroption{show notes}
+\setbeameroption{show notes on second screen=right}
+\usetheme[progressbar=frametitle]{metropolis}
+
+\usepackage[english,german]{babel}
+\usepackage[autostyle=true,german=quotes]{csquotes}
+
+%Tikz
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,positioning,shadows,trees,calc}
+
+%Tables
+\usepackage{longtable,booktabs}
+\usepackage{tabularx}
+\usepackage{ltablex}
+\usepackage{paralist}
+
+%listings
+\usepackage{listings}
+
+
+\title{Projekt Java Compiler}
+\subtitle{Spezielle Kapitel der Praktischen Informatik: Compilerbau}
+\author{Florian Engel, Robin Heinz, Pavel Karasik, Steffen Lindner, Arwed Mett}
+\institute{Universität Tübingen}
+\date{05.02.2018}
+
+\begin{document}
+
+	%Titlepage
+	\begin{frame}
+		\titlepage
+	\end{frame}
+
+	%Agenda
+	\begin{frame}
+		\frametitle{Agenda}
+		\tableofcontents
+	\end{frame}
+
+	%Chapters
+	\input{content/allgemein.tex}
+
+	% Struktur:
+	% Allgemein
+	% Abstrakte Syntax
+	%  - Bsp. zeigen
+	%  - Wie sind Typen abgebildet
+	% Test framework
+	%  - Aufbau des Frameworks
+	%  - Bsp. ein Testfall etc.
+	% Parser
+	%  - Lexer aufbau
+	%  - Happy File
+	%  - Beispiel klasse
+	% Typchecker
+	%  - ...
+	% Codegenerierer
+	%  - ...
+	% Abschließendes Beispiel
+
+\end{document}
