@@ -1,0 +1,26 @@
+ClassFile {
+    magic = Magic, 
+    minver = MinorVersion {numMinVer = 0}, 
+    maxver = MajorVersion {numMaxVer = 52}, 
+    count_cp = 19, 
+    array_cp = [
+                MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 4, index_nameandtype_cp = 15, desc = ""},
+                FieldRef_Info {tag_cp = TagFieldRef, index_name_cp = 3, index_nameandtype_cp = 16, desc = ""},
+                Class_Info {tag_cp = TagClass, index_cp = 17, desc = ""},
+                Class_Info {tag_cp = TagClass, index_cp = 18, desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = "i", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = "I", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 6, cad_cp = "<init>", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = "()V", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = "Code", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 15, cad_cp = "LineNumberTable", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = "doIf", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 13, cad_cp = "StackMapTable", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 10, cad_cp = "SourceFile", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 13, cad_cp = "SimpleIf.java", desc = ""},
+                NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 7, index_descr_cp = 8, desc = ""},
+                NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 5, index_descr_cp = 6, desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 8, cad_cp = "SimpleIf", desc = ""},
+                Utf8_Info {tag_cp = TagUtf8, tam_cp = 16, cad_cp = "java/lang/Object", desc = ""}
+               ], 
+    acfg = AccessFlags [32], this = ThisClass {index_th = 3}, super = SuperClass {index_sp = 4}, count_interfaces = 0, array_interfaces = [], count_fields = 1, array_fields = [Field_Info {af_fi = AccessFlags [], index_name_fi = 5, index_descr_fi = 6, tam_fi = 0, array_attr_fi = []}], count_methods = 2, array_methods = [Method_Info {af_mi = AccessFlags [], index_name_mi = 7, index_descr_mi = 8, tam_mi = 1, array_attr_mi = [AttributeCode {index_name_attr = 9, tam_len_attr = 29, len_stack_attr = 1, len_local_attr = 1, tam_code_attr = 5, array_code_attr = [42,183,0,1,177], tam_ex_attr = 0, array_ex_attr = [], tam_atrr_attr = 1, array_attr_attr = [AttributeLineNumberTable {index_name_attr = 10, tam_len_attr = 6, tam_table_attr = 1, array_line_attr = [(0,1)]}]}]},Method_Info {af_mi = AccessFlags [], index_name_mi = 11, index_descr_mi = 8, tam_mi = 1, array_attr_mi = [AttributeCode {index_name_attr = 9, tam_len_attr = 83, len_stack_attr = 2, len_local_attr = 2, tam_code_attr = 26, array_code_attr = [8,60,42,3,181,0,2,27,8,162,0,11,42,27,181,0,2,167,0,8,42,5,181,0,2,177], tam_ex_attr = 0, array_ex_attr = [], tam_atrr_attr = 2, array_attr_attr = [AttributeLineNumberTable {index_name_attr = 10, tam_len_attr = 26, tam_table_attr = 6, array_line_attr = [(0,6),(2,7),(7,9),(12,10),(20,13),(25,15)]},AttributeGeneric {index_name_attr = 12, tam_len_attr = 7, rest_attr = "\NUL\STX\252\NUL\DC4\SOH\EOT"}]}]}], count_attributes = 1, array_attributes = [AttributeSourceFile {index_name_attr = 13, tam_len_attr = 2, index_src_attr = 14}]}
