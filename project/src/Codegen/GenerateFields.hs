@@ -47,7 +47,7 @@ genVD vis static (VariableDecl name typ final mayExpr) =
                                , _tamFi = length attrFields
                                , _arrayAttrFi = attrFields
                                }
-     modify $ (countFields +~ 1) . over arrayFields (fieldInfo:)
+     modify $ over arrayFields (fieldInfo:)
 
 
 genAttrFields :: Maybe Expr
