@@ -39,7 +39,7 @@ genVD :: Visibility
 genVD vis static (VariableDecl name typ final mayExpr) =
   do indexName <- genUTF8 name
      indexType <- genUTF8 $ typeToDescriptor typ
-     attrFields <- genAttrFields mayExpr
+     attrFields <- if final then genAttrFields mayExpr else return []
      let accessFlags = visToFlag vis : [0x8 | static] ++ [0x10 | final]
          fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
                                , _indexNameFi = indexName
