@@ -25,5 +25,5 @@ localVariableABS = [Class "LocalVariable" []
 
 localVariableTypedABS = [Class "LocalVariable" []
                    [MethodDecl "doStuff" "void" []
-                       (TypedStmt (Block [LocalVarDecls [VariableDecl "i" "int" False Nothing]]) "void") Public False]
+                       (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "int" False Nothing]) "void"]) "void") Public False]
                    ]

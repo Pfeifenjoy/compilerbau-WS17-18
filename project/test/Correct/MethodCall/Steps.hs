@@ -57,3 +57,21 @@ methodCallABS = [Class "B" []
                     ]) Public False
                     ]
                 ]
+
+methodCallTypedABS :: [Class]
+methodCallTypedABS = [Class "B" []
+                 [MethodDecl "getInt" "int" []
+                     (TypedStmt (Block [TypedStmt (Return (TypedExpr (IntegerLiteral 1) "int")) "int"
+                    ]) "int") Public False
+                 ],
+                  Class "MethodCall" []
+                   [MethodDecl "getInt" "int" []
+                     (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "b" "B" False (Just (TypedExpr (StmtExprExpr (TypedStmtExpr (New "B" []) "B")) "B"))]) "void",
+                             TypedStmt (Return (TypedExpr (StmtExprExpr (TypedStmtExpr (MethodCall (TypedExpr (LocalOrFieldVar "b") "B") "getInt" []) "int")) "int")) "int"
+                    ]) "int") Public False
+                    ]
+                ]
+
+
+
+

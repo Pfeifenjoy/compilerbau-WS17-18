@@ -267,4 +267,10 @@ TSWLatexianTemp*
 # nix files
 *.nix
 
+# vim files
+*.swp
+
+# class files
+*.class
+
 # End of https://www.gitignore.io/api/latex,haskell,microsoftoffice

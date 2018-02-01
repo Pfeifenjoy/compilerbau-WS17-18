@@ -45,3 +45,13 @@ whileLoopConditionABS = [Class "WhileLoopCondition" []
                                     ]) Public False
                          ]
                         ]
+
+whileLoopConditionTypedABS = [Class "WhileLoopCondition" []
+                         [MethodDecl "doLoop" "void" []
+                             (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "int" False Nothing]) "void",
+                                     TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 5) "int")) "int")) "void",
+                                     TypedStmt (While (TypedExpr (Binary ">=" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 5) "int")) "boolean")
+                                         (TypedStmt (Block [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (Binary "-" (TypedExpr (LocalOrFieldVar "i") "int") (TypedExpr (IntegerLiteral 1) "int")) "int")) "int")) "void"]) "void")) "void"
+                                    ]) "void") Public False
+                         ]
+                        ]

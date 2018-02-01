@@ -14,6 +14,7 @@ type LocVarTable = Map.Map VarName Type
 type FieldDecs = [FieldDecl]
 type VarDecs = [VariableDecl]
 type MethodDecs = [MethodDecl]
+type SwitchCases = [SwitchCase]
 
 
 -- main typecheck function
@@ -146,17 +147,25 @@ typeCheckExpr (Binary operator operandExprA operandExprB)
             typeCheckExpr operandExprA locVarTable visibleClassList
         typedOperandExprB@(TypedExpr _ operandExprBType) =
             typeCheckExpr operandExprB locVarTable visibleClassList
-    in if isValidTypedBinaryOperator operator
-                                     operandExprAType
-                                     operandExprBType
-       then TypedExpr (Binary operator 
-                              typedOperandExprA
-                              typedOperandExprB)
-                      (propagateSuperType operandExprAType
-                                          operandExprBType)
-       else error $ "Binary operator " ++ operator ++ " is not compatible with"
-                    ++ " types (" ++ operandExprAType ++ ","
-                    ++ operandExprBType ++ ")"
+        operandError = error $ "Operator " ++ operator ++ " can not be "
+                               ++ "applied to types " ++ operandExprAType
+                               ++ " and " ++ operandExprBType                               
+        resultType = 
+            case (operator, operandExprAType, operandExprBType) of
+                     (op, "int", "int")
+                         | op `elem` ["+","-","*","/","%"
+                                     ,"&","|","^","<<",">>",">>>"] -> "int"
+                         | op `elem` ["<=",">=","<",">"] -> "boolean"
+                         | otherwise -> operandError 
+                     ("||", "boolean", "boolean") -> "boolean"
+                     ("&&", "boolean", "boolean") -> "boolean"
+                     (op, operA, operB) 
+                         | op `elem` ["==","!="] && operA == operB -> operA
+                         | otherwise -> operandError
+    in TypedExpr (Binary operator
+                         typedOperandExprA
+                         typedOperandExprB)
+                 resultType                         
 typeCheckExpr (InstanceOf instExpr proposedType)
               locVarTable
               visibleClassList =
@@ -176,8 +185,8 @@ typeCheckExpr (Ternary operandExprA operandExprB operandExprC)
        then TypedExpr (Ternary typedOperandExprA
                                typedOperandExprB
                                typedOperandExprC)
-                      (propagateSuperType operandExprAType
-                                          operandExprBType)
+                      (propagateSuperType operandExprBType
+                                          operandExprCType)
        else error "First expression of ternary operator must be a boolean"
 typeCheckExpr expr@(BooleanLiteral _) _ _ = TypedExpr expr "boolean"
 typeCheckExpr expr@(CharLiteral _)    _ _ = TypedExpr expr "char"
@@ -225,7 +234,13 @@ typeCheckStmtExpr (New newClassName argExprs) locVarTable visibleClassList =
                                                     newClassName
                                  else error $ "Constructor arguments not "
                                             ++ " matching"
-                             Nothing -> error "Constructor not found"
+                             Nothing ->
+                                 if argExprsTypes == []
+                                 then TypedStmtExpr (New newClassName
+                                                         typedArgExprs)
+                                                    newClassName
+                                 else error $ "Trying to call default class"
+                                            ++ " constructor with arguments"
                 Nothing -> error $ "Specified Class "
                                  ++ newClassName ++ " not found"                
 typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
@@ -310,7 +325,7 @@ typeCheckStmt (DoWhile condExpr doWhileExpr) locVarTable visibleClassList =
            typeCheckStmt (While condExpr doWhileExpr)
                          locVarTable
                          visibleClassList
-   in TypedStmt (DoWhile condExpr doWhileExpr) doWhileExprType
+   in TypedStmt (DoWhile typedCondExpr typedDoWhileExpr) doWhileExprType
 typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
               locVarTable
               visibleClassList =
@@ -322,7 +337,7 @@ typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
             typeCheckExpr condExpr updatedLocVarTable visibleClassList
         (typedIterStmt, updatedUpdatedLocVarTable) =
             typeCheckStmtLocVarTransform iterStmt
-                                         locVarTable
+                                         updatedLocVarTable
                                          visibleClassList
         typedBodyStmt@(TypedStmt _ bodyStmtType) =
             typeCheckStmt bodyStmt updatedUpdatedLocVarTable visibleClassList
@@ -359,15 +374,23 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
     let typedSwitchExpr@(TypedExpr _ switchExprType) =
             typeCheckExpr switchExpr locVarTable visibleClassList
         (typedSwitchCases, switchCasesType) =
-            typeCheckSwitchCases switchExprType
-                                 switchCases
+            typeCheckSwitchCases switchCases 
+                                 switchExprType
                                  locVarTable
                                  visibleClassList
+        typedMaybeDefaultCaseStmts =
+           fmap ((.) (\(TypedStmt (Block typedStmts) stmtsType) -> 
+                          (typedStmts, stmtsType))
+                     (\stmts -> 
+                          typeCheckStmt (Block stmts) 
+                                        locVarTable 
+                                        visibleClassList))
+                maybeDefaultCaseStmts
     in undefined
 typeCheckStmt (StmtExprStmt stmtExpr) locVarTable visibleClassList =
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
             typeCheckStmtExpr stmtExpr locVarTable visibleClassList
-    in TypedStmt (StmtExprStmt typedStmtExpr) stmtExprType
+    in TypedStmt (StmtExprStmt typedStmtExpr) "void"
 typeCheckStmt (TypedStmt _ _) _ _ =
     error "Trying to typecheck an already typechecked statement"
 
@@ -382,7 +405,7 @@ typeCheckStmtLocVarTransform (LocalVarDecls varDecs)
                              visibleClassList =
     let (typedVarDecs, updatedLocVarTable) =
             typeCheckVarDecs varDecs locVarTable visibleClassList
-    in (LocalVarDecls typedVarDecs, updatedLocVarTable)
+    in (TypedStmt (LocalVarDecls typedVarDecs) "void", updatedLocVarTable)
 typeCheckStmtLocVarTransform stmt locVarTable visibleClassList =
     (typeCheckStmt stmt locVarTable visibleClassList, locVarTable) 
 
@@ -413,8 +436,38 @@ typeCheckVarDecs varDecs locVarTable visibleClassList =
                                                    typedMaybeInitExpr
                     updatedTypedVarDecs =
                         currentTypedVarDecs ++ [nextTypedVarDec]
+                    
                 in (updatedTypedVarDecs, updatedLocVarTable)
-typeCheckSwitchCases = undefined
+
+-- typecheck switch cases and determine their type
+typeCheckSwitchCases :: SwitchCases 
+                        -> Type 
+                        -> LocVarTable 
+                        -> VisibleClassList
+                        -> (SwitchCases, Type)
+typeCheckSwitchCases switchCases switchExprType locVarTable visibleClassList =
+    let typedSwitchCasesAndSwitchCaseTypes =
+            map (\(SwitchCase switchCaseExpr switchCaseStmts) ->
+                     let typedSwitchCaseExpr@(TypedExpr _ switchCaseExprType) =
+                             typeCheckExpr switchCaseExpr
+                                           locVarTable
+                                           visibleClassList
+                         (TypedStmt (Block typedSwitchCaseStmts)
+                                    switchCaseStmtsType) =
+                             typeCheckStmt (Block switchCaseStmts)
+                                           locVarTable
+                                           visibleClassList
+                     in if switchCaseExprType == "int"
+                        then (SwitchCase typedSwitchCaseExpr
+                                         typedSwitchCaseStmts
+                             , switchCaseStmtsType)
+                        else error "Case expression must me be an integer")
+                switchCases
+        (typedSwitchCases, switchCaseTypes) =
+            unzip typedSwitchCasesAndSwitchCaseTypes
+        switchCasesResultType = 
+            foldr propagateSuperType "void" switchCaseTypes
+    in (typedSwitchCases, switchCasesResultType)    
 
 -- looks up a filed in a class
 classFieldLookup :: FieldName -> Class -> Maybe Type
@@ -449,20 +502,6 @@ methodLookup searchedMethodName (Class classType _ methodDecs) =
             | otherwise = methodDecLookup ms
         methodDecLookup [] = Nothing
 
-isValidTypedBinaryOperator :: Operator -> Type -> Type -> Bool
-isValidTypedBinaryOperator operator typeA typeB =
-   elem (operator, typeA, typeB)
-        [("+","int","int"),("-","int","int")
-        ,("*","int","int"),("/","int","int")
-        ,("%","int","int"),("==","boolean","boolean")
-        ,("==","int","int"),("!=","boolean","boolean")
-        ,("!=","int","int"),("<=","int","int")
-        ,(">=","int","int"),(">","int","int")
-        ,("<","int","int"),("&&","boolean","boolean")
-        ,("||","boolean","boolean"),("&","int","int")
-        ,("|","int","int"),("^","int","int")
-        ,("<<","int","int"),(">>","int","int")]
-
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
 propagateSuperType "void" typeB = typeB
@@ -471,3 +510,10 @@ propagateSuperType typeA typeB
     | typeA == typeB = typeA
     | otherwise = error $ "Types " ++ typeA ++ " and " ++ typeB
                         ++ " are not compatible"
+
+propagateSuperType' :: Type -> Type -> Maybe Type
+propagateSuperType' "void" typeB = Just typeB
+propagateSuperType' typeA "void" = Just typeA
+propagateSuperType' typeA typeB 
+    | typeA == typeB = Just typeA
+    | otherwise = Nothing 

@@ -1,4 +1,4 @@
-module Wrong.Arithmetic.Steps where
+module Wrong.Syntax.Arithmetic.Steps where
 
 import           Lexer.Token
 

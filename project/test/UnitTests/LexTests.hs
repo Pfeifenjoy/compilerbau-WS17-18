@@ -1,11 +1,11 @@
 module UnitTests.LexTests (module UnitTests.LexTests) where
 
-import           Wrong.Arithmetic.Steps
 import           Correct.BitWiseOperation.Steps
 import           Correct.ClassAssign.Steps
 import           Correct.ClassMethods.Steps
 import           Correct.DoWhile.Steps
 import           Correct.EmptyClass.Steps
+import           Correct.EndlessForLoop.Steps
 import           Correct.ForLoop.Steps
 import           Correct.InstanceOf.Steps
 import           Correct.InstanzVariable.Steps
@@ -17,9 +17,10 @@ import           Correct.NewClass.Steps
 import           Correct.ShortIf.Steps
 import           Correct.SimpleIf.Steps
 import           Correct.SwitchCase.Steps
-import           Utils.SUnit
 import           Correct.WhileLoop.Steps
 import           Correct.WhileLoopCondition.Steps
+import           Utils.SUnit
+import           Wrong.Syntax.Arithmetic.Steps
 
 lexTests :: [TestUnit]
 lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
@@ -27,6 +28,7 @@ lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/ClassAssign" classAssignTokens,
             LexerUnit "Correct/ClassMethods" classMethodTokens,
             LexerUnit "Correct/ForLoop" forLoopTokens,
+            LexerUnit "Correct/EndlessForLoop" endlessForLoopTokens,
             LexerUnit "Correct/LocalVariable" localVariableTokens,
             LexerUnit "Correct/SimpleIf" simpleIfTokens,
             LexerUnit "Correct/ShortIf" shortIfTokens,
@@ -40,5 +42,7 @@ lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/NewClass" newClassTokens,
             LexerUnit "Correct/InstanceOf" instanceOfTokens,
             LexerUnit "Correct/MethodCall" methodCallTokens,
-            LexerUnit "Wrong/Arithmetic" arithmeticTokens
+            LexerUnit "Wrong/Syntax/Arithmetic" arithmeticTokens
             ]
+
+

@@ -35,3 +35,29 @@ logicOperations2Tokens = [Lexer.Token.CLASS,
                           Lexer.Token.RIGHT_BRACE,
                           Lexer.Token.RIGHT_BRACE
                          ]
+
+logicOperations2ABS = [Class "LogicOperations2" []
+                      [MethodDecl "doStuff" "void" []
+                        (Block [LocalVarDecls [VariableDecl "i" "boolean" False
+                          (Just
+                            (Binary "||"
+                              (Binary "&&"
+                                (Binary "<=" (IntegerLiteral 1) (IntegerLiteral 3))
+                                (Binary ">=" (IntegerLiteral 3) (IntegerLiteral 2)))
+                              (Binary ">" (IntegerLiteral 3) (IntegerLiteral 1))))]])
+                        Public False]
+                        ]
+
+
+logicOperations2TypedABS = [Class "LogicOperations2" []
+                      [MethodDecl "doStuff" "void" []
+                        (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "boolean" False
+                          (Just
+                            (TypedExpr (Binary "||"
+                              (TypedExpr (Binary "&&"
+                                (TypedExpr (Binary "<=" (TypedExpr (IntegerLiteral 1) "int") (TypedExpr (IntegerLiteral 3) "int")) "boolean")
+                                (TypedExpr (Binary ">=" (TypedExpr (IntegerLiteral 3) "int") (TypedExpr (IntegerLiteral 2) "int")) "boolean")) "boolean")
+                              (TypedExpr (Binary ">" (TypedExpr (IntegerLiteral 3) "int") (TypedExpr (IntegerLiteral 1) "int")) "boolean")) "boolean"))]) "void"])
+                        "void")
+                        Public False]
+                        ]
