@@ -526,6 +526,7 @@ getCondBodyCode cond body =
 genIf :: (t  -> State Vars Code) -> Expr -> t -> t -> State Vars Code
 genIf gen cond bodyIf bodyElse =
   do condCode <- genCond cond False
+     modify $ over line (+3) -- length of branch
      branchLine <- (\n -> n-2) . view line <$> get
      bodyIfCode <- gen bodyIf
      gotoLine <- (+1) . view line <$> get
