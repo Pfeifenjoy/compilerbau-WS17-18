@@ -136,37 +136,9 @@ Statement
         LEFT_PARANTHESES Expression RIGHT_PARANTHESES
                                             { DoWhile $5 $2 }
     | FOR LEFT_PARANTHESES SingleStatement
-        SEMICOLON Expression SEMICOLON
+        SEMICOLON SingleExpression SEMICOLON
         SingleStatement RIGHT_PARANTHESES Statement
                                             { For $3 $5 $7 $9 }
-    | FOR LEFT_PARANTHESES
-        SEMICOLON SEMICOLON
-        RIGHT_PARANTHESES Statement
-                                            { While (BooleanLiteral True) $6 }
-    | FOR LEFT_PARANTHESES SingleStatement
-        SEMICOLON SEMICOLON
-        RIGHT_PARANTHESES Statement
-                                            { For $3 (BooleanLiteral True) (Block []) $7 }
-    | FOR LEFT_PARANTHESES
-        SEMICOLON Expression SEMICOLON
-        RIGHT_PARANTHESES Statement
-                                            { For (Block []) $4 (Block []) $7 }
-    | FOR LEFT_PARANTHESES
-        SEMICOLON SEMICOLON
-        SingleStatement RIGHT_PARANTHESES Statement
-                                            { For (Block []) (BooleanLiteral True) $5 $7 } 
-    | FOR LEFT_PARANTHESES SingleStatement
-        SEMICOLON Expression SEMICOLON
-        RIGHT_PARANTHESES Statement
-                                            { For $3 $5 (Block []) $8 }
-    | FOR LEFT_PARANTHESES
-        SEMICOLON Expression SEMICOLON
-        SingleStatement RIGHT_PARANTHESES Statement
-                                            { For (Block []) $4 $6 $8 }   
-    | FOR LEFT_PARANTHESES SingleStatement
-        SEMICOLON SEMICOLON
-        SingleStatement RIGHT_PARANTHESES Statement
-                                            { For $3 (BooleanLiteral True) $6 $8 }               
     | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
         Statement ELSE Statement
                                             { If $3 $5 (Just $7) }
@@ -231,6 +203,10 @@ SingleStatement
     | CONTINUE                              { Continue }
     | LocalVariableDecl                     { $1 }
     | StatementExpression                   { StmtExprStmt $1 }
+
+SingleExpression
+    :                                       { BooleanLiteral True }
+    | Expression                            { $1 }
 
 
 Expression
