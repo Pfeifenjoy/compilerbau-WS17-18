@@ -3,6 +3,7 @@ module Utils.SUnit (module Utils.SUnit) where
 import           ABSTree
 import           Codegen.Data.ClassFormat
 import           Codegen.GenerateClassFile
+import           Codegen.BinaryClass
 import           Control.Exception
 import           Control.Monad             ()
 import           Data.List
@@ -10,9 +11,12 @@ import           Lexer
 import           Lexer.Token
 import           Parser
 import           System.Directory          ()
+import qualified Data.ByteString.Lazy as BS
+import           Data.Binary (encode)
 import           System.IO.Unsafe
 import           TypeChecker
 import           Utils.ClassFileChecker
+import           Control.Arrow
 
 all_tokens :: [Token]
 all_tokens = [ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULO, INCREMENT, DECREMENT, NOT, AND, OR, EQUAL, NOT_EQUAL, LESSER, GREATER, LESSER_EQUAL, GREATER_EQUAL, BITWISE_AND, BITWISE_OR, BITWISE_XOR, SHIFTLEFT, SHIFTRIGHT, UNSIGNED_SHIFTRIGHT,
@@ -54,6 +58,11 @@ typeABS s = TypeChecker.checkTypes (Parser.parse (readTokens s))
 
 genClassFiles :: [Class] -> [ClassFile]
 genClassFiles = map Codegen.GenerateClassFile.genClass
+
+writeClassFiles :: [Class] -> IO ()
+writeClassFiles = mapM_ ((\(n,cf) -> BS.writeFile ("./" ++ n ++ ".class") (encode cf))
+                          . ((\(Class name _ _) -> name)
+                            &&& Codegen.GenerateClassFile.genClass))
 
 runTest :: TestUnit -> IO Bool
 runTest (LexerUnit name expectedTokens) = do

@@ -20,12 +20,14 @@ import           Correct.SwitchCase.Steps
 import           Correct.WhileLoop.Steps
 import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
+import Correct.OperatorOverloading.Steps
 
 parserTests :: [TestUnit]
 parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
                ParserUnit "Correct/InstanzVariable" instanzVariableABS,
                ParserUnit "Correct/ClassAssign" classAssignABS,
                ParserUnit "Correct/ClassMethods" classMethodsABS,
+               ParserUnit "Correct/OperatorOverloading" operatorOverloadingABS,
                ParserUnit "Correct/ForLoop" forLoopABS,
                ParserUnit "Correct/EndlessForLoop" endlessForLoopABS,
                ParserUnit "Correct/LocalVariable" localVariableABS,
@@ -44,5 +46,6 @@ parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
                ParserException "Wrong/Syntax/Arithmetic" emptyABS,
                ParserException "Wrong/Syntax/BraceError" emptyABS,
                ParserException "Wrong/Syntax/SemicolonMissing" emptyABS,
-               ParserException "Wrong/Syntax/TypeMissing" emptyABS
+               ParserException "Wrong/Syntax/TypeMissing" emptyABS,
+               ParserException "Wrong/Syntax/ReturnTypeMissing" emptyABS
                ]

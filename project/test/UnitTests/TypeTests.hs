@@ -20,12 +20,14 @@ import           Correct.SwitchCase.Steps
 import           Correct.WhileLoop.Steps
 import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
+import Correct.OperatorOverloading.Steps
 
 typeTests :: [TestUnit]
 typeTests = [TypeUnit "Correct/EmptyClass" emptyTypedABS,
              TypeUnit "Correct/InstanzVariable" instanzVariableTypedABS,
              TypeUnit "Correct/ClassAssign" classAssignTypedABS,
              TypeUnit "Correct/ClassMethods" classMethodsTypedABS,
+             TypeUnit "Correct/OperatorOverloading" operatorOverloadingTypedABS,
              TypeUnit "Correct/ForLoop" forLoopTypedABS,
              TypeUnit "Correct/EndlessForLoop" endlessForLoopTypedABS,
              TypeUnit "Correct/LocalVariable" localVariableTypedABS,
