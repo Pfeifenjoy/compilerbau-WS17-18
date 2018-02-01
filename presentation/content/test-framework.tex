@@ -15,9 +15,7 @@ Tests werden in Korrekte und Falsche Testfälle unterschieden.
 	
 Die Test-Suite umfasst eine Token-Coverage von 100\%. 
 
-\begin{lstlisting}
-Tokencoverage: 71/71 (100%)
-\end{lstlisting}
+\par \medskip
 
 Zusätzlich umfasst die Test-Suite insgesamt 21 gültige und 12 ungültige Testfälle.
 
@@ -25,3 +23,41 @@ Zusätzlich umfasst die Test-Suite insgesamt 21 gültige und 12 ungültige Testf
 
 Ungültige Testfälle werden in Syntaxfehler (Parser) und Typfehler (Typchecker) unterschieden.
 \end{frame}
+
+\begin{frame}{Test-Suite: Testfälle}
+
+Jedes Testfile liegt in einem Ordner (Correct bzw. Wrong) mit zugehöriger .java-Datei. 	
+
+\par \medskip
+
+Ein Testfile besteht aus: 
+
+\begin{itemize}
+	\item Erwarteten Tokens
+	\item Erwarteter abstrakter Syntax
+	\item Erwarteter getypter abstrakter Syntax
+\end{itemize}
+
+Zusätzlich zum eigentlichen Testfile enthält der Ordner ein ClassFile in Haskell, mit der zu erwartenden Struktur des erzeugten Classfiles.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Test-Suite: Beispiel Testfile}
+\begin{lstlisting}[language=Haskell]
+module  Correct.EmptyClass.Steps where
+
+import           ABSTree
+import           Lexer.Token
+
+emptyTokens = [Lexer.Token.CLASS,
+              Lexer.Token.IDENTIFIER "Test",
+              Lexer.Token.LEFT_BRACE,
+              Lexer.Token.RIGHT_BRACE
+              ]
+
+emptyABS = [Class "Test" [] []]
+emptyTypedABS = [Class "Test" [] []]	
+\end{lstlisting}
+	
+\end{frame}
+
