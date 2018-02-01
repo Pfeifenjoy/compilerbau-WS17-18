@@ -303,6 +303,9 @@ StatementExpression
     | Expression DOT IDENTIFIER
         LEFT_PARANTHESES Arguments
         RIGHT_PARANTHESES                   { MethodCall $1 $3 $5 }
+    | IDENTIFIER
+        LEFT_PARANTHESES Arguments
+        RIGHT_PARANTHESES                   { MethodCall This $1 $3 }
 
 Type
     : IDENTIFIER                            { $1 }
