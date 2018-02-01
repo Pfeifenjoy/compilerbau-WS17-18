@@ -267,10 +267,9 @@ genCodeExpr (TypedExpr (InstVar obj varName) typ) =
   do code <- genCodeExpr obj
      indexVar
        <- case obj of
-            (LocalOrFieldVar cN) -> zoom classFile
-                                         $ genFieldRef varName cN typ
-            _                    -> zoom classFile
-                                         $ genFieldRefThis varName typ
+            (TypedExpr (LocalOrFieldVar _) cN)
+               -> zoom classFile $ genFieldRef varName cN typ
+            _  -> zoom classFile $ genFieldRefThis varName typ
      modify $ over line (+3)
      let (b1,b2) = split16Byte indexVar
      return $ code ++ [Getfield b1 b2] -- variable of a object
