@@ -349,19 +349,49 @@ MethodDecl
         LEFT_PARANTHESES MethodParameters
         RIGHT_PARANTHESES Block             { MethodDecl $4 $3 $6 $8 Public True }
 
+ConstructorDecl
+    : PUBLIC IDENTIFIER
+        LEFT_PARANTHESES MethodParameters
+        RIGHT_PARANTHESES Block             { MethodDecl $2 $2 $4 $6 Public True }
+    | PRIVATE IDENTIFIER
+        LEFT_PARANTHESES MethodParameters
+        RIGHT_PARANTHESES Block             { MethodDecl $2 $2 $4 $6 Private True }
+    | IDENTIFIER
+        LEFT_PARANTHESES MethodParameters
+        RIGHT_PARANTHESES Block             { MethodDecl $1 $1 $3 $5 Public True }
+
 ClassBody
-    : FieldDecl                             { ( [$1], [] ) }
-    | MethodDecl                            { ( [], [$1] ) }
-    | ClassBody FieldDecl                   { ( (fst $1) ++ [$2], snd $1 ) }
-    | ClassBody MethodDecl                  { ( fst $1, (snd $1) ++ [$2] ) }
+    : FieldDecl                             { ClassBodyDecl [$1] [] [] }
+    | MethodDecl                            { ClassBodyDecl [] [$1] [] }
+    | ConstructorDecl                       { ClassBodyDecl [] [] [$1] }
+    | ClassBody FieldDecl                   { ClassBodyDecl ((fields $1) ++ [$2]) (methods $1) (constructors $1) }
+    | ClassBody MethodDecl                  { ClassBodyDecl (fields $1) ((methods $1) ++ [$2]) (constructors $1) }
+    | ClassBody ConstructorDecl             { ClassBodyDecl (fields $1) (methods $1) ((constructors $1) ++ [$2]) }
 
 Class
     : CLASS IDENTIFIER LEFT_BRACE
-        ClassBody RIGHT_BRACE               { Class $2 (fst $4) (snd $4) }
+        ClassBody RIGHT_BRACE               { Class $2 (fields $4) ((methods $4) ++ (checkAndGetConstructors $2 $4)) }
     | CLASS IDENTIFIER LEFT_BRACE
         RIGHT_BRACE                         { Class $2 [] [] }
 
 {
+data ClassBodyDecl = ClassBodyDecl [FieldDecl] [MethodDecl] [MethodDecl]
+
+fields (ClassBodyDecl xs _ _) = xs
+methods (ClassBodyDecl _ xs _) = xs
+constructors (ClassBodyDecl _ _ xs) = xs
+
+checkConstructor :: String -> MethodDecl -> Bool
+checkConstructor name (MethodDecl cname _ _ _ _ _) = name == cname
+
+checkConstructors :: String -> [MethodDecl] -> [MethodDecl]
+checkConstructors name [] = []
+checkConstructors name (x : xs) = if (checkConstructor name x) then
+                                    ([x] ++ (checkConstructors name xs)) else
+                                    (error "Wrong constructor name.")
+
+checkAndGetConstructors name (ClassBodyDecl _ _ xs) = checkConstructors name xs
+
 parseError :: [Lexer.Token.Token] -> a
 parseError tokens = error ("Parse error " ++ (show tokens))
 
