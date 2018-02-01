@@ -269,6 +269,7 @@ Expression
     | BOOLEAN_LITERAL                       { BooleanLiteral $1 }
     | CHARACTER_LITERAL                     { CharLiteral $1 }
     | INTEGER_LITERAL                       { IntegerLiteral (fromIntegral $1) }
+    | SUBTRACT INTEGER_LITERAL              { IntegerLiteral (-1 * (fromIntegral $2)) }
     | JNULL                                 { JNull }
     | StatementExpression                   { StmtExprExpr $1 }
 
