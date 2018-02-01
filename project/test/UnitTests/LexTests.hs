@@ -21,12 +21,14 @@ import           Correct.WhileLoop.Steps
 import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
 import           Wrong.Syntax.Arithmetic.Steps
+import Correct.OperatorOverloading.Steps
 
 lexTests :: [TestUnit]
 lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/InstanzVariable" instanzVariableTokens,
             LexerUnit "Correct/ClassAssign" classAssignTokens,
             LexerUnit "Correct/ClassMethods" classMethodTokens,
+            LexerUnit "Correct/OperatorOverloading" operatorOverloadingTokens,
             LexerUnit "Correct/ForLoop" forLoopTokens,
             LexerUnit "Correct/EndlessForLoop" endlessForLoopTokens,
             LexerUnit "Correct/LocalVariable" localVariableTokens,
