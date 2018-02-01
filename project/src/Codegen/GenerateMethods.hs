@@ -351,23 +351,23 @@ genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
                  ("&",_)         -> return [Iand]
                  -- TODO 2 complement
                  ("==",_)        -> modify (over line (+7))
-                                    >> return [IfIcmpne 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                                    >> return [IfIcmpne 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  ("!=",_)        -> modify (over line (+7))
-                                    >> return [IfIcmpeq 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                                    >> return [IfIcmpeq 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  ("<" ,_)        -> modify (over line (+7))
-                                    >> return [IfIcmpge 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                                    >> return [IfIcmpge 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  (">=",_)        -> modify (over line (+7))
-                                    >> return [IfIcmplt 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                                    >> return [IfIcmplt 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  (">" ,_)        -> modify (over line (+7))
-                                    >> return [IfIcmple 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                                    >> return [IfIcmple 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  ("<=",_)        -> modify (over line (+7))
-                                    >> return [IfIcmpgt 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                                    >> return [IfIcmpgt 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  ("&&",_)        -> return [Iand]
                  ("|",_)         -> return [Ior]
                  ("||",_)        -> return [Ior]
