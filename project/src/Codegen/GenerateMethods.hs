@@ -89,7 +89,9 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                            , _continueLine = []
                            }
      put $ vars^.classFile
-     let addReturn = typ == "void" && last code /= A.Return
+     let addReturn = typ == "void" && lastNotRet code
+         lastNotRet [] = True
+         lastNotRet c  = last c /= A.Return
          accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
                                   , _tamLenAttr
