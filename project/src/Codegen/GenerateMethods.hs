@@ -49,7 +49,7 @@ genMethods vds = mapM_ (genMethod vds)
 genMethod :: [FieldDecl] -- ^ fields for initial code of constructor
           -> MethodDecl -> State ClassFile ()
 genMethod fds (MethodDecl name typ argDecls stmt vis static) =
-  do indexName <- genUTF8 name
+  do indexName <- if typ == "" then genUTF8 "<init>" else genUTF8 name
      -- generate initial code for constructors
      let genInitCode = mapM genFD
          genFD (FieldDecl vds _ _) = mapM genCode vds
@@ -574,7 +574,7 @@ genMethConst :: Type -- ^ return type
              -> State Vars Code
 genMethConst typ' cl name args =
   do let typ = "(" ++ concatMap (typeToDescriptor . \(TypedExpr _ t) -> t) args
-                   ++ ";)" ++ typ'
+                   ++ ")" ++ typeToDescriptor typ'
      idx <- zoom classFile $ genMethodRef name cl typ
      let (b1,b2) = split16Byte idx
      -- remove args and methodref from operand stack
