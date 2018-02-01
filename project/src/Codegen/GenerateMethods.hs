@@ -350,22 +350,22 @@ genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
                  (">>>" ,_)      -> return [Iushr]
                  ("&",_)         -> return [Iand]
                  -- TODO 2 complement
-                 ("==",_)        -> modify (over line (+8))
+                 ("==",_)        -> modify (over line (+7))
                                     >> return [IfIcmpne 0 3, Iconst1
                                               , Goto 0 3, Iconst0]
-                 ("!=",_)        -> modify (over line (+8))
+                 ("!=",_)        -> modify (over line (+7))
                                     >> return [IfIcmpeq 0 3, Iconst1
                                               , Goto 0 3, Iconst0]
-                 ("<" ,_)        -> modify (over line (+8))
+                 ("<" ,_)        -> modify (over line (+7))
                                     >> return [IfIcmpge 0 3, Iconst1
                                               , Goto 0 3, Iconst0]
-                 (">=",_)        -> modify (over line (+8))
+                 (">=",_)        -> modify (over line (+7))
                                     >> return [IfIcmplt 0 3, Iconst1
                                               , Goto 0 3, Iconst0]
-                 (">" ,_)        -> modify (over line (+8))
+                 (">" ,_)        -> modify (over line (+7))
                                     >> return [IfIcmple 0 3, Iconst1
                                               , Goto 0 3, Iconst0]
-                 ("<=",_)        -> modify (over line (+8))
+                 ("<=",_)        -> modify (over line (+7))
                                     >> return [IfIcmpgt 0 3, Iconst1
                                               , Goto 0 3, Iconst0]
                  ("&&",_)        -> return [Iand]
