@@ -49,7 +49,7 @@ genMethods vds = mapM_ (genMethod vds)
 genMethod :: [FieldDecl] -- ^ fields for initial code of constructor
           -> MethodDecl -> State ClassFile ()
 genMethod fds (MethodDecl name typ argDecls stmt vis static) =
-  do indexName <- genUTF8 name
+  do indexName <- if typ == "" then genUTF8 "<init>" else genUTF8 name
      -- generate initial code for constructors
      let genInitCode = mapM genFD
          genFD (FieldDecl vds _ _) = mapM genCode vds

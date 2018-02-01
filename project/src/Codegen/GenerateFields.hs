@@ -15,7 +15,6 @@ import Codegen.Data.Assembler
 import Codegen.GenerateConstantPool
 import Control.Lens
 import Control.Monad.Trans.State.Lazy
-import qualified Data.HashMap.Lazy as HM
 
 genFields :: Bool -- ^ exists constructor with no arguments
           -> [FieldDecl]
@@ -66,10 +65,7 @@ genInit vds =
   do indexType <- genUTF8 "()V"
      indexCode <- genUTF8 "Code"
      indexThis <- genMethodRefSuper "<init>" "()V"
-     indexClass <- view (this . indexTh) <$> get
-     (ClassInfo _ indexName _) <- fst . head . filter ((==indexClass) . snd)
-                                      . HM.toList . view arrayCp <$> get
-
+     indexName <- genUTF8 "<init>"
      codeVars <- mapM genCode vds
      let (b1,b2) = split16Byte indexThis
          code =  [Aload0,Invokespecial b1 b2]
