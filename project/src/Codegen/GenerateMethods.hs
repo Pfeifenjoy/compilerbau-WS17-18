@@ -574,7 +574,7 @@ genMethConst :: Type -- ^ return type
              -> State Vars Code
 genMethConst typ' cl name args =
   do let typ = "(" ++ concatMap (typeToDescriptor . \(TypedExpr _ t) -> t) args
-                   ++ ";)" ++ typ'
+                   ++ ")" ++ typeToDescriptor typ'
      idx <- zoom classFile $ genMethodRef name cl typ
      let (b1,b2) = split16Byte idx
      -- remove args and methodref from operand stack
