@@ -116,7 +116,7 @@ tokens :-
     null              { \s -> JNULL }
     $digit+           { \s -> INTEGER_LITERAL (fromIntegral (read s)) }
     $alpha [$alpha $digit \_ \']*   { \s -> IDENTIFIER s }
-    \'$alpha\'        { \s ->  CHARACTER_LITERAL ((\(_:snd:_) -> snd) s) }
+    \'.\'             { \s ->  CHARACTER_LITERAL ((\(_:snd:_) -> snd) s) }
     
 {
 }
