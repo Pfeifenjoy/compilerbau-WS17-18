@@ -25,7 +25,7 @@ genClass (Class typ fds mds)
       ClassFile { _magic           = Magic
                 -- TODO which version?
                 , _minver          = MinorVersion 0
-                , _maxver          = MajorVersion 53
+                , _maxver          = MajorVersion 48
                 , _countrCp        = 1
                 , _arrayCp         = fromList []
                 , _acfg            = AccessFlags [0x20]
