@@ -89,7 +89,9 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                            , _continueLine = []
                            }
      put $ vars^.classFile
-     let addReturn = typ == "void" && last code /= A.Return
+     let addReturn = typ == "void" && lastNotRet code
+         lastNotRet [] = True
+         lastNotRet c  = last c /= A.Return
          accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
                                   , _tamLenAttr
@@ -267,10 +269,9 @@ genCodeExpr (TypedExpr (InstVar obj varName) typ) =
   do code <- genCodeExpr obj
      indexVar
        <- case obj of
-            (LocalOrFieldVar cN) -> zoom classFile
-                                         $ genFieldRef varName cN typ
-            _                    -> zoom classFile
-                                         $ genFieldRefThis varName typ
+            (TypedExpr (LocalOrFieldVar _) cN)
+               -> zoom classFile $ genFieldRef varName cN typ
+            _  -> zoom classFile $ genFieldRefThis varName typ
      modify $ over line (+3)
      let (b1,b2) = split16Byte indexVar
      return $ code ++ [Getfield b1 b2] -- variable of a object
@@ -345,30 +346,34 @@ genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
                  ("*" ,"float")  -> return [Fmul]
                  ("*" ,"long")   -> return [Lmul]
                  ("*" ,_)        -> return [Imul]
+                 ("/" ,"double") -> return [Ddiv]
+                 ("/" ,"float")  -> return [Fdiv]
+                 ("/" ,"long")   -> return [Ldiv]
+                 ("/" ,_)        -> return [Idiv]
                  ("^" ,_)        -> return [Ixor]
                  ("<<" ,_)       -> return [Ishl]
                  (">>" ,_)       -> return [Ishr]
                  (">>>" ,_)      -> return [Iushr]
                  ("&",_)         -> return [Iand]
                  -- TODO 2 complement
-                 ("==",_)        -> modify (over line (+8))
-                                    >> return [IfIcmpne 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 ("!=",_)        -> modify (over line (+8))
-                                    >> return [IfIcmpeq 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 ("<" ,_)        -> modify (over line (+8))
-                                    >> return [IfIcmpge 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 (">=",_)        -> modify (over line (+8))
-                                    >> return [IfIcmplt 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 (">" ,_)        -> modify (over line (+8))
-                                    >> return [IfIcmple 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 ("<=",_)        -> modify (over line (+8))
-                                    >> return [IfIcmpgt 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                 ("==",_)        -> modify (over line (+7))
+                                    >> return [IfIcmpne 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 ("!=",_)        -> modify (over line (+7))
+                                    >> return [IfIcmpeq 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 ("<" ,_)        -> modify (over line (+7))
+                                    >> return [IfIcmpge 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 (">=",_)        -> modify (over line (+7))
+                                    >> return [IfIcmplt 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 (">" ,_)        -> modify (over line (+7))
+                                    >> return [IfIcmple 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 ("<=",_)        -> modify (over line (+7))
+                                    >> return [IfIcmpgt 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  ("&&",_)        -> return [Iand]
                  ("|",_)         -> return [Ior]
                  ("||",_)        -> return [Ior]
@@ -527,6 +532,7 @@ getCondBodyCode cond body =
 genIf :: (t  -> State Vars Code) -> Expr -> t -> t -> State Vars Code
 genIf gen cond bodyIf bodyElse =
   do condCode <- genCond cond False
+     modify $ over line (+3) -- length of branch
      branchLine <- (\n -> n-2) . view line <$> get
      bodyIfCode <- gen bodyIf
      gotoLine <- (+1) . view line <$> get
