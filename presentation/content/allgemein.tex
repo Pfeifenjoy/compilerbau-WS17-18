@@ -1,3 +1,30 @@
 \begin{frame}
 	\frametitle{Allgemein}
+	
+\textbf{Aufgabenstellung:}
+
+Entwickeln eines Mini-Java Compilers mit den zugehörigen Schritten: Lexer, Parser, TypChecker und Codegenerierung.
 \end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Allgemein: Ziel}
+
+\textbf{Ziel:}
+
+Korrektes Übersetzen der folgenden Klasse:
+
+\begin{lstlisting}[language=Java]
+class Faculty {
+  int fac(int n) {
+    int ret = 1;
+
+    while(n > 0) {
+      ret = ret * n;
+      n--;
+    }
+    return ret;
+  }
+}
+\end{lstlisting}	
+\end{frame}
+
