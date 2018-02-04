@@ -19,6 +19,7 @@ import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Control.Lens hiding (op)
 import Control.Monad.Trans.State.Lazy
+import qualified Data.Set as S
 
 -- | The name of a local variable.  It is the name in the source code
 --   followed by the deepness in a nested block
@@ -32,6 +33,7 @@ type LineNumber = Int
 
 data Vars = Vars { -- | maps the index of a local Variable to its name.
                    _localVar :: [HM.HashMap LocVarName LocVarIndex ]
+                 , _allLocalVar :: S.Set String
                  , _classFile :: ClassFile
                  , _curStack :: Int
                  , _maxStack :: Int
@@ -42,13 +44,12 @@ data Vars = Vars { -- | maps the index of a local Variable to its name.
 makeLenses ''Vars
 
 genMethods :: [FieldDecl] -> [MethodDecl] -> State ClassFile ()
-genMethods vds mds
-  = modify (set countMethods (length mds)) >> mapM_ (genMethod vds) mds
+genMethods vds = mapM_ (genMethod vds)
 
 genMethod :: [FieldDecl] -- ^ fields for initial code of constructor
           -> MethodDecl -> State ClassFile ()
 genMethod fds (MethodDecl name typ argDecls stmt vis static) =
-  do indexName <- genUTF8 name
+  do indexName <- if typ == "" then genUTF8 "<init>" else genUTF8 name
      -- generate initial code for constructors
      let genInitCode = mapM genFD
          genFD (FieldDecl vds _ _) = mapM genCode vds
@@ -73,20 +74,37 @@ genMethod fds (MethodDecl name typ argDecls stmt vis static) =
                                             (map
                                               (\(ArgumentDecl n _ _) -> n)
                                               argDecls) [1..]]
+                           , _allLocalVar
+                                = S.fromList $
+                                   "This"
+                                   : map (\(ArgumentDecl n _ _) -> n)
+                                         argDecls
                            , _classFile = cf
-                           , _curStack = 0
+                           , _curStack = case () of
+                                          _ | lengthInit > 5 -> 2
+                                          _ | lengthInit > 0 -> 1
+                                          _ ->  0
                            , _maxStack = 0
-                           , _line = 0
+                           , _line = lengthInit
                            , _continueLine = []
                            }
      put $ vars^.classFile
-     let accessFlags = visToFlag vis : [8 | static]
+     let addReturn = typ == "void" && lastNotRet code
+         lastNotRet [] = True
+         lastNotRet c  = last c /= A.Return
+         accessFlags = visToFlag vis : [8 | static]
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = 16 + vars^.line + lengthInit
+                                  , _tamLenAttr
+                                       = 12 + vars^.line + if addReturn
+                                                           then 1 else 0
                                   , _lenStackAttr = vars^.maxStack
-                                  , _lenLocalAttr = length $ vars^.localVar
-                                  , _tamCodeAttr = vars^.line + lengthInit
-                                  , _arrayCodeAttr = code
+                                  , _lenLocalAttr
+                                       = S.size $ vars^.allLocalVar
+                                  , _tamCodeAttr
+                                       = vars^.line + if addReturn
+                                                      then 1 else 0
+                                  , _arrayCodeAttr
+                                       = code ++ [A.Return | addReturn]
                                   , _tamExAttr = 0
                                   , _arrayExAttr = []
                                   , _tamAtrrAttr = 0
@@ -127,11 +145,12 @@ genCodeStmt (TypedStmt (Return expr) typ) =
 
 -- While
 genCodeStmt (While cond body) =
-  do (refLine,condCode,bodyCode) <- getForWhileCode cond body
+  do (refLine,branchLine,condCode,bodyCode) <- getForWhileCode cond body
+     gotoLine <- (+1) . view line <$> get
      modify $ over line (+3) -- length of Goto
      breakLine <- (+1) . view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ breakLine - refLine
-         (b3,b4) = split16Byte . twoCompliment16 $ refLine - breakLine - 1
+     let (b1,b2) = split16Byte $ breakLine - branchLine
+         (b3,b4) = split16Byte $ refLine - gotoLine
          code = condCode b1 b2 ++ adBreaks refLine breakLine bodyCode
                                ++ [Goto b3 b4]
      modify $ over continueLine tail
@@ -142,10 +161,11 @@ genCodeStmt (DoWhile cond body) =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
      bodyCode <- genCodeStmt body
-     condCode <- genCond cond
+     condCode <- genCond cond True
+     branchLine <- (+1) . view line <$> get
      modify $ over line (+3) -- length of Ifne
      breakLine <- (+1) . view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
+     let (b1,b2) = split16Byte $ refLine - branchLine
          code = adBreaks refLine breakLine bodyCode ++ condCode b1 b2
      modify $ over continueLine tail
      return code
@@ -153,12 +173,13 @@ genCodeStmt (DoWhile cond body) =
 -- For
 genCodeStmt (For initStmt cond iter body) =
   do initialCode <- genCodeStmt initStmt -- i.e. i = 1
-     (refLine,condCode,bodyCode) <- getForWhileCode cond body
+     (refLine,branchLine,condCode,bodyCode) <- getForWhileCode cond body
      iterateCode <- genCodeStmt iter -- i.e. i++
+     gotoLine <- (+1) . view line <$> get
      modify (over line (+3)) -- Goto b1 b2
-     breakLine <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16  $ breakLine - refLine
-         (b3,b4) = split16Byte . twoCompliment16  $ refLine - breakLine - 1
+     breakLine <- (+1) . view line <$> get
+     let (b1,b2) = split16Byte $ breakLine - branchLine
+         (b3,b4) = split16Byte $ refLine - gotoLine
          code = initialCode ++ condCode b1 b2
                             ++ adBreaks refLine breakLine bodyCode
                             ++ iterateCode
@@ -174,43 +195,44 @@ genCodeStmt Continue =
   do modify $ over line (+3)
      refLine <- (+1) . view line <$> get
      conLine <- head . view continueLine <$> get
-     let (b1,b2) = split16Byte . twoCompliment16  $ conLine - refLine
+     let (b1,b2) = split16Byte $ conLine - refLine
      return [Goto b1 b2]
 
 genCodeStmt (If cond bodyIf (Just bodyElse))
   = genIf genCodeStmt cond bodyIf bodyElse
 
 genCodeStmt (If cond body Nothing) =
-  do ref <- (+1) . view line <$> get
-     (condCode,bodyCode) <- getCondBodyCode cond body
-     endIf <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ endIf - ref
+  do (branchLine,condCode,bodyCode) <- getCondBodyCode cond body
+     endIf <- (+1) . view line <$> get
+     let (b1,b2) = split16Byte $ endIf - branchLine
      return $ condCode b1 b2 ++ bodyCode
 
-genCodeStmt Switch{} = undefined
--- genCodeStmt (Switch expr switchCases (Just stmts)) =
---   do exprCode <- genCodeExpr expr -- code to compare
---      ref <- view line <$> get
---      let pad = mod (ref+1) 4
---          len = pad + 8 + 2 * length switchCases
---      modify $ over line (+len) -- length of tableswitch assembler
---      caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
---      def <- (+1) . view line <$> get
---      -- TODO default code
---      modifyStack (-1)
---      let (d1,d2,d3,d4) = split32Byte def
---          (n1,n2,n3,n4) = split32Byte $ length switchCases
---      return $ exprCode
---                ++ [Lookupswitch (replicate pad 0)
---                    d1 d2 d3 d4 n1 n2 n3 n4
---                    (map (\(x,y,_)
---                       -> let (b1,b2,b3,b4) = split32Byte x
---                              (b5,b6,b7,b8) = split32Byte y
---                          in (b1,b2,b3,b4,b5,b6,b7,b8))
---                     caseCodes)]
---                ++ concatMap (\(_,_,x) -> x) caseCodes
---
--- genCodeStmt (Switch expr switchCases Nothing) = undefined
+genCodeStmt (Switch expr switchCases defCase) =
+  do exprCode <- genCodeExpr expr -- code to compare
+     ref <- view line <$> get
+     let pad = mod (ref+1) 4
+         len = pad + 8 + 2 * length switchCases
+     modify $ over line (+len) -- length of tableswitch assembler
+     caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
+     def <- (+1) . view line <$> get
+     -- TODO add goto address to end of switch case
+     defCode <- case defCase of
+                  Nothing -> return []
+                  (Just stmts) -> genCodeStmt $ Block stmts
+     modifyStack (-1)
+     let (d1,d2,d3,d4) = split32Byte def
+         (n1,n2,n3,n4) = split32Byte $ length switchCases
+     return $ exprCode
+               ++ [Lookupswitch (replicate pad 0)
+                   d1 d2 d3 d4 n1 n2 n3 n4
+                   (map (\(x,y,_)
+                      -> let (b1,b2,b3,b4) = split32Byte x
+                             (b5,b6,b7,b8) = split32Byte y
+                         in (b1,b2,b3,b4,b5,b6,b7,b8))
+                    caseCodes)]
+               ++ concatMap (\(_,_,x) -> x) caseCodes
+               ++ defCode
+
 genCodeStmt (LocalVarDecls vds)
   = foldr ((-++-) . genCodeVarDecl) (return []) vds
 genCodeStmt (StmtExprStmt stmtExpr) = genCodeStmtExpr stmtExpr
@@ -226,6 +248,7 @@ genCodeExpr (TypedExpr (LocalOrFieldVar var) typ)=
      case locVar of
        (Just idx)
          -> do modify $ over line (+(if idx > 3 then 2 else 1))
+               modifyStack 1
                return $ case typ of
                           "double"    -> [dload idx]
                           "float"     -> [fload idx]
@@ -246,10 +269,9 @@ genCodeExpr (TypedExpr (InstVar obj varName) typ) =
   do code <- genCodeExpr obj
      indexVar
        <- case obj of
-            (LocalOrFieldVar cN) -> zoom classFile
-                                         $ genFieldRef varName cN typ
-            _                    -> zoom classFile
-                                         $ genFieldRefThis varName typ
+            (TypedExpr (LocalOrFieldVar _) cN)
+               -> zoom classFile $ genFieldRef varName cN typ
+            _  -> zoom classFile $ genFieldRefThis varName typ
      modify $ over line (+3)
      let (b1,b2) = split16Byte indexVar
      return $ code ++ [Getfield b1 b2] -- variable of a object
@@ -324,30 +346,34 @@ genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
                  ("*" ,"float")  -> return [Fmul]
                  ("*" ,"long")   -> return [Lmul]
                  ("*" ,_)        -> return [Imul]
+                 ("/" ,"double") -> return [Ddiv]
+                 ("/" ,"float")  -> return [Fdiv]
+                 ("/" ,"long")   -> return [Ldiv]
+                 ("/" ,_)        -> return [Idiv]
                  ("^" ,_)        -> return [Ixor]
                  ("<<" ,_)       -> return [Ishl]
                  (">>" ,_)       -> return [Ishr]
                  (">>>" ,_)      -> return [Iushr]
                  ("&",_)         -> return [Iand]
                  -- TODO 2 complement
-                 ("==",_)        -> modify (over line (+8))
-                                    >> return [IfIcmpne 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 ("!=",_)        -> modify (over line (+8))
-                                    >> return [IfIcmpeq 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 ("<" ,_)        -> modify (over line (+8))
-                                    >> return [IfIcmpge 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 (">=",_)        -> modify (over line (+8))
-                                    >> return [IfIcmplt 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 (">" ,_)        -> modify (over line (+8))
-                                    >> return [IfIcmple 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
-                 ("<=",_)        -> modify (over line (+8))
-                                    >> return [IfIcmpgt 0 3, Iconst1
-                                              , Goto 0 3, Iconst0]
+                 ("==",_)        -> modify (over line (+7))
+                                    >> return [IfIcmpne 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 ("!=",_)        -> modify (over line (+7))
+                                    >> return [IfIcmpeq 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 ("<" ,_)        -> modify (over line (+7))
+                                    >> return [IfIcmpge 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 (">=",_)        -> modify (over line (+7))
+                                    >> return [IfIcmplt 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 (">" ,_)        -> modify (over line (+7))
+                                    >> return [IfIcmple 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
+                 ("<=",_)        -> modify (over line (+7))
+                                    >> return [IfIcmpgt 0 7, Iconst1
+                                              , Goto 0 4, Iconst0]
                  ("&&",_)        -> return [Iand]
                  ("|",_)         -> return [Ior]
                  ("||",_)        -> return [Ior]
@@ -365,14 +391,20 @@ genCodeExpr (Ternary cond expr1 expr2)
   = genIf genCodeExpr cond expr1 expr2
 
 genCodeExpr (BooleanLiteral True)
-  = modify (over line (+1)) >> return [Iconst1]
+  = do modify (over line (+1))
+       modifyStack 1
+       return [Iconst1]
 genCodeExpr (BooleanLiteral False)
-  = modify (over line (+1)) >> return [Iconst0]
+  = do modify (over line (+1))
+       modifyStack 1
+       return [Iconst0]
 genCodeExpr (CharLiteral char)
   = do modify (over line (+(if ord char> 5 then 2 else 1)))
+       modifyStack 1
        return [iconst $ ord char]
 genCodeExpr (IntegerLiteral int)
   = do modify (over line (+(if int > 5 then 2 else 1)))
+       modifyStack 1
        return [iconst $ fromIntegral int]
     --  LongLiteral Int64
     --  FloatLiteral Float
@@ -396,40 +428,41 @@ genCodeVarDecl (VariableDecl name typ _ mayExpr) =
                          name
                          (maximum (map (HM.foldr max 0) (h:hs))+1)
                          h : hs
+     -- remember all variable to get the number
+     modify $ over allLocalVar $ S.insert name
      case mayExpr of
        (Just expr) -> genCodeStmtExpr
                         (Assign
-                           (TypedExpr (LocalOrFieldVar name) typ) expr)
+                          (TypedExpr (LocalOrFieldVar name) typ) expr)
        _           -> return []
 
 genCodeStmtExpr :: StmtExpr -> State Vars Code
 genCodeStmtExpr (Assign (LocalOrFieldVar _) _)
   = error "untyped local or field var"
 genCodeStmtExpr (Assign (TypedExpr (LocalOrFieldVar var) typ) expr)
-  = genCodeExpr expr
-    -++- do exprCode <- genCodeExpr expr
-            locVar <- getLocIdx var . view localVar <$> get
-            modifyStack (-1)
-            case locVar of
-              -- local variable
-              (Just idx)
-                -> do modify $ over line (+(if idx > 3 then 2 else 1))
-                      return $ exprCode ++ case typ of
-                                 "double"  -> [dstore idx]
-                                 "float"   -> [fstore idx]
-                                 "long"    -> [lstore idx]
-                                 "byte"    -> [istore idx]
-                                 "short"   -> [istore idx]
-                                 "int"     -> [istore idx]
-                                 "boolean" -> [istore idx]
-                                 "char"    -> [istore idx]
-                                 _         -> [astore idx]
-              -- TODO static call in other class
-              -- field variable
-              _ -> do idx <- zoom classFile $ genFieldRefThis var typ
-                      modify $ over line (+3)
-                      let (b1,b2) = split16Byte idx
-                      return $ exprCode ++ [Putfield b1 b2] -- TODO or putstatic
+  = do exprCode <- genCodeExpr expr
+       locVar <- getLocIdx var . view localVar <$> get
+       modifyStack (-1)
+       case locVar of
+         -- local variable
+         (Just idx)
+           -> do modify $ over line (+(if idx > 3 then 2 else 1))
+                 return $ exprCode ++ case typ of
+                            "double"  -> [dstore idx]
+                            "float"   -> [fstore idx]
+                            "long"    -> [lstore idx]
+                            "byte"    -> [istore idx]
+                            "short"   -> [istore idx]
+                            "int"     -> [istore idx]
+                            "boolean" -> [istore idx]
+                            "char"    -> [istore idx]
+                            _         -> [astore idx]
+         -- TODO static call in other class
+         -- field variable
+         _ -> do idx <- zoom classFile $ genFieldRefThis var typ
+                 modify $ over line (+3)
+                 let (b1,b2) = split16Byte idx
+                 return $ exprCode ++ [Putfield b1 b2] -- TODO or putstatic
 
 genCodeStmtExpr (Assign (InstVar _ _) _)
   = error "untyped instance var"
@@ -475,57 +508,69 @@ genCodeSwitchCase (SwitchCase expr cas) =
   do lin <- view line <$> get
      code <- genCodeStmt (Block cas)
      modify $ over line (+3) -- length of goto
-     -- goto offset will be added later TODO
+     -- goto offset will be added later
      return (lin,evalInt expr,code++[Goto 0 0])
 
 -- helper functions
 
-getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,Int -> Int -> Code,Code)
+getForWhileCode :: Expr -> Stmt -> State Vars (LineNumber,LineNumber, Byte -> Byte -> Code,Code)
 getForWhileCode cond body =
   do refLine <- (+1) . view line <$> get
      modify $ over continueLine (refLine:)
-     (condCode,bodyCode) <- getCondBodyCode cond body
-     return (refLine,condCode,bodyCode)
+     (condLine,condCode,bodyCode) <- getCondBodyCode cond body
+     return (refLine,condLine,condCode,bodyCode)
 
-getCondBodyCode :: Expr -> Stmt -> State Vars (Int -> Int -> Code,Code)
+getCondBodyCode :: Expr -> Stmt -> State Vars (LineNumber,Byte -> Byte -> Code,Code)
 getCondBodyCode cond body =
-  do condCode <- genCond cond
+  do condCode <- genCond cond False
+     refLine <- (+1) . view line <$> get -- line of branch
      modify (over line (+3)) -- jump + 2 branch bytes
      bodyCode <- genCodeStmt body
-     return (condCode,bodyCode)
+     return (refLine,condCode,bodyCode)
 
 -- gen If or cond?e1:e2
 genIf :: (t  -> State Vars Code) -> Expr -> t -> t -> State Vars Code
 genIf gen cond bodyIf bodyElse =
-  do condCode <- genCond cond
-     ref <- (+1) . view line <$> get
-     modify $ over line (+3) -- length of Ifeq
+  do condCode <- genCond cond False
+     modify $ over line (+3) -- length of branch
+     branchLine <- (\n -> n-2) . view line <$> get
      bodyIfCode <- gen bodyIf
-     endIf <- view line <$> get
-     modify $ over line (+1)
+     gotoLine <- (+1) . view line <$> get
+     modify $ over line (+3) -- length of Goto
+     elseLine <- (+1) . view line <$> get
      bodyElseCode <- gen bodyElse
-     endElse <- view line <$> get
-     let (b1,b2) = split16Byte . twoCompliment16 $ endIf + 4 - ref
-         (b3,b4) = split16Byte . twoCompliment16  $ endElse - endIf
+     endElse <- (+1) . view line <$> get
+     let (b1,b2) = split16Byte $ elseLine - branchLine
+         (b3,b4) = split16Byte $ endElse - gotoLine
      return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4]
                        ++ bodyElseCode
 
-genCond :: Expr -> State Vars (Int -> Int -> Code)
-genCond (TypedExpr (Binary ">" _ _) "") = undefined -- TODO other types
-genCond (TypedExpr (Binary op e1 e2) _) =
+genCond :: Expr -> Bool -- ^ is doWhile?
+           -> State Vars (Byte -> Byte -> Code)
+genCond (TypedExpr (Binary ">" _ _) "") _ = undefined -- TODO other types
+genCond (TypedExpr (Binary op e1 e2) _) doWhile =
   do c1 <- genCodeExpr e1
      c2 <- genCodeExpr e2
-     return $ \b1 b2 -> c1 ++ c2 ++ case op of
-                                     "==" -> [IfIcmpeq b1 b2]
-                                     "!=" -> [IfIcmpne b1 b2]
-                                     "<"  -> [IfIcmplt b1 b2]
-                                     ">=" -> [IfIcmpge b1 b2]
-                                     ">"  -> [IfIcmpgt b1 b2]
-                                     "<=" -> [IfIcmple b1 b2]
-                                     _    -> error $ "unknown operation" ++ op
-genCond (TypedExpr expr _) = do c <- genCodeExpr expr
-                                return $ \b1 b2 -> c ++ [Ifeq b1 b2]
-genCond _ = error "untyped expression"
+     return $ \b1 b2 -> c1 ++ c2
+                           ++ case op of
+                                "==" | doWhile   -> [IfIcmpeq b1 b2]
+                                     | otherwise -> [IfIcmpne b1 b2]
+                                "!=" | doWhile   -> [IfIcmpne b1 b2]
+                                     | otherwise -> [IfIcmpeq b1 b2]
+                                "<"  | doWhile   -> [IfIcmplt b1 b2]
+                                     | otherwise -> [IfIcmpge b1 b2]
+                                ">=" | doWhile   -> [IfIcmpge b1 b2]
+                                     | otherwise -> [IfIcmplt b1 b2]
+                                ">"  | doWhile   -> [IfIcmpgt b1 b2]
+                                     | otherwise -> [IfIcmple b1 b2]
+                                "<=" | doWhile   -> [IfIcmple b1 b2]
+                                     | otherwise -> [IfIcmpgt b1 b2]
+                                _   -> error $ "unknown operation" ++ op
+genCond (TypedExpr expr _) doWhile
+  = do c <- genCodeExpr expr
+       return $ \b1 b2 -> c ++ if doWhile then [Ifeq b1 b2]
+                                          else [Ifne b1 b2]
+genCond _ _ = error "untyped expression"
 
 -- generate a method or a constructor
 genMethConst :: Type -- ^ return type
@@ -535,7 +580,7 @@ genMethConst :: Type -- ^ return type
              -> State Vars Code
 genMethConst typ' cl name args =
   do let typ = "(" ++ concatMap (typeToDescriptor . \(TypedExpr _ t) -> t) args
-                   ++ ";)" ++ typ'
+                   ++ ")" ++ typeToDescriptor typ'
      idx <- zoom classFile $ genMethodRef name cl typ
      let (b1,b2) = split16Byte idx
      -- remove args and methodref from operand stack
@@ -568,7 +613,7 @@ adBreaks :: LineNumber -- ^ current line in code
 adBreaks _ _ [] = []
 adBreaks refIndex idx (Goto 0 0:as)
   = Goto b1 b2: adBreaks (refIndex + 1) idx as
-      where (b1,b2) = split16Byte . twoCompliment16 $ idx - refIndex
+      where (b1,b2) = split16Byte $ idx - refIndex
 adBreaks refIndex idx (a:as) = a : adBreaks (refIndex + 1) idx as
 
 

@@ -22,6 +22,7 @@ import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
 import           Wrong.Syntax.Arithmetic.Steps
 import Correct.OperatorOverloading.Steps
+import Correct.MethodArguments.Steps
 
 lexTests :: [TestUnit]
 lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
@@ -29,6 +30,7 @@ lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/ClassAssign" classAssignTokens,
             LexerUnit "Correct/ClassMethods" classMethodTokens,
             LexerUnit "Correct/OperatorOverloading" operatorOverloadingTokens,
+            LexerUnit "Correct/MethodArguments" methodArgumentsTokens,
             LexerUnit "Correct/ForLoop" forLoopTokens,
             LexerUnit "Correct/EndlessForLoop" endlessForLoopTokens,
             LexerUnit "Correct/LocalVariable" localVariableTokens,

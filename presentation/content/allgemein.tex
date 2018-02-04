@@ -1,3 +1,29 @@
 \begin{frame}
 	\frametitle{Allgemein}
+	
+\textbf{Aufgabenstellung:}
+
+Entwickeln eines Mini-Java Compilers mit den zugehörigen Schritten: Lexer, Parser, TypChecker und Codegenerierung.
 \end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Allgemein: Ziel}
+
+\textbf{Ziel:} Korrektes Übersetzen der folgenden Klasse:
+
+\begin{lstlisting}[language=Java]
+class FibonacciLoop {
+  int getFib(int n) {
+    int f1 = 0, f2 = 1;
+   
+    for(int i = n; i > 1; i--) {
+      int tmp = f2;
+      f2 += f1;
+      f1 = tmp;
+    }
+    return (n<2) ? n : f2;
+  }
+}
+\end{lstlisting}	
+\end{frame}
+
