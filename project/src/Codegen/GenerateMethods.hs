@@ -19,6 +19,7 @@ import Codegen.Data.ClassFormat
 import Codegen.GenerateConstantPool
 import Control.Lens hiding (op)
 import Control.Monad.Trans.State.Lazy
+import Control.Monad(when)
 import qualified Data.Set as S
 
 -- | The name of a local variable.  It is the name in the source code
@@ -538,14 +539,25 @@ genIf gen cond bodyIf bodyElse =
      modify $ over line (+3) -- length of branch
      branchLine <- (\n -> n-2) . view line <$> get
      bodyIfCode <- gen bodyIf
+     let isReturn [] = False
+         isReturn [Ireturn] = True
+         isReturn [Lreturn] = True
+         isReturn [Freturn] = True
+         isReturn [Dreturn] = True
+         isReturn [Areturn] = True
+         isReturn [A.Return] = True
+         isReturn (_:xs) = isReturn xs
+         addGoto = not $ isReturn bodyIfCode
      gotoLine <- (+1) . view line <$> get
-     modify $ over line (+3) -- length of Goto
+     -- if last statement is return goto never got reached
+     when addGoto
+       (modify $ over line (+3)) -- length of Goto
      elseLine <- (+1) . view line <$> get
      bodyElseCode <- gen bodyElse
      endElse <- (+1) . view line <$> get
      let (b1,b2) = split16Byte $ elseLine - branchLine
          (b3,b4) = split16Byte $ endElse - gotoLine
-     return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4]
+     return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4| addGoto]
                        ++ bodyElseCode
 
 genCond :: Expr -> Bool -- ^ is doWhile?
