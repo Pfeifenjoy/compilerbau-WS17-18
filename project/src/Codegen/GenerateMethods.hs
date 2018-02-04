@@ -493,8 +493,11 @@ genCodeStmtExpr (New typ args) =
      modifyStack 2
      ([A.New b1 b2,Dup]++) <$> genMethConst "void" typ "<init>" args
 
-genCodeStmtExpr (TypedStmtExpr (MethodCall (TypedExpr _ cl) n args) typ)
-  = genMethConst typ cl n args
+genCodeStmtExpr (TypedStmtExpr (MethodCall (TypedExpr obj cl) n args) typ) =
+  do codeArgs <- foldr ((-++-) . genCodeExpr) (return []) args
+     codeObj <- genCodeExpr obj
+     code <- genMethConst typ cl n args
+     return $ codeArgs ++ codeObj ++ code
 
 -- TODO whats the difference?
 genCodeStmtExpr (LazyAssign var expr)
