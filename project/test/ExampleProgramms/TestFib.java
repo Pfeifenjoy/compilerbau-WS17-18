@@ -1,8 +1,8 @@
 class TestFib {
 
 	public static void main(String[] args) {
-		Fib f = new Fib();
+		FibonacciLoop f = new FibonacciLoop();
 
-		System.out.println(f.getFib(4));
+		System.out.println(f.getFib(32));
 	}
 }
