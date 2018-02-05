@@ -9,21 +9,39 @@ Entwickeln eines Mini-Java Compilers mit den zugehörigen Schritten: Lexer, Pars
 \begin{frame}[fragile]
 \frametitle{Allgemein: Ziel}
 
-\textbf{Ziel:} Korrektes Übersetzen der folgenden Klasse:
+\textbf{Ziel} 
+
+Korrektes Übersetzen der folgenden Klasse:
 
 \begin{lstlisting}[language=Java]
-class FibonacciLoop {
+class Fibonacci {
   int getFib(int n) {
-    int f1 = 0, f2 = 1;
-   
-    for(int i = n; i > 1; i--) {
-      int tmp = f2;
-      f2 += f1;
-      f1 = tmp;
-    }
-    return (n<2) ? n : f2;
+    return (n < 2) ? n : getFib(n-1) + getFib(n-2);
   }
 }
 \end{lstlisting}	
 \end{frame}
 
+
+
+\begin{frame}{Featureliste}
+
+Umgesetze Features (Auszug):
+
+\begin{itemize}
+	\item Ternary Operator
+	\item For / While / DoWhile 
+	\item If / If-Else / Switch-Case
+	\item Pre- bzw. Post Inkrement/Dekrement
+	\item Arithmetische Operatoren (+, -, /, div, mod, *) inklusive Zuweisung (+=, etc.)
+\end{itemize}	
+\end{frame}
+
+\begin{frame}{Entwicklung}
+
+Code-Sharing über GitHub (https://github.com/Pfeifenjoy/compilerbau-WS17-18) mit continuous integration (travis).
+
+\par \medskip
+
+Als Build-System wird cabal eingesetzt.	
+\end{frame}
