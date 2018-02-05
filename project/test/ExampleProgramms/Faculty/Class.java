@@ -1,14 +1,5 @@
 class Faculty {
-
 	int fac(int n) {
-		int ret = 1;
-
-		while(n > 0) {
-			ret = ret * n;
-			n--;
-		}
-		
-		return ret;
+		return (n < 3) ? n : n * fac(n-1);
 	}
-
 }
