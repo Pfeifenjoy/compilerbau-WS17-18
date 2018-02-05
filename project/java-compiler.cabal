@@ -31,7 +31,7 @@ library
 
 executable jc
   main-is:             Main.hs
-  build-depends:       base, argparser, java-compiler
+  build-depends:       base, argparser, java-compiler, filepath, directory
   hs-source-dirs:      cli
   default-language:    Haskell2010
 
