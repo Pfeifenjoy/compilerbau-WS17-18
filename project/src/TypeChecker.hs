@@ -33,7 +33,7 @@ checkClass (Class classType fieldDecs methodDecs) visibleClassList =
     in (Class classType typedFieldDecs typedMethodDecs)
 
 
--- typecheck field declarations and create LocVarTable in the process
+-- typecheck field declarations and generate LocVarTable in the process
 typeCheckFieldDecs :: FieldDecs 
                       -> Type 
                       -> VisibleClassList 
@@ -76,7 +76,8 @@ typeCheckFieldDecs fieldDecs thisType visibleClassList =
                                            ++ varType ++ " variable "
                                            ++ varName ++ " with type "
                                            ++ initExprType
-                     
+
+
 -- typecheck class method declarations
 typeCheckMethodDecs :: MethodDecs 
                        -> LocVarTable 
@@ -85,6 +86,7 @@ typeCheckMethodDecs :: MethodDecs
 typeCheckMethodDecs methodDecs locVarTable visibleClassList =
     map (\method -> typeCheckMethod method locVarTable visibleClassList)
         methodDecs
+
 
 -- typecheck a single class method
 typeCheckMethod :: MethodDecl -> LocVarTable -> VisibleClassList -> MethodDecl
@@ -97,8 +99,7 @@ typeCheckMethod (MethodDecl name returnType argDecs body visibility isStatic)
                            Map.insert argName argType currentArgVarTable)
                   Map.empty
                   argDecs
-        shadowedLocVarTable =
-            Map.union argVarTable locVarTable
+        shadowedLocVarTable = Map.union argVarTable locVarTable
         typedBody@(TypedStmt _ bodyType) =
             typeCheckStmt body shadowedLocVarTable visibleClassList
     in if bodyType == returnType
@@ -108,29 +109,33 @@ typeCheckMethod (MethodDecl name returnType argDecs body visibility isStatic)
                   ++ " do not match"
             
 
--- typecheck expressions
+-- TYPECHECKING OF EXPRESSIONS:
 typeCheckExpr :: Expr -> LocVarTable -> [Class] -> Expr
+-- This 
 typeCheckExpr This locVarTable visibleClassList =
     TypedExpr This (fromJust $ Map.lookup "this" locVarTable)
+-- LocalOrFieldVar
 typeCheckExpr expr@(LocalOrFieldVar varName) locVarTable visibleClassList = 
-    let maybeVarType = Map.lookup varName locVarTable
-    in case maybeVarType of
+    case Map.lookup varName locVarTable of
         Just varType -> TypedExpr expr varType
-        Nothing      -> error $ "Unknown variable " ++ varName
-                                ++ " encountered"
+        Nothing      -> error $ "Unknown variable " ++ varName ++ " encountered"
+-- InstVar 
 typeCheckExpr (InstVar instExpr instVarName) locVarTable visibleClassList =
     let typedInstExpr@(TypedExpr _ instExprType) =
             typeCheckExpr instExpr locVarTable visibleClassList
+        thisType =
+            fromJust $ Map.lookup "this" locVarTable
     in case classLookup instExprType visibleClassList of
            Nothing -> error $ "Class " ++ instExprType ++ " not found"
            Just instClass ->
-               case classFieldLookup instVarName instClass of
+               case classFieldLookup instVarName instClass thisType of
                    Nothing -> error $ "Class " ++ instExprType
                                       ++ " has no (visible) field "
                                       ++ instVarName
                    Just fieldType ->
                        TypedExpr (InstVar typedInstExpr instVarName)
                                  fieldType
+-- Unary operators
 typeCheckExpr (Unary operator operandExpr) locVarTable visibleClassList =
     let typedOperandExpr@(TypedExpr _ operandExprType) =
             typeCheckExpr operandExpr locVarTable visibleClassList
@@ -139,7 +144,8 @@ typeCheckExpr (Unary operator operandExpr) locVarTable visibleClassList =
     in if (operator, operandExprType) `elem` possibleCombinations
        then TypedExpr (Unary operator typedOperandExpr) operandExprType
        else error $ "Unary operator " ++ operator ++ " is not compatible with "
-                    ++ "type " ++ operandExprType 
+                    ++ "type " ++ operandExprType
+-- Binary operators 
 typeCheckExpr (Binary operator operandExprA operandExprB)
               locVarTable
               visibleClassList =
@@ -147,31 +153,28 @@ typeCheckExpr (Binary operator operandExprA operandExprB)
             typeCheckExpr operandExprA locVarTable visibleClassList
         typedOperandExprB@(TypedExpr _ operandExprBType) =
             typeCheckExpr operandExprB locVarTable visibleClassList
-        operandError = error $ "Operator " ++ operator ++ " can not be "
-                               ++ "applied to types " ++ operandExprAType
-                               ++ " and " ++ operandExprBType                               
+        operandError = 
+            error $ "Operator " ++ operator ++ " can not be applied to types "
+                  ++ operandExprAType ++ " and " ++ operandExprBType                               
         resultType = 
             case (operator, operandExprAType, operandExprBType) of
-                     (op, "int", "int")
-                         | op `elem` ["+","-","*","/","%"
-                                     ,"&","|","^","<<",">>",">>>"] -> "int"
-                         | op `elem` ["<=",">=","<",">"] -> "boolean"
-                         | otherwise -> operandError 
-                     ("||", "boolean", "boolean") -> "boolean"
-                     ("&&", "boolean", "boolean") -> "boolean"
-                     (op, operA, operB) 
-                         | op `elem` ["==","!="] && operA == operB -> operA
-                         | otherwise -> operandError
-    in TypedExpr (Binary operator
-                         typedOperandExprA
-                         typedOperandExprB)
-                 resultType                         
-typeCheckExpr (InstanceOf instExpr proposedType)
-              locVarTable
-              visibleClassList =
-    let typedInstExpr = 
-            typeCheckExpr instExpr locVarTable visibleClassList
+                (op, "int", "int")
+                    | op `elem` ["+", "-", "*", "/", "%", "&", "|", "^", "<<"
+                                , ">>", ">>>"] -> "int"
+                    | op `elem` ["<=",">=","<",">"] -> "boolean"
+                    | otherwise -> operandError 
+                ("||", "boolean", "boolean") -> "boolean"
+                ("&&", "boolean", "boolean") -> "boolean"
+                (op, operA, operB) 
+                    | op `elem` ["==","!="] && operA == operB -> operA
+                    | otherwise -> operandError
+    in TypedExpr (Binary operator typedOperandExprA typedOperandExprB)
+                 resultType            
+-- InstanceOf              
+typeCheckExpr (InstanceOf instExpr proposedType) locVarTable visibleClassList =
+    let typedInstExpr = typeCheckExpr instExpr locVarTable visibleClassList
     in TypedExpr (InstanceOf typedInstExpr proposedType) "boolean"
+-- Ternary operator 
 typeCheckExpr (Ternary operandExprA operandExprB operandExprC)
               locVarTable
               visibleClassList =
@@ -188,20 +191,25 @@ typeCheckExpr (Ternary operandExprA operandExprB operandExprC)
                       (propagateSuperType operandExprBType
                                           operandExprCType)
        else error "First expression of ternary operator must be a boolean"
+-- Literals
 typeCheckExpr expr@(BooleanLiteral _) _ _ = TypedExpr expr "boolean"
 typeCheckExpr expr@(CharLiteral _)    _ _ = TypedExpr expr "char"
 typeCheckExpr expr@(IntegerLiteral _) _ _ = TypedExpr expr "int"
+-- JNull
 typeCheckExpr JNull _ _ = TypedExpr JNull "void"
+-- StatementExpressions
 typeCheckExpr (StmtExprExpr stmtExpr) locVarTable visibleClassList = 
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
             typeCheckStmtExpr stmtExpr locVarTable visibleClassList
     in TypedExpr (StmtExprExpr typedStmtExpr) stmtExprType
+-- Catching typechecks of typechecked expressions
 typeCheckExpr (TypedExpr _ _) _ _ =
     error "Trying to typecheck an already typechecked expression"
 
     
--- typecheck expression statements
+-- TYPECHECKING OF EXPRESSION STATEMENTS:
 typeCheckStmtExpr :: StmtExpr -> LocVarTable -> VisibleClassList -> StmtExpr
+-- Assign
 typeCheckStmtExpr (Assign leftValExpr rightValExpr) 
                   locVarTable 
                   visibleClassList =
@@ -209,40 +217,45 @@ typeCheckStmtExpr (Assign leftValExpr rightValExpr)
             typeCheckExpr leftValExpr locVarTable visibleClassList
         typedRightValExpr@(TypedExpr _ rightValExprType) =
             typeCheckExpr rightValExpr locVarTable visibleClassList
-    in TypedStmtExpr (Assign typedLeftValExpr
-                             typedRightValExpr)
-                     (propagateSuperType leftValExprType
-                                         rightValExprType)
+    in if (leftValExprType == rightValExprType)
+       then TypedStmtExpr (Assign typedLeftValExpr typedRightValExpr)
+                          leftValExprType
+       else error $ "Cannot assign " ++ rightValExprType ++ " to a variable "
+                  ++ "of type " ++ leftValExprType 
+-- New
 typeCheckStmtExpr (New newClassName argExprs) locVarTable visibleClassList =
-    let typedArgExprs = 
-            map (\argExpr -> typeCheckExpr argExpr
-                                           locVarTable
-                                           visibleClassList)
-                argExprs
+    let typedArgExprs = map (\argExpr -> typeCheckExpr argExpr
+                                                       locVarTable
+                                                       visibleClassList)
+                            argExprs
         argExprsTypes =
             map (\(TypedExpr _ argExprType) -> argExprType) typedArgExprs
+        thisType = 
+            fromJust $ Map.lookup "this" locVarTable
     in case classLookup newClassName visibleClassList of
-                Just newClass ->
-                    case methodLookup newClassName newClass of
-                             Just (MethodDecl _ retType argDecs _ Public _) ->
-                                 if (==) argExprsTypes
-                                         (map (\(ArgumentDecl _ argType _) ->
-                                                   argType)
-                                              argDecs)
-                                 then TypedStmtExpr (New newClassName
-                                                         typedArgExprs)
-                                                    newClassName
-                                 else error $ "Constructor arguments not "
-                                            ++ " matching"
-                             Nothing ->
-                                 if argExprsTypes == []
-                                 then TypedStmtExpr (New newClassName
-                                                         typedArgExprs)
-                                                    newClassName
-                                 else error $ "Trying to call default class"
-                                            ++ " constructor with arguments"
-                Nothing -> error $ "Specified Class "
-                                 ++ newClassName ++ " not found"                
+           Just newClass ->
+               case methodLookup' newClassName newClass thisType of
+                   [] -> if argExprsTypes == []
+                         then TypedStmtExpr (New newClassName typedArgExprs)
+                                            newClassName
+                         else error $ "Trying to call standard constructor with"
+                                    ++ " arguments"
+                   constructorDecs -> checkArgs constructorDecs
+                       where
+                           checkArgs ((MethodDecl _ retType argDecs _ _ _):cs) =
+                               if (==) argExprsTypes
+                                       (map (\(ArgumentDecl _ argType _) ->
+                                                 argType)
+                                       argDecs)
+                               then TypedStmtExpr (New newClassName
+                                                      typedArgExprs)
+                                                  newClassName
+                               else checkArgs cs
+                           checkArgs [] =
+                               error $ "Constructor with corresponding"
+                                     ++ " arguments not found"
+           Nothing -> error $ "Class " ++ newClassName ++ " could not be found"
+-- MethodCall
 typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
                   locVarTable
                   visibleClassList =
@@ -254,24 +267,30 @@ typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
                 argExprs
         argExprsTypes =
             map (\(TypedExpr _ argExprType) -> argExprType) typedArgExprs
+        thisType =
+            fromJust $ Map.lookup "this" locVarTable
     in case classLookup instExprType visibleClassList of
-                Just instClass -> 
-                    case methodLookup methodName instClass of
-                             Just (MethodDecl _ retType argDecs _ Public _) ->
-                                 if (==) argExprsTypes
-                                         (map (\(ArgumentDecl _ argType _) ->
-                                                   argType)
-                                              argDecs)
-                                 then TypedStmtExpr (MethodCall typedInstExpr
-                                                                methodName
-                                                                typedArgExprs)
-                                                    retType
-                                 else error "Function arguments don't match" 
-                                             
-                             _ -> error $ "Method " ++ methodName
-                                        ++ " not found or not visible"
-                Nothing -> error $ "Class " ++ instExprType
-                                 ++ " could not be found"
+           Just instClass -> 
+               case methodLookup' methodName instClass thisType of
+                   [] -> error $ "Method " ++ methodName ++ " could not be "
+                               ++ "found or is not visible"
+                   methodDecs -> checkArgs methodDecs
+                       where  
+                           checkArgs ((MethodDecl _ retType argDecs _ _ _):cs) =
+                               if (==) argExprsTypes
+                                       (map (\(ArgumentDecl _ argType _) ->
+                                                 argType)
+                                       argDecs)
+                               then TypedStmtExpr (MethodCall typedInstExpr
+                                                              methodName
+                                                              typedArgExprs)
+                                                  retType
+                               else checkArgs cs
+                           checkArgs [] =
+                               error $ "Method with corresponding"
+                                     ++ " arguments not found" 
+           Nothing -> error $ "Class " ++ instExprType ++ " could not be found"
+-- Lazy Assignment
 typeCheckStmtExpr (LazyAssign leftValExpr rightValExpr)
                   locVarTable
                   visibleClassList =
@@ -280,38 +299,40 @@ typeCheckStmtExpr (LazyAssign leftValExpr rightValExpr)
                               locVarTable
                               visibleClassList
     in TypedStmtExpr (LazyAssign typedLeftValExpr typedRightValExpr) assignType
+-- Catching typechecks of typechecked expressions
 typeCheckStmtExpr (TypedStmtExpr _ _) _ _ =
     error "Trying to typecheck an already typechecked statement expression"
 
     
--- typecheck statements (blocks)
+-- TYPECHECKING STATEMENTS:
 typeCheckStmt :: Stmt -> LocVarTable -> VisibleClassList -> Stmt
+-- Block
 typeCheckStmt (Block blockStmts) locVarTable visibleClassList =
     TypedStmt (Block typedBlockStmts) blockType
-        where
-            (typedBlockStmts, _, blockType) =
-                foldl foldBlockSegment ([], locVarTable, "void") blockStmts
-            
-            foldBlockSegment (currentTypedBlockStmts
-                             ,currentLocVarTable
-                             ,currentBlockType)
-                             nextBlockStmt =
-                let (typedNextBlockStmt@(TypedStmt _ nextBlockType)
-                     ,updatedLocVarTable) = 
-                        typeCheckStmtLocVarTransform nextBlockStmt 
-                                                     currentLocVarTable
-                                                     visibleClassList
-                    updatedTypedBlockStmts =
-                        currentTypedBlockStmts ++ [typedNextBlockStmt]
-                    updatedBlockType =
-                        propagateSuperType nextBlockType currentBlockType
-                in (updatedTypedBlockStmts
-                   ,updatedLocVarTable
-                   ,updatedBlockType)
+    where
+        (typedBlockStmts, _, blockType) =
+            foldl foldBlockSegment ([], locVarTable, "void") blockStmts
+    
+        foldBlockSegment (currentTypedBlockStmts
+                         ,currentLocVarTable
+                         ,currentBlockType)
+                         nextBlockStmt =
+            let (typedNextBlockStmt@(TypedStmt _ nextBlockType)
+                 , updatedLocVarTable) = 
+                    typeCheckStmtLocVarTransform nextBlockStmt 
+                                                 currentLocVarTable
+                                                 visibleClassList
+                updatedTypedBlockStmts =
+                    currentTypedBlockStmts ++ [typedNextBlockStmt]
+                updatedBlockType =
+                    propagateSuperType nextBlockType currentBlockType
+            in (updatedTypedBlockStmts, updatedLocVarTable, updatedBlockType)
+-- Return 
 typeCheckStmt (Return returnExpr) locVarTable visibleClassList =
    let typedReturnExpr@(TypedExpr _ returnExprType) =
            typeCheckExpr returnExpr locVarTable visibleClassList
    in TypedStmt (Return typedReturnExpr) returnExprType
+-- While loop
 typeCheckStmt (While condExpr whileStmt) locVarTable visibleClassList =
    let typedCondExpr@(TypedExpr _ condExprType) =
            typeCheckExpr condExpr locVarTable visibleClassList
@@ -319,13 +340,16 @@ typeCheckStmt (While condExpr whileStmt) locVarTable visibleClassList =
            typeCheckStmt whileStmt locVarTable visibleClassList
    in if (condExprType == "boolean")
       then TypedStmt (While typedCondExpr typedWhileStmt) whileStmtType
-      else error "Conditional expression must be a boolean"
+      else error "Conditional expression in while loop must be a boolean"
+-- Do-While loop
 typeCheckStmt (DoWhile condExpr doWhileExpr) locVarTable visibleClassList =
    let (TypedStmt (While typedCondExpr typedDoWhileExpr) doWhileExprType) =
            typeCheckStmt (While condExpr doWhileExpr)
                          locVarTable
                          visibleClassList
    in TypedStmt (DoWhile typedCondExpr typedDoWhileExpr) doWhileExprType
+-- For loop
+-- TODO: iterStmt cannot change locVarTable
 typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
               locVarTable
               visibleClassList =
@@ -469,9 +493,10 @@ typeCheckSwitchCases switchCases switchExprType locVarTable visibleClassList =
             foldr propagateSuperType "void" switchCaseTypes
     in (typedSwitchCases, switchCasesResultType)    
 
--- looks up a filed in a class
-classFieldLookup :: FieldName -> Class -> Maybe Type
-classFieldLookup searchedfieldName (Class _ fieldDecs _) =
+
+-- looks up a field in a class
+classFieldLookup :: FieldName -> Class -> Type -> Maybe Type
+classFieldLookup searchedfieldName (Class classType fieldDecs _) thisType  =
    fieldDecsLookup fieldDecs
        where
            fieldDecsLookup [] = Nothing
@@ -479,12 +504,16 @@ classFieldLookup searchedfieldName (Class _ fieldDecs _) =
                case varDecsLookup varDecs of
                         Nothing -> fieldDecsLookup fs
                         res -> res
-           fieldDecsLookup (f:fs) = fieldDecsLookup fs
+           fieldDecsLookup ((FieldDecl varDecs Private isStatic):fs)
+               | thisType == classType =
+                     fieldDecsLookup $ (FieldDecl varDecs Public isStatic):fs
+               | otherwise = fieldDecsLookup fs
            
            varDecsLookup [] = Nothing
            varDecsLookup ((VariableDecl varName varType _ _):vs)
                | varName == searchedfieldName = Just varType
-               | otherwise = varDecsLookup vs               
+               | otherwise = varDecsLookup vs
+
 
 -- looks up a class in a currently visible class list
 classLookup :: Type -> VisibleClassList -> Maybe Class
@@ -502,6 +531,19 @@ methodLookup searchedMethodName (Class classType _ methodDecs) =
             | otherwise = methodDecLookup ms
         methodDecLookup [] = Nothing
 
+-- looks up a method in a class
+methodLookup' :: MethodName -> Class -> Type -> MethodDecs
+methodLookup' searchedMethodName (Class classType _ methodDecs) thisType =
+    filter filterMethodDecByName methodDecs
+    where
+        filterMethodDecByName (MethodDecl methodName _ _ _ Public _) =
+            methodName == searchedMethodName
+        filterMethodDecByName (MethodDecl methodName w x y Private z) =
+            (thisType == classType)
+            && filterMethodDecByName (MethodDecl methodName w x y Public z)
+            
+            
+
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
 propagateSuperType "void" typeB = typeB
@@ -516,4 +558,4 @@ propagateSuperType' "void" typeB = Just typeB
 propagateSuperType' typeA "void" = Just typeA
 propagateSuperType' typeA typeB 
     | typeA == typeB = Just typeA
-    | otherwise = Nothing 
+    | otherwise = Nothing
