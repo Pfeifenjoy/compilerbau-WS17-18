@@ -1,1 +1,47 @@
 \section{Lexer}
+
+\begin{frame}[fragile]
+	\frametitle{Tokens}
+	\begin{lstlisting}[language=Haskell]
+		
+data Token
+	-- Arithmentics
+	= ADD
+	| SUBTRACT
+	| MULTIPLY
+	| DIVIDE
+	| MODULO
+	| INCREMENT
+	| DECREMENT
+	-- Logical
+	| NOT	
+	...	
+		
+	\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Struktur Alex File}
+	\begin{lstlisting}[basicstyle=\tiny, language=Haskell]
+
+%wrapper "basic"
+
+$digit = 0-9
+$alpha = [a-zA-Z]
+
+tokens :-
+
+	-- Ignore
+	$white+ ; 
+	"//".*  ;
+	
+	-- Operators
+	-- Arithmetics
+	\+                { \s -> ADD }
+	\-                { \s -> SUBTRACT }
+	\*                { \s -> MULTIPLY }
+	\/                { \s -> DIVIDE }	
+	...
+
+	\end{lstlisting}
+\end{frame}
