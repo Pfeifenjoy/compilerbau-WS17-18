@@ -17,4 +17,4 @@ class B {
 		return a.multiply(3,2);
 
 	}
-}e
+}
