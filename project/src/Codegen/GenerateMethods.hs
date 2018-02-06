@@ -36,7 +36,7 @@ type LineNumber = Int
 
 data Vars = Vars { -- | maps the index of a local Variable to its name.
                    _localVar :: [HM.HashMap LocVarName LocVarIndex ]
-                 , _allLocalVar :: S.Set String
+                 , _allLocalVar :: S.Set LocVarName
                  , _classFile :: ClassFile
                  , _curStack :: Int
                  , _maxStack :: Int
