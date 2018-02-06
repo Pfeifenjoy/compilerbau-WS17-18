@@ -53,9 +53,9 @@ generateLog name src tokens ast typedAst classFiles = return (
     (spacer ("Class: " ++ name)) ++ "\n"
     ++ (spacer "Source") ++ src ++ "\n"
     ++ (spacer "Tokens") ++ (show tokens) ++ "\n"
-    ++ (spacer "Abstract Syntax") ++ (show ast) ++ "\n"
-    ++ (spacer "Typed Abstract Syntax") ++ (show typedAst) ++ "\n"
-    ++ (spacer "Class Files") ++ (show classFiles) ++ "\n")
+    ++ "\n" ++ (spacer "Abstract Syntax") ++ (show ast) ++ "\n"
+    ++ "\n" ++ (spacer "Typed Abstract Syntax") ++ (show typedAst) ++ "\n"
+    ++ "\n" ++ (spacer "Class Files") ++ (show classFiles) ++ "\n")
 
 -- Write text into log file
 log :: String -> String -> IO ()
