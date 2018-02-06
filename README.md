@@ -16,6 +16,19 @@ TODO
 
 TODO
 
+## Test Framework
+
+Inside the project dir run
+
+```cabal repl test-core```
+
+and call
+
+```main```
+
+in order to see the tests running.
+
+![Gif of test-core repl](figs/test-core.gif)
 
 ## Notes
 
