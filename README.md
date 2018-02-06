@@ -9,13 +9,25 @@ More specifically, this compiler will be able to translate a narrow subset of Ja
 
 ## Setup
 
-TODO
+Install using 
 
+```cabal build && cabal install```
+
+Maybe update cabal before using
+
+```cabal update && cabal install```
 
 ## Usage
 
-TODO
+```jc File.java -l logFile```
 
+Run 
+
+```jc -h```
+
+for additional information
+
+![jc usage](figs/usage.gif)
 ## Test Framework
 
 Inside the project dir run
@@ -29,11 +41,6 @@ and call
 in order to see the tests running.
 
 ![Gif of test-core repl](figs/test-core.gif)
-
-## Notes
-
-* TODO tests are located at TODO, run them using TODO
-* TODO use `javap -v` for something
 
 
 ## Resources
