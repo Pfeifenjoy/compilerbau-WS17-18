@@ -2,7 +2,6 @@ module Main (module Main) where
 import           UnitTests.LexTests
 import           UnitTests.ParserTests
 import           UnitTests.TypeTests
-import           Utils.ClassFileChecker
 import           Utils.SUnit
 
 allTests :: [TestUnit]

@@ -24,14 +24,16 @@ endlessForLoopTokens = [Lexer.Token.CLASS,
 
 endlessForLoopABS = [Class "EndlessForLoop" []
                      [MethodDecl "doStuff" "void" []
-                       (Block [While (BooleanLiteral True) (Block [])])
-                       Public False]
+                       (Block [For (Block []) (BooleanLiteral True) (Block []) (Block [])]) 
+                       Public False
+                     ]
                     ]
 
 endlessForLoopTypedABS = [Class "EndlessForLoop" []
                           [MethodDecl "doStuff" "void" []
                             (TypedStmt (Block
-                                [TypedStmt (While (TypedExpr (BooleanLiteral True) "boolean") (TypedStmt (Block []) "void")) "void"]
-                            ) "void")
-                            Public False]
+                                [TypedStmt (For (TypedStmt (Block []) "void") (TypedExpr (BooleanLiteral True) "boolean") (TypedStmt (Block []) "void") 
+                                  (TypedStmt (Block []) "void")) "void"]) "void") 
+                            Public False
+                          ]
                          ]
