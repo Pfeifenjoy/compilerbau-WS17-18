@@ -16,8 +16,10 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser, TypeChecker, Codegen.GenerateClassFile, 
-                       Codegen.GenerateConstantPool, Codegen.GenerateFields, Codegen.GenerateMethods, Codegen.BinaryClass
+  exposed-modules:     Lexer, Lexer.Token, ABSTree, Parser,
+                       TypeChecker, Codegen.GenerateClassFile, 
+                       Codegen.GenerateConstantPool, Codegen.GenerateFields,
+                       Codegen.GenerateMethods, Codegen.BinaryClass
                        Codegen.Data.Assembler, Codegen.Data.ClassFormat, Codegen.EvalCode
   build-depends:       base <= 4.10.1 , array, unordered-containers
                        , hashable, bytestring, lens, transformers
@@ -29,8 +31,8 @@ library
 
 executable jc
   main-is:             Main.hs
-  build-depends:       base
-  hs-source-dirs:      src
+  build-depends:       base, argparser, java-compiler, filepath, directory
+  hs-source-dirs:      cli
   default-language:    Haskell2010
 
 test-suite test-core
