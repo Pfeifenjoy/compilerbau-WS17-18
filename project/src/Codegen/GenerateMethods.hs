@@ -22,6 +22,8 @@ import Control.Monad.Trans.State.Lazy
 import Control.Monad(when)
 import qualified Data.Set as S
 
+-- TODO diffentiat between switch case goto and break goto
+
 -- | The name of a local variable.  It is the name in the source code
 --   followed by the deepness in a nested block
 type LocVarName = String
@@ -152,7 +154,7 @@ genCodeStmt (While cond body) =
      breakLine <- (+1) . view line <$> get
      let (b1,b2) = split16Byte $ breakLine - branchLine
          (b3,b4) = split16Byte $ refLine - gotoLine
-         code = condCode b1 b2 ++ adBreaks refLine breakLine bodyCode
+         code = condCode b1 b2 ++ addGoto refLine breakLine bodyCode
                                ++ [Goto b3 b4]
      modify $ over continueLine tail
      return code
@@ -167,7 +169,7 @@ genCodeStmt (DoWhile cond body) =
      modify $ over line (+3) -- length of Ifne
      breakLine <- (+1) . view line <$> get
      let (b1,b2) = split16Byte $ refLine - branchLine
-         code = adBreaks refLine breakLine bodyCode ++ condCode b1 b2
+         code = addGoto refLine breakLine bodyCode ++ condCode b1 b2
      modify $ over continueLine tail
      return code
 
@@ -182,7 +184,7 @@ genCodeStmt (For initStmt cond iter body) =
      let (b1,b2) = split16Byte $ breakLine - branchLine
          (b3,b4) = split16Byte $ refLine - gotoLine
          code = initialCode ++ condCode b1 b2
-                            ++ adBreaks refLine breakLine bodyCode
+                            ++ addGoto refLine breakLine bodyCode
                             ++ iterateCode
                             ++ [Goto b3 b4]
      modify $ over continueLine tail
@@ -210,16 +212,17 @@ genCodeStmt (If cond body Nothing) =
 
 genCodeStmt (Switch expr switchCases defCase) =
   do exprCode <- genCodeExpr expr -- code to compare
-     ref <- view line <$> get
+     ref <- (+1) . view line <$> get -- start of tableswitch
      let pad = mod (ref+1) 4
          len = pad + 8 + 2 * length switchCases
      modify $ over line (+len) -- length of tableswitch assembler
+     casesLine <- (+1) . view line <$> get -- start of cases
      caseCodes <- mapM genCodeSwitchCase switchCases -- code of cases
-     def <- (+1) . view line <$> get
-     -- TODO add goto address to end of switch case
+     def <- (+1) . view line <$> get -- start of default code
      defCode <- case defCase of
                   Nothing -> return []
                   (Just stmts) -> genCodeStmt $ Block stmts
+     gotoLine <- (+1) . view line <$> get -- end of tableswitch
      modifyStack (-1)
      let (d1,d2,d3,d4) = split32Byte def
          (n1,n2,n3,n4) = split32Byte $ length switchCases
@@ -231,8 +234,9 @@ genCodeStmt (Switch expr switchCases defCase) =
                              (b5,b6,b7,b8) = split32Byte y
                          in (b1,b2,b3,b4,b5,b6,b7,b8))
                     caseCodes)]
-               ++ concatMap (\(_,_,x) -> x) caseCodes
-               ++ defCode
+               ++ addGoto casesLine gotoLine
+                  (concatMap (\(_,_,x) -> x) caseCodes
+                   ++ defCode)
 
 genCodeStmt (LocalVarDecls vds)
   = foldr ((-++-) . genCodeVarDecl) (return []) vds
@@ -547,17 +551,17 @@ genIf gen cond bodyIf bodyElse =
          isReturn [Areturn] = True
          isReturn [A.Return] = True
          isReturn (_:xs) = isReturn xs
-         addGoto = not $ isReturn bodyIfCode
+         needGoto = not $ isReturn bodyIfCode
      gotoLine <- (+1) . view line <$> get
      -- if last statement is return goto never got reached
-     when addGoto
+     when needGoto
        (modify $ over line (+3)) -- length of Goto
      elseLine <- (+1) . view line <$> get
      bodyElseCode <- gen bodyElse
      endElse <- (+1) . view line <$> get
      let (b1,b2) = split16Byte $ elseLine - branchLine
          (b3,b4) = split16Byte $ endElse - gotoLine
-     return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4| addGoto]
+     return $ condCode b1 b2 ++ bodyIfCode ++ [Goto b3 b4 | needGoto]
                        ++ bodyElseCode
 
 genCond :: Expr -> Bool -- ^ is doWhile?
@@ -621,15 +625,15 @@ getLocIdx var (vars:blocks) = case HM.lookup var vars of
                                 _            -> getLocIdx var blocks
 
 -- | ads the lines to jump to the Goto
-adBreaks :: LineNumber -- ^ current line in code
-         -> LineNumber -- ^ line to jump to
-         -> Code -- ^ code without right break references
-         -> Code -- ^ code with right break references
-adBreaks _ _ [] = []
-adBreaks refIndex idx (Goto 0 0:as)
-  = Goto b1 b2: adBreaks (refIndex + 1) idx as
+addGoto :: LineNumber -- ^ current line in code
+        -> LineNumber -- ^ line to jump to
+        -> Code -- ^ code without right break references
+        -> Code -- ^ code with right break references
+addGoto _ _ [] = []
+addGoto refIndex idx (Goto 0 0:as)
+  = Goto b1 b2: addGoto (refIndex + 1) idx as
       where (b1,b2) = split16Byte $ idx - refIndex
-adBreaks refIndex idx (a:as) = a : adBreaks (refIndex + 1) idx as
+addGoto refIndex idx (a:as) = a : addGoto (refIndex + 1) idx as
 
 
 -- | concatenates to lists in applicatives
