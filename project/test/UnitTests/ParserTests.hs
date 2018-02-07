@@ -22,6 +22,8 @@ import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
 import           Correct.OperatorOverloading.Steps
 import           Correct.MethodArguments.Steps
+import ExampleProgramms.Faculty.Steps
+import ExampleProgramms.Fibonacci.Steps
 
 parserTests :: [TestUnit]
 parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
@@ -49,5 +51,7 @@ parserTests = [ParserUnit "Correct/EmptyClass" emptyABS,
                ParserException "Wrong/Syntax/BraceError" emptyABS,
                ParserException "Wrong/Syntax/SemicolonMissing" emptyABS,
                ParserException "Wrong/Syntax/TypeMissing" emptyABS,
-               ParserException "Wrong/Syntax/ReturnTypeMissing" emptyABS
+               ParserException "Wrong/Syntax/ReturnTypeMissing" emptyABS,
+               ParserUnit "ExampleProgramms/Faculty" facultyABS,
+               ParserUnit "ExampleProgramms/Fibonacci" fibonacciABS
                ]
