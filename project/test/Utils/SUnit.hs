@@ -15,7 +15,6 @@ import qualified Data.ByteString.Lazy as BS
 import           Data.Binary (encode)
 import           System.IO.Unsafe
 import           TypeChecker
-import           Utils.ClassFileChecker
 import           Control.Arrow
 
 all_tokens :: [Token]

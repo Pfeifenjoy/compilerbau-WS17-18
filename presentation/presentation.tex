@@ -1,4 +1,5 @@
-\documentclass[aspectratio=169,handout]{beamer}
+\documentclass[aspectratio=169]{beamer}
+%\documentclass[aspectratio=169,handout]{beamer}
 \usepackage{pgfpages}
 \usepackage[utf8]{inputenc}
 \setbeameroption{show notes}
@@ -8,19 +9,25 @@
 \usepackage[english,german]{babel}
 \usepackage[autostyle=true,german=quotes]{csquotes}
 
-%Tikz
+% Tikz
 \usepackage{tikz}
 \usetikzlibrary{arrows,shapes,positioning,shadows,trees,calc}
 
-%Tables
+% Tables
 \usepackage{longtable,booktabs}
 \usepackage{tabularx}
 \usepackage{ltablex}
 
-
-%listings
+% Listings
 \usepackage{listings}
 
+% Links
+\usepackage{hyperref}
+
+% Images
+\usepackage{graphicx}
+
+\usepackage{lstlinebgrd}
 
 
 \title{Projekt Java Compiler}
@@ -44,11 +51,14 @@
 
 	%Chapters
 	\input{content/allgemein.tex}
-	\input{content/abstrakte-syntax.tex}
 	\input{content/test-framework.tex}
+	\input{content/lexer.tex}
+	\input{content/abstrakte-syntax.tex}
 	\input{content/parser.tex}
 	\input{content/type-checker.tex}
 	\input{content/code-generator.tex}
+	\input{content/fazit.tex}
+	\input{content/standout.tex}
 
 	% Struktur:
 	% Allgemein -> Steffen / Robin

@@ -1,11 +1,13 @@
 \section{Test-Framework}
 
 \begin{frame}{Test-Framework}
-Das Test-Framework wurde selbst implementiert. Es enthält diverse Funktionen zum automatisierten überprüfen der Testfälle.
+Das Test-Framework wurde selbst implementiert. Es enthält diverse Funktionen zum automatisierten Überprüfen der Testfälle.
 
 \par \medskip
 
-Tests werden in Korrekte und Falsche Testfälle unterschieden.
+\pause
+
+Tests werden in korrekte und falsche Testfälle unterteilt.
 
 
 \end{frame}
@@ -15,27 +17,33 @@ Tests werden in Korrekte und Falsche Testfälle unterschieden.
 	
 Die Test-Suite umfasst eine Token-Coverage von 100\%. 
 
+\pause
+
 \par \medskip
 
 Zusätzlich umfasst die Test-Suite insgesamt 21 gültige und 12 ungültige Testfälle.
 
+\pause
+
 \par \medskip
 
-Ungültige Testfälle werden in Syntaxfehler (Parser) und Typfehler (Typchecker) unterschieden.
+Ungültige Testfälle können in Syntaxfehler (Parser) und Typfehler (Typchecker) eingeteilt werden.
 \end{frame}
 
 \begin{frame}{Test-Suite: Testfälle}
 
 Jedes Testfile liegt in einem Ordner (Correct bzw. Wrong) mit zugehöriger .java-Datei. 	
 
+\pause 
+
 \par \medskip
 
 Ein Testfile besteht aus: 
 
 \begin{itemize}
-	\item Erwarteten Tokens
-	\item Erwarteter abstrakter Syntax
-	\item Erwarteter getypter abstrakter Syntax
+	\item Erwarteten Tokens \pause 
+	\item Erwarteter abstrakter Syntax \pause 
+	\item Erwarteter getypter abstrakter Syntax \pause
 \end{itemize}
 
 Zusätzlich zum eigentlichen Testfile enthält der Ordner ein ClassFile in Haskell, mit der zu erwartenden Struktur des erzeugten Classfiles.
@@ -60,4 +68,21 @@ emptyTypedABS = [Class "Test" [] []]
 \end{lstlisting}
 	
 \end{frame}
+
+\begin{frame}{Test-Suite: Beispielprogramme}
+Die Testsuite enthält neben den Testfällen auch eine Reihe von (realistischeren) Anwendungsprogrammen. Diese wurden mit 'normalen' Javaprogrammen getestet.
+
+\pause
+
+\begin{itemize}
+	\item Multiplikation \pause 
+	\item Gaußsumme (kleiner Gauß) \pause
+	\item Fakultät \pause
+	\item Fibonacci \pause
+	\item Potenz $a^b$ \pause 
+	\item $\lfloor \sqrt{x} \rfloor$ \pause
+	\item Primzahltest \& nächste Primzahl ermitteln
+\end{itemize}	
+\end{frame}
+
 

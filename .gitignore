@@ -36,6 +36,8 @@ cabal.project.local
 *.cb
 *.cb2
 
+*.tex.latexmain
+
 ## Intermediate documents:
 *.dvi
 *.xdv
@@ -274,3 +276,5 @@ TSWLatexianTemp*
 *.class
 
 # End of https://www.gitignore.io/api/latex,haskell,microsoftoffice
+
+presentation.pdf
