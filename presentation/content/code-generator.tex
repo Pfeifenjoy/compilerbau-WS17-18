@@ -1,0 +1,60 @@
+\section{Code Generator}
+
+\begin{frame}
+        \frametitle{Module}
+        Die folgenden Module werden für die Erzeugung des Class files aus dem ABSTree benutzt
+        \begin{itemize}
+                \item genClassFile.hs
+                \item genConstantPool.hs
+                \item genFields.hs
+                \item genMethods.hs
+        \end{itemize}
+\end{frame}
+\begin{frame}
+        \frametitle{Module}
+        In den nachfolgenden Modulen sind die Datentypen enthalten die für den abstrakten Bytecode benutzt werden
+        \begin{itemize}
+                \item Data/Assembler.hs
+                \item Data/ClassFile.hs
+        \end{itemize}
+        Aus dem abstrakten Bytecode wird im Module Module BinaryClass.hs der Bytecode erzeugt
+\end{frame}
+\begin{frame}
+        \frametitle{Constanten Pool}
+        Der Constantenpool ist in einer hashMap die ein Eintrag auf dessen Position abbildet.
+
+        Im Module genConstantPool.hs sind Funktionen enthalten die ein Eintrag erzeugen und dessen Position zurückgeben bzw nur die Position zurückgeben.
+\end{frame}
+\begin{frame}[fragile]
+        \frametitle{Beispiel genConstantPool}
+        \begin{lstlisting}
+genMethodRefSuper :: String
+                  -> Type
+                  -> State ClassFile IndexConstantPool
+genMethodRefSuper name typ =
+  do indexClassName <- view (super . indexSp) <$> get
+     indexNameType <- genNameAndType name typ
+     genInfo MethodRefInfo
+               { _tagCp              = TagMethodRef
+               , _indexNameCp        = indexClassName
+               , _indexNameandtypeCp = indexNameType
+               , _desc               = ""
+               }
+        \end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+        \frametitle{Generieren der Methoden}
+        Bei der Generierung der Methoden werden auch gleichzeitig die Einträge im constanten pool erstellt.  Im State wird folgender Datentyp verwendet.
+        \begin{lstlisting}
+data Vars
+  = Vars { _localVar :: [HM.HashMap LocVarName LocVarIndex]
+         , _allLocalVar :: S.Set LocVarName
+         , _classFile :: ClassFile
+         , _curStack :: Int
+         , _maxStack :: Int
+         , _line :: LineNumber
+         , _continueLine :: [LineNumber]
+         }
+makeLenses ''Vars
+        \end{lstlisting}
+\end{frame}
