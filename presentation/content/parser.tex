@@ -1,21 +1,65 @@
 \section{Parser}
 
+\begin{frame}
+	\frametitle{Parser - Allgemein}
+	\begin{itemize}
+		\item Verwendete Werkzeuge: Happy, Alex
+		\item Input: Tokens
+		\item Output: ABSTree
+		\item Herausforderungen:
+			\begin{itemize}
+				\item Integration in Build System
+				\item Operatoren Priorität
+				\item Klassen / Konstruktoren
+				\item If-Else
+			\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Parser - Integration Build System}
+	\begin{lstlisting}[escapechar=!]
+library
+  exposed-modules:     Lexer, ...
+  build-depends:       base <= 4.10.1 ...
+  hs-source-dirs:      src
+  !\colorbox{yellow}{build-tools:}!            !\colorbox{yellow}{alex, happy}!
+  !\colorbox{yellow}{other-modules:}!          !\colorbox{yellow}{Lexer.Lexer, Parser.Parser}!
+  default-language:    Haskell2010
+	\end{lstlisting}
+
+	\note{
+		\begin{itemize}
+			\item build-tools
+			\item other-modules
+		\end{itemize}
+	}
+\end{frame}
+
 \begin{frame}[fragile]
 	\frametitle{Parser - Operatoren Priorität}
 	\begin{lstlisting}
-%right in
+%right in                                 //lowest precedence
 %right ASSIGN ADD ...
 %right QUESTIONMARK COLON
 %left OR
 ...
 %nonassoc LESSER GREATER LESSER_EQUAL...
 ...
-%nonassoc INCREMENT DECREMENT
+%nonassoc INCREMENT DECREMENT             //highest precedence
 	\end{lstlisting}
+	\note{
+		\begin{itemize}
+			\item Was ist Operatoren Priorität
+			\item Wie wird es in Happy implementiert
+			\item Precedence top (low), bottom (high)
+			\item Beschreibe Assoziativität
+		\end{itemize}
+	}
 \end{frame}
 
 \begin{frame}[fragile]
-	\frametitle{Struktur Happy File}
+	\frametitle{Parser - Struktur Happy File}
 	\begin{lstlisting}[basicstyle=\tiny]
 		
 Program
@@ -37,27 +81,48 @@ Statement
 \end{frame}
 
 \begin{frame}[fragile]
-	\frametitle{Beispiel}
-	\begin{lstlisting}[language=Java, basicstyle=\tiny]
-class SimpleIf {
-	int i;
-	void doIf() {
-		int a;
-		a = 5;
-		i = 0;
-		if(a < 5) {
-			i = a;
-		}
-		else {
-			i = 2;
-		}
-	}
-}
+	\frametitle{Parser - Klassen / Konstruktoren}
+	Problem:
+	\begin{itemize}
+		\item Methoden, Attribute aufteilen in Listen
+		\item teste: Klassenname $=$ Konstruktorname
+	\end{itemize}
+	\pause
+
+	\begin{lstlisting}[basicstyle=\tiny]
+ClassBody
+    : FieldDecl                 { ClassBodyDecl [$1] [] [] }
+    | MethodDecl                { ClassBodyDecl [] [$1] [] }
+    | ConstructorDecl           { ClassBodyDecl [] [] [$1] }
+    | ClassBody FieldDecl       { ClassBodyDecl ((fields $1) ++ [$2]) (...) (...) }
+    | ClassBody MethodDecl      { ClassBodyDecl (...) ((methods $1) ++ [$2]) (...) }
+    | ClassBody ConstructorDecl { ClassBodyDecl (...) (...) ((constructors $1) ++ [$2]) }
 	\end{lstlisting}
-	\begin{tikzpicture}
-		\node(class){[Class \enquote{SimpleIf}]}
-			child { node { FieldDecl } }
-			child { node { FieldDecl } }
-			;
-	\end{tikzpicture}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Parser - If - Else}
+	Problem:
+	\begin{lstlisting}
+if_stmt
+    : "if" expr "{" stmt "}"
+    | "if" expr "{" stmt "}" "else" "{" statement "}"
+	\end{lstlisting}
+	\pause
+	Solution:
+
+	\begin{lstlisting}
+%nonassoc THEN
+
+if_stmt
+    : "if" expr "{" stmt "}" %prec THEN
+    | "if" expr "{" stmt "}" "else" "{" statement "}"
+	\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Beispiel}
+	\begin{center}
+		\Huge Demo
+	\end{center}
 \end{frame}
