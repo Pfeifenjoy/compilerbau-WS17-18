@@ -372,8 +372,11 @@ typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
                            typedBodyStmt)
                       bodyStmtType
        else error "Conditional expression in for loop must have boolean type"
+-- Break
 typeCheckStmt Break _ _ = TypedStmt Break "void"
+-- Continue
 typeCheckStmt Continue _ _ = TypedStmt Continue "void"
+-- If
 typeCheckStmt (If condExpr thenStmt maybeElseStmt)
               locVarTable 
               visibleClassList =
@@ -392,6 +395,7 @@ typeCheckStmt (If condExpr thenStmt maybeElseStmt)
                                propagateSuperType thenStmtType elseStmtType
                            Nothing -> thenStmtType)
        else error "Conditional expression in if clause must have boolean type"
+-- Switch
 typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
               locVarTable
               visibleClassList =
@@ -402,7 +406,7 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
                                  switchExprType
                                  locVarTable
                                  visibleClassList
-        typedMaybeDefaultCaseStmts =
+        typedMaybeDefaultCaseStmtsAndType =
            fmap ((.) (\(TypedStmt (Block typedStmts) stmtsType) -> 
                           (typedStmts, stmtsType))
                      (\stmts -> 
@@ -410,7 +414,20 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
                                         locVarTable 
                                         visibleClassList))
                 maybeDefaultCaseStmts
-    in undefined
+    in case typedMaybeDefaultCaseStmtsAndType of
+           Nothing -> TypedStmt (Switch typedSwitchExpr 
+                                        typedSwitchCases
+                                        Nothing)
+                                switchCasesType
+           Just (typedDefaultCaseStmts, defaultCaseStmtsType)
+               | defaultCaseStmtsType == switchCasesType ->
+                     TypedStmt (Switch typedSwitchExpr
+                                       typedSwitchCases
+                                       (Just typedDefaultCaseStmts))
+                               switchCasesType
+               | otherwise ->
+                     error $ "Cases and default case types do not match"
+-- Statement Expressions
 typeCheckStmt (StmtExprStmt stmtExpr) locVarTable visibleClassList =
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
             typeCheckStmtExpr stmtExpr locVarTable visibleClassList
