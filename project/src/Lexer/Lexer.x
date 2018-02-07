@@ -117,6 +117,5 @@ tokens :-
     $digit+           { \s -> INTEGER_LITERAL (fromIntegral (read s)) }
     $alpha [$alpha $digit \_ \']*   { \s -> IDENTIFIER s }
     \'.\'             { \s ->  CHARACTER_LITERAL ((\(_:snd:_) -> snd) s) }
-    
 {
 }
