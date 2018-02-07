@@ -161,7 +161,7 @@ typeCheckExpr (Binary operator operandExprA operandExprB)
                 (op, "int", "int")
                     | op `elem` ["+", "-", "*", "/", "%", "&", "|", "^", "<<"
                                 , ">>", ">>>"] -> "int"
-                    | op `elem` ["<=",">=","<",">"] -> "boolean"
+                    | op `elem` ["<=",">=","<",">", "=="] -> "boolean"
                     | otherwise -> operandError 
                 ("||", "boolean", "boolean") -> "boolean"
                 ("&&", "boolean", "boolean") -> "boolean"
