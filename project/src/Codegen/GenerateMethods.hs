@@ -351,6 +351,7 @@ genCodeExpr (TypedExpr (Binary op expr1 expr2) typ)
                  ("*" ,"float")  -> return [Fmul]
                  ("*" ,"long")   -> return [Lmul]
                  ("*" ,_)        -> return [Imul]
+                 ("%" ,_)        -> return [Irem]
                  ("/" ,"double") -> return [Ddiv]
                  ("/" ,"float")  -> return [Fdiv]
                  ("/" ,"long")   -> return [Ldiv]
