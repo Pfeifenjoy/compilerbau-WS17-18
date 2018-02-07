@@ -234,7 +234,7 @@ typeCheckStmtExpr (New newClassName argExprs) locVarTable visibleClassList =
             fromJust $ Map.lookup "this" locVarTable
     in case classLookup newClassName visibleClassList of
            Just newClass ->
-               case methodLookup' newClassName newClass thisType of
+               case methodLookup newClassName newClass thisType of
                    [] -> if argExprsTypes == []
                          then TypedStmtExpr (New newClassName typedArgExprs)
                                             newClassName
@@ -271,7 +271,7 @@ typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
             fromJust $ Map.lookup "this" locVarTable
     in case classLookup instExprType visibleClassList of
            Just instClass -> 
-               case methodLookup' methodName instClass thisType of
+               case methodLookup methodName instClass thisType of
                    [] -> error $ "Method " ++ methodName ++ " could not be "
                                ++ "found or is not visible"
                    methodDecs -> checkArgs methodDecs
@@ -539,18 +539,8 @@ classLookup t (cl@(Class s _ _):cls) | t == s = Just cl
                                      | otherwise = classLookup t cls
                                      
 -- looks up a method in a class
-methodLookup :: MethodName -> Class -> Maybe MethodDecl
-methodLookup searchedMethodName (Class classType _ methodDecs) =
-    methodDecLookup methodDecs
-    where
-        methodDecLookup (m@(MethodDecl methodName _ _ _ _ _): ms)
-            | searchedMethodName == methodName = Just m
-            | otherwise = methodDecLookup ms
-        methodDecLookup [] = Nothing
-
--- looks up a method in a class
-methodLookup' :: MethodName -> Class -> Type -> MethodDecs
-methodLookup' searchedMethodName (Class classType _ methodDecs) thisType =
+methodLookup :: MethodName -> Class -> Type -> MethodDecs
+methodLookup searchedMethodName (Class classType _ methodDecs) thisType =
     filter filterMethodDecByName methodDecs
     where
         filterMethodDecByName (MethodDecl methodName _ _ _ Public _) =
@@ -560,7 +550,6 @@ methodLookup' searchedMethodName (Class classType _ methodDecs) thisType =
             && filterMethodDecByName (MethodDecl methodName w x y Public z)
             
             
-
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
 propagateSuperType "void" typeB = typeB
@@ -569,10 +558,3 @@ propagateSuperType typeA typeB
     | typeA == typeB = typeA
     | otherwise = error $ "Types " ++ typeA ++ " and " ++ typeB
                         ++ " are not compatible"
-
-propagateSuperType' :: Type -> Type -> Maybe Type
-propagateSuperType' "void" typeB = Just typeB
-propagateSuperType' typeA "void" = Just typeA
-propagateSuperType' typeA typeB 
-    | typeA == typeB = Just typeA
-    | otherwise = Nothing
