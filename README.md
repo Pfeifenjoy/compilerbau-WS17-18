@@ -4,7 +4,7 @@
 
 *We're building a compiler. It'll compile things.*
 
-More specifically, this compiler will be able to translate a narrow subset of Java to JVM bytecode, taking a scenic tour through all the necessary steps in the form of multiple passes: lexing, parsing, typechecking, codegen'ing and serializing. TODO more prose?
+More specifically, this compiler will be able to translate a narrow subset of Java to JVM bytecode, taking a scenic tour through all the necessary steps in the form of multiple passes: lexing, parsing, typechecking, codegen'ing and serializing. 
 
 
 ## Setup
@@ -18,31 +18,78 @@ Maybe update cabal before using
 ```cabal update && cabal install```
 
 ## Usage
+Inside the **dist/build/jc** dir run ```./jc File.java -l logFile```
 
-```jc File.java -l logFile```
-
-Run 
-
-```jc -h```
-
-for additional information
+Run ```./jc -h``` for additional information
 
 ![jc usage](figs/usage.gif)
 ## Test Framework
 
-Inside the project dir run
+Inside the **project** directory run
 
 ```cabal repl test-core```
 
-and call
-
-```main```
-
-in order to see the tests running.
+and call ```main``` in order to see the tests running.
 
 ![Gif of test-core repl](figs/test-core.gif)
 
+Alternatively run ```cabal test --show-details streaming```
 
+The Test-suite contains multiple testfiles:
+
+```
+test/
+  - Correct/
+    - BitWiseOperation
+    - ClassAssign
+    - ClassMethods
+    - DoWhile
+    - EmptyClass
+    - EndlessForLoop
+    - ForLoop
+    - InstanceOf
+    - InstanzVariable
+    - LocalVariable
+    - LogicOperations
+    - LogicOperations2
+    - MethodArguments
+    - MethodCall
+    - NewClass
+    - OperatorOverloading
+    - ShortIf
+    - SimpleIf
+    - SwitchCase
+    - WhileLoop
+    - WhileLoopCondition
+  - Wrong/
+    - Syntax/
+      - Arithmetic
+      - BraceError
+      - ReturnTypeMissing
+      - SemicolonMissing
+      - TypeMissing
+    - Type/
+      - InstVarTypeMissmatch
+      - MethodCall
+      - MultipleReturnType
+      - NoReturn
+      - ReturnType
+      - WrongArgumentType
+      - WrongIfComparison
+```
+
+and additional example programs. All example programs are validated with normal java programs (print return from compiled example program).
+
+```
+test/ExampleProgramma
+  - Faculty
+  - Fibonacci
+  - Fibonacci-Loop
+  - FloorSquareRoot
+  - GaußSum
+  - Multiplication
+  - Pow
+```
 ## Resources
 
 * https://hypertextphoenix.atlassian.net/secure/RapidBoard.jspa?rapidView=3&projectKey=COM
