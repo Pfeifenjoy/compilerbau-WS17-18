@@ -4,13 +4,14 @@ class Prime {
 	}
 
 	boolean isPrime(int n) {
+
 		for(int i = 2; i < n; i++) {
 			if(modulo(n,i) == 0) {
 				return false;
 			}
 		}
 
-		return true;
+		return (n == 1) ? false : true;
 	}
 
 	int nextPrime(int n) {
