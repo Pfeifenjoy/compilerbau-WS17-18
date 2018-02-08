@@ -74,8 +74,8 @@ saveBytecode ((Bytecode name code):xs) = do
     saveBytecode xs
 
 -- Compile single source file
-compile :: String -> String -> IO ()
-compile srcpath logpath = do
+compile :: String -> String -> Bool -> IO ()
+compile srcpath logpath verbose = do
     src <- readFile srcpath
     tokens <- Main.lex src
     ast <- Main.parse tokens
@@ -83,20 +83,21 @@ compile srcpath logpath = do
     classFiles <- Main.generateBytecode typedAst
     logText <- generateLog className src tokens ast typedAst classFiles
     Main.log logpath logText
+    when verbose (putStrLn logText)
     saveBytecode classFiles
     where className = takeBaseName srcpath
 
 -- clear the intial log
-clearLog (JC _ path) = do
+clearLog (JC _ path _) = do
     exists <- doesFileExist path
     when exists (removeFile path)
 
 -- iterate through all source files
 compileAll :: JC -> IO ()
-compileAll (JC [] _) = return ()
-compileAll (JC (x : xs) logpath) = do
-    compile x logpath
-    compileAll (JC xs logpath)
+compileAll (JC [] _ _) = return ()
+compileAll (JC (x : xs) logpath verbose) = do
+    compile x logpath verbose
+    compileAll (JC xs logpath verbose)
 
 -- compile all sources
 runAll :: JC -> IO ()
@@ -107,7 +108,7 @@ runAll jc = do
 -- 4. TUI interface
 -- Argument parser data structur
 -- The program gets paths to the source files and can have a path to the log file.
-data JC = JC [String] String -- paths, log
+data JC = JC [String] String Bool -- paths, log, verbose
     deriving (Show)
 
 -- Argparser specifications
@@ -117,6 +118,8 @@ jcArgumentParser = JC
         `Descr` "Path to the sources which are compiled."
     `andBy` optFlag "" "log"
         `Descr` "Specify log file."
+    `andBy` boolFlag "verbose"
+        `Descr` "Show extra information"
 
 jcInterface :: IO (CmdLnInterface JC)
 jcInterface = mkApp jcArgumentParser
