@@ -2,48 +2,18 @@
 
 \begin{frame}[fragile]
 	\frametitle{Lexer - Tokens}
-	\begin{lstlisting}[language=Haskell]
-		
-data Token
-	-- Arithmetics
-	= ADD
-	| SUBTRACT
-	| MULTIPLY
-	| DIVIDE
-	| MODULO
-	| INCREMENT
-	| DECREMENT
-	-- Logical
-	| NOT	
-	...	
-		
-	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/lexer/tokens.png}
+	\end{figure}
 \end{frame}
 
 \begin{frame}[fragile]
 	\frametitle{Lexer - Struktur Alex File}
-	\begin{lstlisting}[basicstyle=\tiny, language=Haskell]
-
-%wrapper "basic"
-
-$digit = 0-9
-$alpha = [a-zA-Z]
-
-tokens :-
-
-	-- Ignore
-	$white+ ; 
-	"//".*  ;
-	
-	-- Operators
-	-- Arithmetics
-	\+                { \s -> ADD }
-	\-                { \s -> SUBTRACT }
-	\*                { \s -> MULTIPLY }
-	\/                { \s -> DIVIDE }	
-	...
-
-	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/lexer/parser-mapping.png}
+	\end{figure}
 \end{frame}
 
 \begin{frame}{Lexer - Demo}
