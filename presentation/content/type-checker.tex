@@ -22,6 +22,7 @@ Typen: int, boolean, char, class-types
     \frametitle{Typechecker - Klassenliste}
 ${\bf C} = [c_1, \cdots , c_n]$ \\
 Iteriere über $C$, für jedes $c \in C$:
+\pause
 \begin{itemize}
     \item Iteriere über Variablendeklarationen
     \begin{itemize}
@@ -29,11 +30,13 @@ Iteriere über $C$, für jedes $c \in C$:
         \item konstruiere (Name:Typ)-Tabelle ${\bf L}$ der Feldvariablen
         \item Klassentyp $"$this$"$
     \end{itemize}
+    \pause
     \item Iteriere über Methodendeklarationen
     \begin{itemize}
         \item Prüfe ob Bodytyp (Syntaxbaum) und ReturnTyp zusammenpassen
     \end{itemize}
 \end{itemize}
+\pause
 $\Rightarrow$ Syntaxbaum wird rekursiv abgearbeitet mit ${\bf C}$, ${\bf L}$
 \end{frame}
 
@@ -41,14 +44,20 @@ $\Rightarrow$ Syntaxbaum wird rekursiv abgearbeitet mit ${\bf C}$, ${\bf L}$
     \frametitle{Typechecker - Blocks}
 Funktionsbody liegt als Block statement (Statemensequenz) vor \\
 Returntyp $\rightarrow$ Bodytyp \\
+\pause
 Handling: fold-Operation wird auf Block ausgeführt
 \begin{lstlisting}[language=Haskell]
 { int x = 2; int y = 3; int res = x + y; return res; }	
 \end{lstlisting}
+\pause
 ($\{ \}$, void, $L$) \\
+\pause
 $\Rightarrow$ ($\{"x=2"\}$, void, $L \leftarrow (x,int)$) \\
+\pause
 $\Rightarrow$ ($\{"x=2","y=3"\}$, void, $L \leftarrow (x,int),(y,int)$) \\
+\pause
 $\Rightarrow$ ($\{"x=2","y=3","res=x+y"\}$, void, $L \leftarrow (x,int),(y,int),(res,int)$) \\
+\pause
 $\Rightarrow$ ($\{"x=2","y=3","res=x+y","return"\}$, \bf{int}, $L \leftarrow (x,int),(y,int),(res,int)$) \\
 \end{frame}
 
@@ -57,10 +66,12 @@ $\Rightarrow$ ($\{"x=2","y=3","res=x+y","return"\}$, \bf{int}, $L \leftarrow (x,
 Klassenliste $C$, Variablenliste $L$ \\
 - Literale: True\\
 (Booleanliteral True) $\Rightarrow$ ({\bf TypedExpr} (Booleanliteral True) $"$boolean$"$) \\
+\pause
 - Variablenaufruf: x \\
 (LocalOrFieldVar x) \\
 $\Rightarrow$ Lookup von x in ${\bf L}$ $\rightarrow$ char \\
-$\Rightarrow$ ({\bf TypedExpr} (LocalOrFieldVar x) $"$char$"$) \\ 
+$\Rightarrow$ ({\bf TypedExpr} (LocalOrFieldVar x) $"$char$"$) \\
+\pause
 - Instanzvariablen: x.y \\
 (InstVar (x:A) y) \\
 $\Rightarrow$ Lookup von A in {\bf C} \\ 
@@ -79,6 +90,7 @@ $\Rightarrow$ von f in A $\rightarrow$ returnTyp boolean\\
 $\Rightarrow$ Unifikation gegebener und verlangter Argumente \\
 $\Rightarrow$ ({\bf TypedStmtExpr} (MethodCall (x:A) f (2:int, 3:int)) $"$boolean$"$) \\
 \ \\
+\pause
 Noch nicht klar, ob als Statement (Typ void) oder als Expression verwendet
 \end{frame}
 
@@ -91,6 +103,7 @@ Veränderte Variablenliste $L$ wird verworfen (scope) \\
 Bodytype wird auch Bodytype des umgebenden Blocks \\
 (Block [$\cdots$]) $\Rightarrow$ ({\bf TypedStmt} (Block [$\cdots$]) blocktype) \\
 \ \\
+\pause
 - Variablendeklarationen: int i = 5;\\
 Wie in Felddefinitionen für Klassen \\
 ${\bf L}$ wird aktualisiert zurückgegeben (shadowing) \\
