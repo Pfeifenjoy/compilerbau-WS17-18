@@ -23,6 +23,8 @@ import           Utils.SUnit
 import           Wrong.Syntax.Arithmetic.Steps
 import Correct.OperatorOverloading.Steps
 import Correct.MethodArguments.Steps
+import ExampleProgramms.Faculty.Steps
+import ExampleProgramms.Fibonacci.Steps
 
 lexTests :: [TestUnit]
 lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
@@ -46,7 +48,9 @@ lexTests = [LexerUnit "Correct/EmptyClass" emptyTokens,
             LexerUnit "Correct/NewClass" newClassTokens,
             LexerUnit "Correct/InstanceOf" instanceOfTokens,
             LexerUnit "Correct/MethodCall" methodCallTokens,
-            LexerUnit "Wrong/Syntax/Arithmetic" arithmeticTokens
+            LexerUnit "Wrong/Syntax/Arithmetic" arithmeticTokens,
+            LexerUnit "ExampleProgramms/Faculty" facultyTokens,
+            LexerUnit "ExampleProgramms/Fibonacci" fibonacciTokens
             ]
 
 

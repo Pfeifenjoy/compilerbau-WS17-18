@@ -62,3 +62,27 @@ switchCaseABS = [Class "SwitchCase" []
                  ]
                 ]
 
+switchCaseTypedABS = [Class "SwitchCase" [] 
+                      [MethodDecl "doStuff" "void" [] 
+                          (TypedStmt (Block [TypedStmt (LocalVarDecls [VariableDecl "i" "int" False (Just (TypedExpr (IntegerLiteral 5) "int")),VariableDecl "a" "int" False Nothing]) "void",
+                           TypedStmt (Switch (TypedExpr (LocalOrFieldVar "i") "int") 
+                                [SwitchCase (TypedExpr (IntegerLiteral 1) "int") 
+                                    [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 3) "int")) "int")) "void",
+                                    TypedStmt Break "void"],
+                                    SwitchCase (TypedExpr (IntegerLiteral 2) "int") 
+                                    [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 2) "int")) "int")) "void",
+                                    TypedStmt Break "void"]
+                                ] 
+                                (Just [TypedStmt (StmtExprStmt (TypedStmtExpr (Assign (TypedExpr (LocalOrFieldVar "a") "int") (TypedExpr (IntegerLiteral 0) "int")) "int")) "void"])) "void"]) "void") 
+                          Public False
+                      ]
+                     ]
+
+
+
+
+
+
+
+
+

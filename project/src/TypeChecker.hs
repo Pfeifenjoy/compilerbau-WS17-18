@@ -161,7 +161,7 @@ typeCheckExpr (Binary operator operandExprA operandExprB)
                 (op, "int", "int")
                     | op `elem` ["+", "-", "*", "/", "%", "&", "|", "^", "<<"
                                 , ">>", ">>>"] -> "int"
-                    | op `elem` ["<=",">=","<",">"] -> "boolean"
+                    | op `elem` ["<=",">=","<",">", "=="] -> "boolean"
                     | otherwise -> operandError 
                 ("||", "boolean", "boolean") -> "boolean"
                 ("&&", "boolean", "boolean") -> "boolean"
@@ -234,7 +234,7 @@ typeCheckStmtExpr (New newClassName argExprs) locVarTable visibleClassList =
             fromJust $ Map.lookup "this" locVarTable
     in case classLookup newClassName visibleClassList of
            Just newClass ->
-               case methodLookup' newClassName newClass thisType of
+               case methodLookup newClassName newClass thisType of
                    [] -> if argExprsTypes == []
                          then TypedStmtExpr (New newClassName typedArgExprs)
                                             newClassName
@@ -271,7 +271,7 @@ typeCheckStmtExpr (MethodCall instExpr methodName argExprs)
             fromJust $ Map.lookup "this" locVarTable
     in case classLookup instExprType visibleClassList of
            Just instClass -> 
-               case methodLookup' methodName instClass thisType of
+               case methodLookup methodName instClass thisType of
                    [] -> error $ "Method " ++ methodName ++ " could not be "
                                ++ "found or is not visible"
                    methodDecs -> checkArgs methodDecs
@@ -372,8 +372,11 @@ typeCheckStmt (For initStmt condExpr iterStmt bodyStmt)
                            typedBodyStmt)
                       bodyStmtType
        else error "Conditional expression in for loop must have boolean type"
+-- Break
 typeCheckStmt Break _ _ = TypedStmt Break "void"
+-- Continue
 typeCheckStmt Continue _ _ = TypedStmt Continue "void"
+-- If
 typeCheckStmt (If condExpr thenStmt maybeElseStmt)
               locVarTable 
               visibleClassList =
@@ -392,6 +395,7 @@ typeCheckStmt (If condExpr thenStmt maybeElseStmt)
                                propagateSuperType thenStmtType elseStmtType
                            Nothing -> thenStmtType)
        else error "Conditional expression in if clause must have boolean type"
+-- Switch
 typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
               locVarTable
               visibleClassList =
@@ -402,7 +406,7 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
                                  switchExprType
                                  locVarTable
                                  visibleClassList
-        typedMaybeDefaultCaseStmts =
+        typedMaybeDefaultCaseStmtsAndType =
            fmap ((.) (\(TypedStmt (Block typedStmts) stmtsType) -> 
                           (typedStmts, stmtsType))
                      (\stmts -> 
@@ -410,7 +414,20 @@ typeCheckStmt (Switch switchExpr switchCases maybeDefaultCaseStmts)
                                         locVarTable 
                                         visibleClassList))
                 maybeDefaultCaseStmts
-    in undefined
+    in case typedMaybeDefaultCaseStmtsAndType of
+           Nothing -> TypedStmt (Switch typedSwitchExpr 
+                                        typedSwitchCases
+                                        Nothing)
+                                switchCasesType
+           Just (typedDefaultCaseStmts, defaultCaseStmtsType)
+               | defaultCaseStmtsType == switchCasesType ->
+                     TypedStmt (Switch typedSwitchExpr
+                                       typedSwitchCases
+                                       (Just typedDefaultCaseStmts))
+                               switchCasesType
+               | otherwise ->
+                     error $ "Cases and default case types do not match"
+-- Statement Expressions
 typeCheckStmt (StmtExprStmt stmtExpr) locVarTable visibleClassList =
     let typedStmtExpr@(TypedStmtExpr _ stmtExprType) =
             typeCheckStmtExpr stmtExpr locVarTable visibleClassList
@@ -522,18 +539,8 @@ classLookup t (cl@(Class s _ _):cls) | t == s = Just cl
                                      | otherwise = classLookup t cls
                                      
 -- looks up a method in a class
-methodLookup :: MethodName -> Class -> Maybe MethodDecl
-methodLookup searchedMethodName (Class classType _ methodDecs) =
-    methodDecLookup methodDecs
-    where
-        methodDecLookup (m@(MethodDecl methodName _ _ _ _ _): ms)
-            | searchedMethodName == methodName = Just m
-            | otherwise = methodDecLookup ms
-        methodDecLookup [] = Nothing
-
--- looks up a method in a class
-methodLookup' :: MethodName -> Class -> Type -> MethodDecs
-methodLookup' searchedMethodName (Class classType _ methodDecs) thisType =
+methodLookup :: MethodName -> Class -> Type -> MethodDecs
+methodLookup searchedMethodName (Class classType _ methodDecs) thisType =
     filter filterMethodDecByName methodDecs
     where
         filterMethodDecByName (MethodDecl methodName _ _ _ Public _) =
@@ -543,7 +550,6 @@ methodLookup' searchedMethodName (Class classType _ methodDecs) thisType =
             && filterMethodDecByName (MethodDecl methodName w x y Public z)
             
             
-
 -- propagates the supertype of two types
 propagateSuperType :: Type -> Type -> Type
 propagateSuperType "void" typeB = typeB
@@ -552,10 +558,3 @@ propagateSuperType typeA typeB
     | typeA == typeB = typeA
     | otherwise = error $ "Types " ++ typeA ++ " and " ++ typeB
                         ++ " are not compatible"
-
-propagateSuperType' :: Type -> Type -> Maybe Type
-propagateSuperType' "void" typeB = Just typeB
-propagateSuperType' typeA "void" = Just typeA
-propagateSuperType' typeA typeB 
-    | typeA == typeB = Just typeA
-    | otherwise = Nothing
