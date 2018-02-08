@@ -1,6 +1,6 @@
 \section{Test-Framework}
 
-\begin{frame}{Test-Framework}
+\begin{frame}{Test-Framework - Allgemein}
 Das Test-Framework wurde selbst implementiert. Es enthält diverse Funktionen zum automatisierten Überprüfen der Testfälle.
 
 \par \medskip
@@ -13,7 +13,7 @@ Tests werden in korrekte und falsche Testfälle unterteilt.
 \end{frame}
 
 \begin{frame}[fragile]
-	\frametitle{Test-Suite: Token-Coverage \& Testfälle}
+	\frametitle{Test-Framework - Token-Coverage \& Testfälle}
 	
 Die Test-Suite umfasst eine Token-Coverage von 100\%. 
 
@@ -30,7 +30,7 @@ Zusätzlich umfasst die Test-Suite insgesamt 21 gültige und 12 ungültige Testf
 Ungültige Testfälle können in Syntaxfehler (Parser) und Typfehler (Typchecker) eingeteilt werden.
 \end{frame}
 
-\begin{frame}{Test-Suite: Testfälle}
+\begin{frame}{Test-Framework - Testfälle}
 
 Jedes Testfile liegt in einem Ordner (Correct bzw. Wrong) mit zugehöriger .java-Datei. 	
 
@@ -50,7 +50,7 @@ Zusätzlich zum eigentlichen Testfile enthält der Ordner ein ClassFile in Haske
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Test-Suite: Beispiel Testfile}
+\frametitle{Test-Framework - Beispiel Testfile}
 \begin{lstlisting}[language=Haskell]
 module  Correct.EmptyClass.Steps where
 
@@ -69,7 +69,7 @@ emptyTypedABS = [Class "Test" [] []]
 	
 \end{frame}
 
-\begin{frame}{Test-Suite: Beispielprogramme}
+\begin{frame}{Test-Framework - Beispielprogramme}
 Die Testsuite enthält neben den Testfällen auch eine Reihe von (realistischeren) Anwendungsprogrammen. Diese wurden mit 'normalen' Javaprogrammen getestet.
 
 \pause
