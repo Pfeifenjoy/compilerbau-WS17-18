@@ -89,7 +89,7 @@ test/ExampleProgramma
   - GaußSum
   - Multiplication
   - Pow
-  - Prim
+  - Prime
 ```
 ## Resources
 
