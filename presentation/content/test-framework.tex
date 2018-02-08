@@ -51,22 +51,9 @@ Zusätzlich zum eigentlichen Testfile enthält der Ordner ein ClassFile in Haske
 
 \begin{frame}[fragile]
 \frametitle{Test-Framework - Beispiel Testfile}
-\begin{lstlisting}[language=Haskell]
-module  Correct.EmptyClass.Steps where
-
-import           ABSTree
-import           Lexer.Token
-
-emptyTokens = [Lexer.Token.CLASS,
-              Lexer.Token.IDENTIFIER "Test",
-              Lexer.Token.LEFT_BRACE,
-              Lexer.Token.RIGHT_BRACE
-              ]
-
-emptyABS = [Class "Test" [] []]
-emptyTypedABS = [Class "Test" [] []]	
-\end{lstlisting}
-	
+\begin{center}
+	\includegraphics[width=1\textwidth]{images/test-framework/testfile}
+\end{center}	
 \end{frame}
 
 \begin{frame}{Test-Framework - Beispielprogramme}
