@@ -38,16 +38,10 @@ library
 
 \begin{frame}[fragile]
 	\frametitle{Parser - Operatoren Priorität}
-	\begin{lstlisting}
-%right in                                 //lowest precedence
-%right ASSIGN ADD ...
-%right QUESTIONMARK COLON
-%left OR
-...
-%nonassoc LESSER GREATER LESSER_EQUAL...
-...
-%nonassoc INCREMENT DECREMENT             //highest precedence
-	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{images/parser/operator-precedence.png}
+	\end{figure}
 	\note{
 		\begin{itemize}
 			\item Was ist Operatoren Priorität
@@ -60,24 +54,10 @@ library
 
 \begin{frame}[fragile]
 	\frametitle{Parser - Struktur Happy File}
-	\begin{lstlisting}[basicstyle=\tiny]
-		
-Program
-    : Class                { [$1] }
-    | Program Class        { $1 ++ [$2] }
-    | Program SEMICOLON    { $1 }
-
-Statement
-    : SingleStatement SEMICOLON             { $1 }
-	...
-    | IF LEFT_PARANTHESES Expression RIGHT_PARANTHESES
-        Statement ELSE Statement
-                                            { If $3 $5 (Just $7) }
-    | IF LEFT_PARANTHESES Expression
-        RIGHT_PARANTHESES Statement
-        %prec THEN                          { If $3 $5 Nothing }
-    | Switch                                { $1 }
-	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{images/parser/ast-example.png}
+	\end{figure}
 \end{frame}
 \begin{frame}
 	\frametitle{Parser - Klassen / Konstruktoren}
