@@ -102,7 +102,9 @@ typeCheckMethod (MethodDecl name returnType argDecs body visibility isStatic)
         shadowedLocVarTable = Map.union argVarTable locVarTable
         typedBody@(TypedStmt _ bodyType) =
             typeCheckStmt body shadowedLocVarTable visibleClassList
-    in if bodyType == returnType
+    in if (bodyType == returnType)
+          || ((name == (fromJust $ Map.lookup "this" locVarTable))
+              && bodyType == "void")
        then MethodDecl name returnType argDecs typedBody visibility isStatic
        else error $ "Bodytype " ++ bodyType ++ " and returnType "
                   ++ returnType ++ " of Function " ++ name 
