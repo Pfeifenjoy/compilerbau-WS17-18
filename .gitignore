@@ -36,6 +36,9 @@ cabal.project.local
 *.cb
 *.cb2
 
+*.tex.latexmain
+.latexmkrc
+
 ## Intermediate documents:
 *.dvi
 *.xdv

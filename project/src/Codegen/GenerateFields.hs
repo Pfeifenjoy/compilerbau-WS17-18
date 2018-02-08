@@ -2,6 +2,7 @@
 This module generates the fields. Additional it gens the init
 method, which is used to assign non final values to the fields.
 -}
+{-# OPTIONS -Wall #-}
 module Codegen.GenerateFields (
   genFields,
   genCode
@@ -19,15 +20,16 @@ genFields :: Bool -- ^ exists constructor with no arguments
           -> [FieldDecl]
           -> State ClassFile ()
 genFields False [] = genInit []
-genFields constructor fds = mapM_ (genFD constructor) fds
+genFields constructor fds
+  = do mapM_ genFD fds
+       if constructor
+       then return ()
+       else genInit (concatMap (\(FieldDecl vds _ _) -> vds) fds)
 
-genFD :: Bool -- ^ exists constructor with no arguments
-      -> FieldDecl
+genFD :: FieldDecl
       -> State ClassFile ()
-genFD constructor (FieldDecl vds vis static)
-  = mapM_ (genVD vis static) vds >> if constructor
-                                    then return ()
-                                    else genInit vds
+genFD (FieldDecl vds vis static)
+  = mapM_ (genVD vis static) vds
 
 genVD :: Visibility
       -> Bool -- ^ is the field static?
@@ -36,7 +38,7 @@ genVD :: Visibility
 genVD vis static (VariableDecl name typ final mayExpr) =
   do indexName <- genUTF8 name
      indexType <- genUTF8 $ typeToDescriptor typ
-     attrFields <- genAttrFields mayExpr
+     attrFields <- if final then genAttrFields mayExpr else return []
      let accessFlags = visToFlag vis : [0x8 | static] ++ [0x10 | final]
          fieldInfo = FieldInfo { _afFi = AccessFlags accessFlags
                                , _indexNameFi = indexName
@@ -44,14 +46,14 @@ genVD vis static (VariableDecl name typ final mayExpr) =
                                , _tamFi = length attrFields
                                , _arrayAttrFi = attrFields
                                }
-     modify $ (countFields +~ 1) . over arrayFields (fieldInfo:)
+     modify $ over arrayFields (fieldInfo:)
 
 
 genAttrFields :: Maybe Expr
                    -> State ClassFile AttributeInfos
 genAttrFields Nothing  = return []
 genAttrFields (Just expr) =
-  do indexName <- genUTF8 "constant"
+  do indexName <- genUTF8 "ConstantValue"
      indexValue <- exprToConstantPool expr
      return [AttributeConstantValue { _indexNameAttr = indexName
                                     , _tamAttr = 2
@@ -62,8 +64,8 @@ genInit :: [VariableDecl] -> State ClassFile ()
 genInit vds =
   do indexType <- genUTF8 "()V"
      indexCode <- genUTF8 "Code"
-     indexThis <- genMethodRefThis "<init>" "void"
-     indexName <- view (this . indexTh) <$> get
+     indexThis <- genMethodRefSuper "<init>" "()V"
+     indexName <- genUTF8 "<init>"
      codeVars <- mapM genCode vds
      let (b1,b2) = split16Byte indexThis
          code =  [Aload0,Invokespecial b1 b2]
@@ -71,8 +73,9 @@ genInit vds =
                     ++ [Return]
          lengthCode = 5 + sum (map fst codeVars)
          codeAttr = AttributeCode { _indexNameAttr = indexCode
-                                  , _tamLenAttr = 14+lengthCode
-                                  , _lenStackAttr = 1
+                                  , _tamLenAttr = 12+lengthCode
+                                  , _lenStackAttr = if lengthCode > 5
+                                                    then 2 else 1
                                   , _lenLocalAttr = 1
                                   , _tamCodeAttr = lengthCode
                                   , _arrayCodeAttr = code
@@ -91,11 +94,11 @@ genInit vds =
 
 genCode :: VariableDecl -> State ClassFile (Int,Code)
 genCode (VariableDecl _ _  _ Nothing) = return (0,[])
-genCode (VariableDecl name "float" _ (Just expr)) = undefined
+genCode (VariableDecl _ "float" _ (Just _)) = undefined
 genCode (VariableDecl name typ  _ (Just expr)) =
-  do index <- genFieldRefThis name $ typeToDescriptor typ
+  do idx <- genFieldRefSuper name $ typeToDescriptor typ
      let val = evalInt expr
-         (b1,b2) = split16Byte index
+         (b1,b2) = split16Byte idx
      return (if val > 5 then 6 else 5
             ,[Aload0,iconst val,Putfield b1 b2])
 

@@ -21,6 +21,8 @@ import           Correct.WhileLoop.Steps
 import           Correct.WhileLoopCondition.Steps
 import           Utils.SUnit
 import Correct.OperatorOverloading.Steps
+import ExampleProgramms.Faculty.Steps
+import ExampleProgramms.Fibonacci.Steps
 
 typeTests :: [TestUnit]
 typeTests = [TypeUnit "Correct/EmptyClass" emptyTypedABS,
@@ -33,7 +35,7 @@ typeTests = [TypeUnit "Correct/EmptyClass" emptyTypedABS,
              TypeUnit "Correct/LocalVariable" localVariableTypedABS,
              TypeUnit "Correct/SimpleIf" simpleIfTypedABS,
              TypeUnit "Correct/ShortIf" shortIfTypedABS,
-             -- TypeUnit "Correct/SwitchCase" emptyABS,
+             TypeUnit "Correct/SwitchCase" switchCaseTypedABS,
              TypeUnit "Correct/WhileLoop" whileLoopTypedABS,
              TypeUnit "Correct/WhileLoopCondition" whileLoopConditionTypedABS,
              TypeUnit "Correct/DoWhile" doWhileTypedABS,
@@ -42,7 +44,9 @@ typeTests = [TypeUnit "Correct/EmptyClass" emptyTypedABS,
              TypeUnit "Correct/BitWiseOperation" bitWiseOperationTypedABS,
              TypeUnit "Correct/NewClass" newClassTypedABS,
              TypeUnit "Correct/InstanceOf" instanceOfTypedABS,
-             TypeUnit "Correct/MethodCall" methodCallTypedABS--,
+             TypeUnit "Correct/MethodCall" methodCallTypedABS,
+             TypeUnit "ExampleProgramms/Faculty" facultyTypedABS,
+             TypeUnit "ExampleProgramms/Fibonacci" fibonacciTypedABS
 
 
 
