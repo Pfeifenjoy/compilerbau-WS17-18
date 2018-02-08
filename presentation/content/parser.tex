@@ -118,21 +118,17 @@ Statement
 \begin{frame}[fragile]
 	\frametitle{Parser - If - Else}
 	Problem:
-	\begin{lstlisting}
-if_stmt
-    : "if" expr "{" stmt "}"
-    | "if" expr "{" stmt "}" "else" "{" statement "}"
-	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{images/parser/if-else-grammar.png}
+	\end{figure}
 	\pause
 	Solution:
 
-	\begin{lstlisting}
-%nonassoc THEN
-
-if_stmt
-    : "if" expr "{" stmt "}" %prec THEN
-    | "if" expr "{" stmt "}" "else" "{" statement "}"
-	\end{lstlisting}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\linewidth]{images/parser/sol-if-else-grammar.png}
+	\end{figure}
 \end{frame}
 
 \begin{frame}[fragile]
