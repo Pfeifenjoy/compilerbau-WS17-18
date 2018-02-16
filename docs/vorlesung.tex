@@ -36,22 +36,18 @@
 	\end{spacing}
 	\newpage
 
-	% Abkürzungsverzeichnis
-	\cleardoublepage
-	\input{ads/acronyms}
+	%% Abbildungsverzeichnis
+	%\cleardoublepage
+	%\listoffigures
 
-	% Abbildungsverzeichnis
-	\cleardoublepage
-	\listoffigures
+	%%Tabellenverzeichnis
+	%\cleardoublepage
+	%\listoftables
 
-	%Tabellenverzeichnis
-	\cleardoublepage
-	\listoftables
-
-	% Quellcodeverzeichnis
-	\cleardoublepage
-	\lstlistoflistings
-	\cleardoublepage
+	%% Quellcodeverzeichnis
+	%\cleardoublepage
+	%\lstlistoflistings
+	%\cleardoublepage
 
 	\pagenumbering{arabic}
 	
@@ -59,21 +55,25 @@
 
 	% Chapters
 	\input{content/00-introduction}
+	\input{content/01-installation}
+	\input{content/02-organisation}
 	
-	
-	
-	\clearpage
+	%\clearpage
+
+	% Abkürzungsverzeichnis
+	\cleardoublepage
+	\input{ads/acronyms}
 
 	% Literaturverzeichnis
 	\cleardoublepage
 	\printbibliography
 
 	% Glossar
-	\printglossary[style=altlist,title=\langglossar]
+	%\printglossary[style=altlist,title=\langglossar]
 	
 	% sonstiger Anhang
-	\clearpage
-	\appendix
-	\input{ads/appendix}
+	%\clearpage
+	%\appendix
+	%\input{ads/appendix}
 	
 \end{document}
