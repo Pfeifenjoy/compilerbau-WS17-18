@@ -1,6 +1,7 @@
 # compilerbau-WS17-18
 
 [![Build Status](https://travis-ci.com/Pfeifenjoy/compilerbau-WS17-18.svg?token=FpJ5U6QQLsfb6qvQ5Fsg&branch=master)](https://travis-ci.com/Pfeifenjoy/compilerbau-WS17-18)
+![GHC v8.0.1](https://img.shields.io/badge/ghc-v8.0.1-yellow.svg)
 
 *We're building a compiler. It'll compile things.*
 
