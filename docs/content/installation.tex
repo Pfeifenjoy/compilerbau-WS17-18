@@ -31,14 +31,35 @@ Dieser kann mit Hilfe von Cabal erstellt und installiert werden.
 Durch \lstinline{cabal install} wird das Kommando \lstinline{jc} installiert.
 Falls sich \lstinline{jc} nicht im Pfad befindet kann es alternativ mit \lstinline{cabal exec jc}
 ausgeführt werden.
-\begin{lstlisting}[language=bash, caption={Bauen des jc Kommandos}]
+\begin{lstlisting}[language=bash, caption={Bauen des jc Kommandos}, label={install-script}]
 cd compilerbau-WS17-18/project
 cabal configure
 cabal build
 cabal install
 \end{lstlisting}
 
-\section{Bedienung}
+\section{Ausführen des Testframeworks}
+
+Das Testframework ist eine Haskell Testsuite, welche in Cabal erst aktiviert werden muss.
+Nachdem, oder während, das Project installiert wurde wie in \autoref{install-script} beschrieben,
+müssen folgende Befehle ausgeführt werden.
+
+\begin{lstlisting}[language=bash, caption={Aktivierung des Testframeworks}, label={configure-tests}]
+cabal configure --enable-tests
+\end{lstlisting}
+
+Anschließend kann mit dem Befehl \lstinline{cabal test} das Testframework ausgeführt werden
+oder mit \lstinline{cabal repl test-core} in den interaktiven Modus gesprungen werden.
+
+\begin{lstlisting}[language=bash, caption={Interaktiver Modus: Testframework}, label={interactive-mode}]
+cabal repl test-core
+> main -- Anzeiger der Testinformationen
+\end{lstlisting}
+
+Mithilfe der main Funktion können dann die Testfälle ausgeführt werden und deren
+Ergebnisse angezeigt werden.
+
+\section{Bedienung des Compilers}
 Das Programm \lstinline{jc} bekommt als Argument eine Liste von Java Quelldateien,
 und generiert daraus Class-Files.
 Mithilfe des flag \lstinline{-l LOG}, e.g. \lstinline{cabal exec jc -- -l log *.java},
