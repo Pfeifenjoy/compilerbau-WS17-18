@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="13.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <type>com.baselet.element.old.allinone.ActivityDiagramText</type>
+    <coordinates>
+      <x>140</x>
+      <y>150</y>
+      <w>1138</w>
+      <h>535</h>
+    </coordinates>
+    <panel_attributes>title:Open File
+Start
+Open FileDialog
+If
+	[User cancels]
+	Go back to the app
+
+	[User selects one or more files]
+	If
+		[All files are open]
+		Focus last selected file
+
+		[No files are open]
+		Open all files and focus the last one
+
+		[Some files are open]
+		Open the unopened files and focus the last one
+	EndIf
+EndIf
+End
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

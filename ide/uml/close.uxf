@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="13.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <type>com.baselet.element.old.allinone.ActivityDiagramText</type>
+    <coordinates>
+      <x>120</x>
+      <y>140</y>
+      <w>959</w>
+      <h>535</h>
+    </coordinates>
+    <panel_attributes>title:Close
+Start
+If
+	[Current File is dirty]
+	Show warning message
+	If
+		[User clicks on save]
+		Save
+
+		[User clicks on cancel]
+		Cancel
+
+		[User clicks on don't save]
+		Remove Tab
+	EndIf
+	
+	[Current File is not dirty]
+	Remove Tab
+EndIf	
+End</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

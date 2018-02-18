@@ -1,0 +1,4 @@
+Build:
+
+cd into directory then:
+pyinstaller main.spec
